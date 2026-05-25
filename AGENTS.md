@@ -38,6 +38,10 @@ packages/<name>/
 | `npm run build -w packages/cli` | Build a single workspace package |
 | `npx selfcure run` | Execute the full crawl → generate → run → heal → report pipeline |
 
+## Documentation maintenance
+Before creating, updating, or deleting any doc or related file, read **`SKILLHUB.md`**.
+It contains the full document map, change → file matrix, and checklists for common scenarios.
+
 ## Conventions
 - All source in `src/`, TypeScript strict mode.
 - ESM-first (`"type": "module"` in package.json).

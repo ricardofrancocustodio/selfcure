@@ -31,6 +31,11 @@ ANTHROPIC_API_KEY=sk-ant-...
 - Always include component source + existing test (if any) in context.
 - Cap input tokens per request; chunk large files if needed.
 
+## Documentation maintenance
+Before creating, updating, or deleting any doc or related file, read **`SKILLHUB.md`**.
+It maps every document to the code it covers and provides checklists for structural changes
+(new package, deleted package, new config option, etc.).
+
 ## What NOT to touch
 - Never modify `dist/` directly — it is generated.
 - Never hardcode API keys; always use `process.env.ANTHROPIC_API_KEY`.
