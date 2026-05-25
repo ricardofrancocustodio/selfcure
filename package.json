@@ -1,33 +1,21 @@
 {
-  "name": "selfcure",
+  "name": "selfcure-root",
   "version": "0.1.0",
-  "description": "AI-powered self-healing test suite using Playwright + Claude",
+  "private": true,
+  "description": "AI-powered self-healing test suite using Playwright + Claude — monorepo root",
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "selfcure": "dist/cli.js"
-  },
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
+    "build": "npm run build --workspaces --if-present",
     "test": "vitest",
     "lint": "tsc --noEmit"
   },
   "keywords": ["playwright", "ai", "self-healing", "testing", "claude"],
   "author": "ricardofrancocustodio",
   "license": "MIT",
-  "dependencies": {
-    "@anthropic-ai/sdk": "latest",
-    "@playwright/test": "1.60.0",
-    "@typescript-eslint/parser": "latest",
-    "chalk": "latest",
-    "commander": "latest",
-    "fs-extra": "latest",
-    "glob": "latest",
-    "ora": "latest"
-  },
   "devDependencies": {
-    "@types/fs-extra": "latest",
     "@types/node": "latest",
     "tsup": "latest",
     "typescript": "latest",

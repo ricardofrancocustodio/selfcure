@@ -1,0 +1,19 @@
+{
+  "name": "@selfcure/generator",
+  "version": "0.1.0",
+  "description": "Sends component analysis to Claude and receives Playwright test code",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@selfcure/analyzer": "*"
+  }
+}

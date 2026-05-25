@@ -1,0 +1,24 @@
+{
+  "name": "@selfcure/reporter",
+  "version": "0.1.0",
+  "description": "Generates HTML report with test evidence — screenshots, traces, diffs",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@selfcure/runner": "*",
+    "@selfcure/selfcure": "*",
+    "chalk": "latest",
+    "fs-extra": "latest"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "latest"
+  }
+}

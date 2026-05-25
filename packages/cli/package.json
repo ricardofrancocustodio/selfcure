@@ -1,0 +1,26 @@
+{
+  "name": "@selfcure/cli",
+  "version": "0.1.0",
+  "description": "CLI entry-point for selfcure (init, crawl, run, heal, report)",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "selfcure": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --banner.js '#!/usr/bin/env node'",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@selfcure/analyzer": "*",
+    "@selfcure/crawler": "*",
+    "@selfcure/generator": "*",
+    "@selfcure/reporter": "*",
+    "@selfcure/runner": "*",
+    "@selfcure/selfcure": "*",
+    "chalk": "latest",
+    "commander": "latest",
+    "ora": "latest"
+  }
+}

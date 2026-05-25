@@ -1,0 +1,23 @@
+{
+  "name": "@selfcure/crawler",
+  "version": "0.1.0",
+  "description": "Static + dynamic source crawler — extracts component ASTs via @typescript-eslint/parser",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@typescript-eslint/parser": "latest",
+    "fs-extra": "latest",
+    "glob": "latest"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "latest"
+  }
+}

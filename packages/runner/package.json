@@ -1,0 +1,18 @@
+{
+  "name": "@selfcure/runner",
+  "version": "0.1.0",
+  "description": "Executes Playwright tests programmatically and captures traces on failure",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@playwright/test": "1.60.0"
+  }
+}

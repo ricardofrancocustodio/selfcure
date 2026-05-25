@@ -1,0 +1,24 @@
+{
+  "name": "@selfcure/selfcure",
+  "version": "0.1.0",
+  "description": "Self-healing loop — sends trace + error to Claude, applies diff, re-validates",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@selfcure/generator": "*",
+    "@selfcure/runner": "*",
+    "fs-extra": "latest"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "latest"
+  }
+}

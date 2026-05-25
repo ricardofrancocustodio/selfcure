@@ -4,26 +4,39 @@
 `selfcure` is a CLI + library that uses **Claude** (Anthropic) to generate, lint,
 and self-heal **Playwright** test suites for React / Vue / Angular projects.
 
-## Repository layout
+## Repository layout (npm workspaces monorepo)
 ```
-src/
-  cli.ts          — Commander entry-point  (selfcure crawl | run | heal)
-  crawler.ts      — Scans source files with glob, extracts components via @typescript-eslint/parser
-  generator.ts    — Sends component AST → Claude → returns Playwright test code
-  runner.ts       — Executes tests via @playwright/test programmatic API
-  healer.ts       — On failure, sends trace + error → Claude → patches test file
-  utils/          — chalk/ora helpers, fs-extra wrappers
-dist/             — tsup output (CommonJS + ESM)
-tests/            — vitest unit tests for selfcure itself
+packages/
+  cli/            — @selfcure/cli     — Commander entry-point (selfcure init | crawl | run | heal | report)
+  crawler/        — @selfcure/crawler — Static + dynamic source crawl via glob + @typescript-eslint/parser
+  analyzer/       — @selfcure/analyzer— Classifies interactive elements, computes testability score
+  generator/      — @selfcure/generator— Sends AST + analysis → Claude → Playwright test code
+  runner/         — @selfcure/runner  — Executes tests via @playwright/test, captures traces on failure
+  selfcure/       — @selfcure/selfcure— Self-healing loop: trace + error → Claude diff → patch + re-run
+  reporter/       — @selfcure/reporter— HTML report + JSON summary + evidence (screenshots, diffs)
+selfcure.config.js — Config template for the TARGET project under test
+package.json      — Workspace root (private, no runtime deps)
+tsconfig.json     — Shared base TypeScript config (extended by each package)
+```
+
+Each package follows:
+```
+packages/<name>/
+  src/index.ts   — public API
+  package.json   — scoped deps (@selfcure/*)
+  tsconfig.json  — extends ../../tsconfig.json
+  dist/          — tsup output (gitignored)
 ```
 
 ## Commands the agent may run
 | Command | Purpose |
 |---------|---------|
-| `npm run build` | Compile CLI with tsup |
-| `npm test` | Run vitest suite |
-| `npm run lint` | TypeScript type-check |
-| `npx playwright test` | Execute generated tests |
+| `npm install` | Install + link all workspace packages |
+| `npm run build` | Build all packages with tsup (runs `--workspaces`) |
+| `npm test` | Run vitest suite from the root |
+| `npm run lint` | TypeScript type-check (`tsc --noEmit`) |
+| `npm run build -w packages/cli` | Build a single workspace package |
+| `npx selfcure run` | Execute the full crawl → generate → run → heal → report pipeline |
 
 ## Conventions
 - All source in `src/`, TypeScript strict mode.
