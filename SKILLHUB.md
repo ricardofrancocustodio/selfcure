@@ -41,6 +41,12 @@ create / update / delete each one.
 | `docs/packages/reporter.md` | `@selfcure/reporter` — `report()` API, output files, HTML columns |
 | `docs/packages/web.md` | `@selfcure/web` — `startWebServer()` API, HTTP routes, init page, generator |
 
+### `docs/implementations/` — incremental implementation notes
+
+| File | Covers |
+|------|--------|
+| `docs/implementations/2026-05-25-web-crawl-page.md` | Web crawler/analyzer page, `/crawl`, `/api/crawl`, filters, and validation notes |
+
 ---
 
 ## 2. Change → document matrix

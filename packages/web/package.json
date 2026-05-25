@@ -13,6 +13,8 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@selfcure/analyzer": "*",
+    "@selfcure/crawler": "*",
     "@selfcure/generator": "*",
     "fs-extra": "latest"
   },

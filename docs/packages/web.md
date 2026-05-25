@@ -1,6 +1,6 @@
 # `@selfcure/web`
 
-Local HTTP server that serves the selfcure init wizard in the browser.
+Local HTTP server that serves the selfcure init wizard and crawler/analyzer results in the browser.
 Invoked via `selfcure web` from the CLI.
 
 ## Exported API
@@ -23,9 +23,11 @@ Returns a `http.Server` instance.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/` | Serves the init wizard HTML page |
+| `GET` | `/crawl` | Serves the crawler/analyzer results page with client-side filters |
 | `GET` | `/api/dirs` | Returns the wizard `cwd` and its immediate subdirectories (used to populate the source-folder picker) |
 | `GET` | `/api/providers` | Returns the supported LLM providers + which env vars are already set in the server's environment |
 | `POST` | `/api/init` | Writes `selfcure.config.mjs` + `.env`, returns `GenerateResult` JSON |
+| `POST` | `/api/crawl` | Loads `selfcure.config.mjs`, runs `crawl()` + `analyze()`, and returns serializable component metadata |
 
 ### GET `/api/dirs` response
 
@@ -100,6 +102,40 @@ interface GenerateResult {
 }
 ```
 
+### POST `/api/crawl` request body
+
+```typescript
+interface CrawlWebRequest {
+  /** Optional path relative to the web server cwd; default: selfcure.config.mjs, fallback: selfcure.config.js */
+  configPath?: string;
+}
+```
+
+### POST `/api/crawl` response body
+
+```typescript
+interface CrawlWebResponse {
+  rootDir: string;
+  count: number;
+  components: Array<{
+    filePath: string;
+    componentName: string;
+    framework: 'react' | 'vue' | 'angular' | 'unknown';
+    props: Array<{ name: string; type: string; required: boolean }>;
+    score: number;
+    complexity: 'low' | 'medium' | 'high';
+    interactiveElements: Array<{
+      type: 'button' | 'input' | 'link' | 'form' | 'custom';
+      selector: string;
+      label?: string;
+      actions: string[];
+    }>;
+  }>;
+}
+```
+
+The raw AST is intentionally omitted from this response. The browser receives only the data needed to list pages/components, props, selectors, labels, actions, score, and complexity.
+
 ## Init page
 
 Single self-contained HTML document with an inline `<style>` block —
@@ -120,6 +156,17 @@ no per-element inline styles. Fields mirror the CLI wizard exactly:
 On submit the page POSTs to `/api/init`, then shows the generated config
 with **Copy to clipboard** and **Download** buttons.
 
+## Crawl page
+
+`GET /crawl` serves a plain HTML page that calls `POST /api/crawl` and renders:
+
+- pages/components discovered by the crawler
+- prop names, types, and required/optional status
+- interactive tags found by the analyzer (`button`, `input`, `select`, `textarea`, `a`, `form` mapped to element types)
+- selector, label, available Playwright actions, score, and complexity
+
+The page filters results locally by search text, framework, complexity, tag/element type, minimum score, and whether a component has interactive tags. Results can also be sorted by file path, component name, score, or number of tags.
+
 ## Config generator
 
 ```typescript
@@ -138,6 +185,7 @@ import { buildConfigContent, generateConfig, FRAMEWORK_EXTENSIONS } from '@selfc
 packages/web/
   src/
     index.ts       — startWebServer() + re-exports
+    crawlPage.ts   — crawler/analyzer results page HTML
     generator.ts   — InitOptions, GenerateResult, buildConfigContent, generateConfig
     initPage.ts    — initPageHtml string (the init wizard HTML)
 ```

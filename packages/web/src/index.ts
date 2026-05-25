@@ -1,7 +1,12 @@
 import http from 'node:http';
 import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { analyze } from '@selfcure/analyzer';
+import { crawl } from '@selfcure/crawler';
 import { PROVIDERS, type ProviderId } from '@selfcure/generator';
 import { generateConfig, type InitOptions } from './generator.js';
+import { crawlPageHtml } from './crawlPage.js';
 import { initPageHtml } from './initPage.js';
 
 // Directories that should never appear in the source-folder picker
@@ -32,6 +37,88 @@ interface ProviderListEntry {
   defaultBaseURL?: string;
   hint: string;
   apiKeyPlaceholder: string;
+}
+
+interface WebCrawlConfig {
+  rootDir: string;
+  include: string[];
+  exclude: string[];
+  framework?: 'react' | 'vue' | 'angular' | 'auto';
+}
+
+interface CrawlRequestBody {
+  configPath?: string;
+}
+
+async function readJsonBody(req: http.IncomingMessage, limit = 64_000): Promise<unknown> {
+  let body = '';
+
+  return new Promise((resolve, reject) => {
+    req.on('data', (chunk: Buffer) => {
+      body += chunk.toString();
+      if (body.length > limit) {
+        reject(new Error('Payload too large'));
+        req.destroy();
+      }
+    });
+
+    req.on('end', () => {
+      if (!body.trim()) {
+        resolve({});
+        return;
+      }
+
+      try {
+        resolve(JSON.parse(body));
+      } catch (err) {
+        reject(err instanceof Error ? err : new Error(String(err)));
+      }
+    });
+
+    req.on('error', reject);
+  });
+}
+
+function resolveConfigPath(cwd: string, provided?: string): string {
+  if (provided) return path.resolve(cwd, provided);
+
+  const mjs = path.resolve(cwd, 'selfcure.config.mjs');
+  if (fs.existsSync(mjs)) return mjs;
+
+  return path.resolve(cwd, 'selfcure.config.js');
+}
+
+async function loadCrawlConfig(cwd: string, configPath?: string): Promise<WebCrawlConfig> {
+  const resolved = resolveConfigPath(cwd, configPath);
+  const { default: config } = await import(`${pathToFileURL(resolved).href}?t=${Date.now()}`);
+  return config as WebCrawlConfig;
+}
+
+async function runCrawlAnalysis(cwd: string, body: CrawlRequestBody) {
+  const config = await loadCrawlConfig(cwd, body.configPath);
+  const rootDir = path.resolve(cwd, config.rootDir);
+  const components = await crawl({
+    rootDir,
+    include: config.include,
+    exclude: config.exclude,
+    framework: config.framework,
+  });
+
+  const analysis = await analyze(components);
+
+  return {
+    rootDir,
+    count: analysis.length,
+    components: analysis.map((item) => ({
+      filePath: item.component.filePath,
+      componentName: item.component.componentName,
+      framework: item.component.framework,
+      props: item.component.props,
+      score: item.score,
+      complexity: item.complexity,
+      interactiveElements: item.interactiveElements,
+    })),
+  };
 }
 
 function listProviders(): {
@@ -72,9 +159,11 @@ export { buildConfigContent, generateConfig, FRAMEWORK_EXTENSIONS } from './gene
  *
  * Routes:
  *   GET  /              → init wizard HTML page
+ *   GET  /crawl         → crawler/analyzer results page
  *   GET  /api/dirs      → cwd + immediate subdirs (for the source-folder picker)
  *   GET  /api/providers → supported LLM providers + which env vars are already set
  *   POST /api/init      → generate selfcure.config.mjs + .env, return JSON
+ *   POST /api/crawl     → run crawler + analyzer and return serializable JSON
  *
  * @param port - Port to listen on (default: 3333)
  * @param cwd  - Working directory where config + .env are written (default: process.cwd())
@@ -87,6 +176,12 @@ export function startWebServer(
     if (req.method === 'GET' && req.url === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(initPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && req.url === '/crawl') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(crawlPageHtml);
       return;
     }
 
@@ -159,6 +254,20 @@ export function startWebServer(
           res.end(JSON.stringify({ error: String(err) }));
         }
       });
+      return;
+    }
+
+    if (req.method === 'POST' && req.url === '/api/crawl') {
+      readJsonBody(req)
+        .then((rawBody) => runCrawlAnalysis(cwd, rawBody as CrawlRequestBody))
+        .then((result) => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        })
+        .catch((err) => {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: String(err) }));
+        });
       return;
     }
 
