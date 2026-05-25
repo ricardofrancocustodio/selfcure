@@ -1,0 +1,18 @@
+# Dependencies — never read
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# Test outputs & traces (large binary/json)
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Environment secrets
+.env
+.env.*
+
+# Logs
+*.log
