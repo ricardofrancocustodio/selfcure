@@ -14,6 +14,7 @@ packages/
   runner/         — @selfcure/runner  — Executes tests via @playwright/test, captures traces on failure
   selfcure/       — @selfcure/selfcure— Self-healing loop: trace + error → Claude diff → patch + re-run
   reporter/       — @selfcure/reporter— HTML report + JSON summary + evidence (screenshots, diffs)
+  web/            — @selfcure/web     — Local HTTP server + browser init wizard (selfcure web)
 selfcure.config.js — Config template for the TARGET project under test
 package.json      — Workspace root (private, no runtime deps)
 tsconfig.json     — Shared base TypeScript config (extended by each package)
@@ -37,6 +38,7 @@ packages/<name>/
 | `npm run lint` | TypeScript type-check (`tsc --noEmit`) |
 | `npm run build -w packages/cli` | Build a single workspace package |
 | `npx selfcure run` | Execute the full crawl → generate → run → heal → report pipeline |
+| `npx selfcure web` | Open the browser init wizard at http://localhost:3333 |
 
 ## Documentation maintenance
 Before creating, updating, or deleting any doc or related file, read **`SKILLHUB.md`**.

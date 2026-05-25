@@ -1,0 +1,22 @@
+{
+  "name": "@selfcure/web",
+  "version": "0.1.0",
+  "description": "Local web UI for selfcure init — serves the configuration wizard in the browser",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "fs-extra": "latest"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "latest",
+    "@types/node": "latest"
+  }
+}

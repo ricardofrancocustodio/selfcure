@@ -8,17 +8,19 @@
     "selfcure": "dist/index.js"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --banner.js '#!/usr/bin/env node'",
+    "build": "tsup --config tsup.config.ts",
     "dev": "tsup src/index.ts --format esm --watch",
     "test": "vitest"
   },
   "dependencies": {
+    "@inquirer/prompts": "latest",
     "@selfcure/analyzer": "*",
     "@selfcure/crawler": "*",
     "@selfcure/generator": "*",
     "@selfcure/reporter": "*",
     "@selfcure/runner": "*",
     "@selfcure/selfcure": "*",
+    "@selfcure/web": "*",
     "chalk": "latest",
     "commander": "latest",
     "ora": "latest"

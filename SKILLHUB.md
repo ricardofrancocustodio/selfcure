@@ -39,6 +39,7 @@ create / update / delete each one.
 | `docs/packages/runner.md` | `@selfcure/runner` — `run()` API, Playwright flags, error handling |
 | `docs/packages/selfcure.md` | `@selfcure/selfcure` — `heal()` API, heal prompt, sanity check |
 | `docs/packages/reporter.md` | `@selfcure/reporter` — `report()` API, output files, HTML columns |
+| `docs/packages/web.md` | `@selfcure/web` — `startWebServer()` API, HTTP routes, init page, generator |
 
 ---
 

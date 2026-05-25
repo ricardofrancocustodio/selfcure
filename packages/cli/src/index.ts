@@ -2,6 +2,11 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { runInitWizard } from './init.js';
+import { startWebServer } from '@selfcure/web';
+import { crawl } from '@selfcure/crawler';
 
 // ---------------------------------------------------------------------------
 // Public configuration types (re-exported so selfcure.config.js can use
@@ -111,25 +116,47 @@ program
   .command('init')
   .description('Scaffold selfcure.config.js in the current project')
   .action(async () => {
-    const spinner = ora('Initialising selfcure…').start();
     try {
-      // TODO: copy selfcure.config.js template into cwd
-      spinner.succeed(chalk.green('selfcure.config.js created'));
+      await runInitWizard(process.cwd());
     } catch (err) {
-      spinner.fail(chalk.red(String(err)));
+      console.error(chalk.red(String(err)));
       process.exit(1);
     }
   });
 
 program
-  .command('crawl')
+  .command('crawl [file]')
   .description('Crawl source files and extract component metadata')
   .option('-c, --config <path>', 'path to selfcure.config.js', './selfcure.config.js')
-  .action(async (_opts) => {
+  .action(async (file: string | undefined, opts) => {
     const spinner = ora('Crawling source files…').start();
     try {
-      // TODO: load config, call @selfcure/crawler, print summary
-      spinner.succeed(chalk.green('Crawl complete'));
+      const configUrl = pathToFileURL(path.resolve(opts.config)).href;
+      const { default: config } = await import(configUrl);
+
+      let components;
+      if (file) {
+        // Single-file mode: crawl only the provided path
+        const abs = path.resolve(file);
+        components = await crawl({
+          rootDir: path.dirname(abs),
+          include: [path.basename(abs)],
+          exclude: [],
+          framework: config.framework,
+        });
+      } else {
+        components = await crawl({
+          rootDir: config.rootDir,
+          include: config.include,
+          exclude: config.exclude,
+          framework: config.framework,
+        });
+      }
+
+      spinner.succeed(chalk.green(`Crawl complete — ${components.length} component(s) found`));
+      for (const c of components) {
+        console.log(chalk.dim(`  ${c.framework}  ${c.componentName}  →  ${c.filePath}`));
+      }
     } catch (err) {
       spinner.fail(chalk.red(String(err)));
       process.exit(1);
@@ -179,6 +206,15 @@ program
       spinner.fail(chalk.red(String(err)));
       process.exit(1);
     }
+  });
+
+program
+  .command('web')
+  .description('Open the selfcure init wizard in the browser')
+  .option('-p, --port <number>', 'port to listen on', '3333')
+  .action((opts) => {
+    const port = Number(opts.port);
+    startWebServer(port, process.cwd());
   });
 
 program.parse();
