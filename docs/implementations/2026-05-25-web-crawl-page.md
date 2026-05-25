@@ -15,5 +15,6 @@ Implemented a browser page for running the selfcure crawler/analyzer from `selfc
 
 ## Validation
 
-- Pending: `npm install` to refresh workspace lockfile after dependency changes.
-- Pending: `npm run build`.
+- `npm install` refreshed workspace links and lockfile after dependency changes.
+- `npm run build` completed successfully for all packages.
+- Local smoke test returned `200` for `GET /crawl` and `POST /api/crawl`.
