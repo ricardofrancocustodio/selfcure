@@ -1,6 +1,7 @@
 import { glob } from 'glob';
 import fs from 'fs-extra';
 import { parse } from '@typescript-eslint/parser';
+import { parse as parseHtml } from 'node-html-parser';
 import path from 'node:path';
 
 // ---------------------------------------------------------------------------
@@ -18,12 +19,18 @@ export interface CrawlOptions {
   framework?: 'react' | 'vue' | 'angular' | 'auto';
 }
 
-export type Framework = 'react' | 'vue' | 'angular' | 'unknown';
+export type Framework = 'react' | 'vue' | 'angular' | 'html' | 'unknown';
 
 export interface PropMeta {
   name: string;
   type: string;
   required: boolean;
+}
+
+/** A single interactive element pre-extracted from an HTML file. */
+export interface HtmlElementMeta {
+  tag: string;
+  attrs: Record<string, string>;
 }
 
 export interface ComponentMeta {
@@ -33,6 +40,8 @@ export interface ComponentMeta {
   props: PropMeta[];
   /** Raw ESTree AST produced by @typescript-eslint/parser */
   ast: ReturnType<typeof parse>;
+  /** Pre-extracted elements from HTML files — only set when framework is 'html' */
+  htmlElements?: HtmlElementMeta[];
 }
 
 // ---------------------------------------------------------------------------
@@ -40,6 +49,7 @@ export interface ComponentMeta {
 // ---------------------------------------------------------------------------
 
 function detectFramework(filePath: string, source: string): Framework {
+  if (filePath.endsWith('.html')) return 'html';
   if (filePath.endsWith('.vue')) return 'vue';
   if (filePath.endsWith('.component.ts') || source.includes('@Component')) return 'angular';
   if (source.includes('React') || source.includes('jsx') || filePath.endsWith('.tsx')) return 'react';
@@ -146,6 +156,27 @@ export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
   for (const filePath of files) {
     const source = await fs.readFile(filePath, 'utf-8');
 
+    // ── HTML files: extract interactive elements via DOM parser ──────────
+    if (filePath.endsWith('.html')) {
+      const root = parseHtml(source);
+      const htmlElements: HtmlElementMeta[] = [];
+      for (const tag of ['button', 'input', 'a', 'form', 'select', 'textarea']) {
+        for (const el of root.querySelectorAll(tag)) {
+          htmlElements.push({ tag, attrs: el.attributes as Record<string, string> });
+        }
+      }
+      results.push({
+        filePath,
+        componentName: deriveComponentName(filePath),
+        framework: 'html',
+        props: [],
+        ast: { type: 'Program', body: [], sourceType: 'module' } as unknown as ReturnType<typeof parse>,
+        htmlElements,
+      });
+      continue;
+    }
+
+    // ── TypeScript / JSX files: parse AST ────────────────────────────────
     let ast: ReturnType<typeof parse>;
     try {
       ast = parse(source, {
@@ -154,7 +185,7 @@ export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
         range: true,
       });
     } catch {
-      // Skip files that cannot be parsed as TypeScript/JSX (e.g. HTML, minified JS, SVG)
+      // Skip files that cannot be parsed as TypeScript/JSX (e.g. minified JS, SVG)
       continue;
     }
 

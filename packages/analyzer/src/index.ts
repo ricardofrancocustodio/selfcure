@@ -1,4 +1,4 @@
-import type { ComponentMeta } from '@selfcure/crawler';
+import type { ComponentMeta, HtmlElementMeta } from '@selfcure/crawler';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -132,6 +132,31 @@ function extractInteractiveElements(ast: unknown): InteractiveElement[] {
 }
 
 // ---------------------------------------------------------------------------
+// HTML interactive element extraction (for framework: 'html')
+// ---------------------------------------------------------------------------
+
+function extractInteractiveElementsFromHtml(htmlElements: HtmlElementMeta[]): InteractiveElement[] {
+  const elements: InteractiveElement[] = [];
+  const seen = new Set<string>();
+
+  for (const { tag, attrs } of htmlElements) {
+    if (!TAG_TYPE[tag]) continue;
+    const selector = buildSelector(tag, attrs);
+    if (seen.has(selector)) continue;
+    seen.add(selector);
+    const type = TAG_TYPE[tag]!;
+    elements.push({
+      type,
+      selector,
+      label: buildLabel(attrs),
+      actions: ACTIONS[type],
+    });
+  }
+
+  return elements;
+}
+
+// ---------------------------------------------------------------------------
 // Scoring + complexity
 // ---------------------------------------------------------------------------
 
@@ -156,7 +181,9 @@ function classifyComplexity(elements: InteractiveElement[]): Complexity {
  */
 export async function analyze(components: ComponentMeta[]): Promise<AnalysisResult[]> {
   return components.map((component) => {
-    const interactiveElements = extractInteractiveElements(component.ast);
+    const interactiveElements = component.htmlElements
+      ? extractInteractiveElementsFromHtml(component.htmlElements)
+      : extractInteractiveElements(component.ast);
 
     return {
       component,

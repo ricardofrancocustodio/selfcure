@@ -15,7 +15,8 @@
   "dependencies": {
     "@typescript-eslint/parser": "latest",
     "fs-extra": "latest",
-    "glob": "latest"
+    "glob": "latest",
+    "node-html-parser": "^7.1.0"
   },
   "devDependencies": {
     "@types/fs-extra": "latest"
