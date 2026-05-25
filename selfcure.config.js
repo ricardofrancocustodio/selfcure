@@ -20,6 +20,71 @@ export default {
     '**/dist/**',
   ],
 
+  /**
+   * Framework hint — skips auto-detection.
+   * Values: 'react' | 'vue' | 'angular' | 'auto'
+   * @default 'auto'
+   */
+  framework: 'auto',
+
+  // ── Authentication (omit entire block for public / unauthenticated apps) ─
+  //
+  // Choose ONE of the four strategies below and delete the others.
+  //
+  // Strategy 1 — Form-based login
+  // selfcure navigates to loginURL, fills the fields, and clicks submit.
+  // The resulting browser session is reused for all generated tests.
+  //
+  // auth: {
+  //   type: 'form',
+  //   loginURL: '/login',
+  //   usernameSelector: '[name="username"]',
+  //   passwordSelector: '[name="password"]',
+  //   submitSelector: 'button[type=submit]',
+  //   waitForURL: '/dashboard',   // URL (or glob) to wait for after login
+  //   username: process.env.SELFCURE_USERNAME,
+  //   password: process.env.SELFCURE_PASSWORD,
+  // },
+  //
+  // Strategy 2 — Playwright storage-state (pre-authenticated)
+  // Run `selfcure auth-save` once to generate the file, then commit it
+  // (or add it to .gitignore and generate it in CI).
+  //
+  // auth: {
+  //   type: 'storageState',
+  //   storageState: './.selfcure-auth.json',
+  // },
+  //
+  // Strategy 3 — HTTP Basic Auth (.htaccess / nginx auth_basic)
+  //
+  // auth: {
+  //   type: 'httpCredentials',
+  //   username: process.env.SELFCURE_USERNAME,
+  //   password: process.env.SELFCURE_PASSWORD,
+  // },
+  //
+  // Strategy 4 — Custom request headers (Bearer token, API key, etc.)
+  //
+  // auth: {
+  //   type: 'headers',
+  //   extraHTTPHeaders: {
+  //     Authorization: `Bearer ${process.env.SELFCURE_TOKEN}`,
+  //     'X-Api-Key': process.env.SELFCURE_API_KEY,
+  //   },
+  // },
+
+  // ── Browser ──────────────────────────────────────────────────────────────
+  browser: {
+    /** 'chromium' | 'firefox' | 'webkit' */
+    type: 'chromium',
+    headless: true,
+    viewport: { width: 1280, height: 720 },
+    /** Default navigation + action timeout in ms */
+    timeout: 30_000,
+    /** Slow-motion delay between actions in ms (0 = disabled) */
+    slowMo: 0,
+  },
+
   // ── Test generation ──────────────────────────────────────────────────────
   /** Output directory for generated Playwright spec files */
   testsDir: './selfcure-tests',

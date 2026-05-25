@@ -11,6 +11,11 @@ export interface CrawlOptions {
   rootDir: string;
   include: string[];
   exclude: string[];
+  /**
+   * Framework hint — skips auto-detection when set to a specific value.
+   * @default 'auto'
+   */
+  framework?: 'react' | 'vue' | 'angular' | 'auto';
 }
 
 export type Framework = 'react' | 'vue' | 'angular' | 'unknown';
@@ -54,7 +59,7 @@ function deriveComponentName(filePath: string): string {
  * component metadata extracted from each matching file's AST.
  */
 export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
-  const { rootDir, include, exclude } = options;
+  const { rootDir, include, exclude, framework = 'auto' } = options;
 
   const files = await glob(include, {
     cwd: rootDir,
@@ -72,10 +77,15 @@ export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
       range: true,
     });
 
+    const detectedFramework =
+      framework !== 'auto'
+        ? (framework as Framework)
+        : detectFramework(filePath, source);
+
     results.push({
       filePath,
       componentName: deriveComponentName(filePath),
-      framework: detectFramework(filePath, source),
+      framework: detectedFramework,
       props: [], // TODO: walk AST declarations and extract prop types
       ast,
     });

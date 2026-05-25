@@ -3,111 +3,7 @@
 All options live in **`selfcure.config.js`** at the root of your target project.  
 The file must use ES module syntax (`export default { … }`).
 
----
-
-## Full reference
-
-```js
-/** @type {import('@selfcure/cli').SelfcureConfig} */
-export default {
-
-  // ── Source crawl ─────────────────────────────────────────────────────────
-
-  /**
-   * Root directory of the frontend codebase to crawl.
-   * All glob patterns in `include` / `exclude` are relative to this path.
-   * @default './src'
-   */
-  rootDir: './src',
-
-  /**
-   * Glob patterns of files to include in the crawl.
-   * @default ['**\/*.tsx', '**\/*.jsx', '**\/*.vue', '**\/*.component.ts']
-   */
-  include: ['**/*.tsx', '**/*.jsx', '**/*.vue', '**/*.component.ts'],
-
-  /**
-   * Glob patterns to exclude.
-   * @default ['**\/*.spec.*', '**\/*.test.*', '**/node_modules/**', '**/dist/**']
-   */
-  exclude: [
-    '**/*.spec.*',
-    '**/*.test.*',
-    '**/node_modules/**',
-    '**/dist/**',
-  ],
-
-  // ── Test generation ───────────────────────────────────────────────────────
-
-  /**
-   * Directory where selfcure writes generated .spec.ts files.
-   * Created automatically if it does not exist.
-   * @default './selfcure-tests'
-   */
-  testsDir: './selfcure-tests',
-
-  /**
-   * Claude model used for test generation.
-   * Higher-quality models produce better tests but cost more tokens.
-   * @default 'claude-opus-4-5'
-   */
-  generationModel: 'claude-opus-4-5',
-
-  /**
-   * Maximum input tokens sent to Claude per generation request.
-   * Increase for very large components; decrease to reduce cost.
-   * @default 4096
-   */
-  maxInputTokens: 4096,
-
-  // ── Test execution ────────────────────────────────────────────────────────
-
-  /**
-   * Absolute or relative path to your Playwright configuration file.
-   * selfcure adds --trace=on-first-retry automatically.
-   * @default './playwright.config.ts'
-   */
-  playwrightConfig: './playwright.config.ts',
-
-  /**
-   * Base URL of the running application.
-   * Forwarded to Playwright via PLAYWRIGHT_BASE_URL env var.
-   * @default 'http://localhost:3000'
-   */
-  baseURL: 'http://localhost:3000',
-
-  // ── Self-healing ──────────────────────────────────────────────────────────
-
-  /**
-   * Claude model used to generate healing diffs.
-   * Haiku is fast and inexpensive — ideal for iterative patching.
-   * @default 'claude-haiku-3-5'
-   */
-  healingModel: 'claude-haiku-3-5',
-
-  /**
-   * Maximum number of patch attempts per failing test.
-   * After this limit the test is left unpatched and marked as failed.
-   * @default 3
-   */
-  maxHealAttempts: 3,
-
-  // ── Reporting ─────────────────────────────────────────────────────────────
-
-  /**
-   * Directory where the HTML report and summary.json are written.
-   * Created automatically if it does not exist.
-   * @default './selfcure-report'
-   */
-  reportDir: './selfcure-report',
-
-  /**
-   * Title shown in the generated HTML report.
-   * @default 'Selfcure Report'
-   */
-  reportTitle: 'Selfcure Report',
-};
-```
+The full TypeScript type is `SelfcureConfig` exported from `@selfcure/cli`.
 
 ---
 
@@ -118,6 +14,13 @@ export default {
 | `rootDir` | `string` | `'./src'` | Source root to crawl |
 | `include` | `string[]` | `['**/*.tsx', …]` | Glob patterns to include |
 | `exclude` | `string[]` | `['**/*.spec.*', …]` | Glob patterns to exclude |
+| `framework` | `string` | `'auto'` | Framework hint — skips auto-detection |
+| `auth` | `AuthConfig` | `undefined` | Authentication strategy (see §2) |
+| `browser.type` | `string` | `'chromium'` | Browser engine |
+| `browser.headless` | `boolean` | `true` | Headless mode |
+| `browser.viewport` | `object` | `{w:1280,h:720}` | Viewport size |
+| `browser.timeout` | `number` | `30000` | Nav + action timeout (ms) |
+| `browser.slowMo` | `number` | `0` | Delay between actions (ms) |
 | `testsDir` | `string` | `'./selfcure-tests'` | Generated spec output directory |
 | `generationModel` | `string` | `'claude-opus-4-5'` | Claude model for generation |
 | `maxInputTokens` | `number` | `4096` | Token cap per generation request |
@@ -127,6 +30,192 @@ export default {
 | `maxHealAttempts` | `number` | `3` | Max patch attempts per test |
 | `reportDir` | `string` | `'./selfcure-report'` | Report output directory |
 | `reportTitle` | `string` | `'Selfcure Report'` | HTML report title |
+
+---
+
+## §1 Source crawl
+
+```js
+rootDir: './src',
+
+include: ['**/*.tsx', '**/*.jsx', '**/*.vue', '**/*.component.ts'],
+
+exclude: [
+  '**/*.spec.*',
+  '**/*.test.*',
+  '**/node_modules/**',
+  '**/dist/**',
+],
+
+/**
+ * Optional framework hint.
+ * Values: 'react' | 'vue' | 'angular' | 'auto'
+ * When set to 'auto' (default) selfcure inspects file extensions and imports.
+ */
+framework: 'auto',
+```
+
+`rootDir` is the single root that all `include`/`exclude` globs are applied against.  
+If your components span multiple directories, point `rootDir` at the common ancestor
+and widen the `include` patterns.
+
+---
+
+## §2 Authentication
+
+Omit the `auth` block entirely for public (unauthenticated) applications.
+
+selfcure supports four strategies. Choose one and delete the others.
+
+### Strategy 1 — Form-based login
+
+selfcure opens `loginURL`, fills the username and password fields, clicks submit,
+and waits for `waitForURL`. The resulting browser session is shared across all
+generated tests via Playwright's storage-state mechanism.
+
+```js
+auth: {
+  type: 'form',
+
+  /** Path relative to baseURL — e.g. '/login' */
+  loginURL: '/login',
+
+  /** CSS / ARIA selector for the username input */
+  usernameSelector: '[name="username"]',
+
+  /** CSS / ARIA selector for the password input */
+  passwordSelector: '[name="password"]',
+
+  /** Selector of the submit button — default: 'button[type=submit]' */
+  submitSelector: 'button[type=submit]',
+
+  /** URL or glob to wait for after a successful login — e.g. '/dashboard' */
+  waitForURL: '/dashboard',
+
+  /** Read credentials from environment variables — never hardcode */
+  username: process.env.SELFCURE_USERNAME,
+  password: process.env.SELFCURE_PASSWORD,
+},
+```
+
+Required environment variables:
+
+```
+SELFCURE_USERNAME=myuser
+SELFCURE_PASSWORD=mypassword
+```
+
+### Strategy 2 — Playwright storage-state (pre-authenticated)
+
+Use this when your login flow is complex (MFA, OAuth, CAPTCHA) or when you want
+the fastest possible test startup. Run `selfcure auth-save` once to generate the
+storage-state file, then reference it here.
+
+```js
+auth: {
+  type: 'storageState',
+
+  /** Path to the JSON file produced by `selfcure auth-save` */
+  storageState: './.selfcure-auth.json',
+},
+```
+
+> Add `.selfcure-auth.json` to `.gitignore` if it contains session cookies.  
+> In CI, generate it in a setup step before running selfcure.
+
+### Strategy 3 — HTTP Basic Auth
+
+For staging environments protected by `.htaccess` / `nginx auth_basic`.
+
+```js
+auth: {
+  type: 'httpCredentials',
+  username: process.env.SELFCURE_USERNAME,
+  password: process.env.SELFCURE_PASSWORD,
+},
+```
+
+### Strategy 4 — Custom request headers
+
+For SPAs that authenticate via a Bearer token or a proprietary API key header.
+
+```js
+auth: {
+  type: 'headers',
+  extraHTTPHeaders: {
+    Authorization: `Bearer ${process.env.SELFCURE_TOKEN}`,
+    // 'X-Api-Key': process.env.SELFCURE_API_KEY,
+  },
+},
+```
+
+Required environment variable:
+
+```
+SELFCURE_TOKEN=eyJhbGciOiJ...
+```
+
+---
+
+## §3 Browser
+
+```js
+browser: {
+  /** 'chromium' (default) | 'firefox' | 'webkit' */
+  type: 'chromium',
+  headless: true,
+  viewport: { width: 1280, height: 720 },
+  /** Navigation and action timeout in ms — default: 30000 */
+  timeout: 30_000,
+  /** Slow-motion delay between actions in ms (0 = disabled) */
+  slowMo: 0,
+},
+```
+
+---
+
+## §4 Test generation
+
+```js
+testsDir: './selfcure-tests',
+generationModel: 'claude-opus-4-5',
+maxInputTokens: 4096,
+```
+
+`maxInputTokens` caps the component source sent to Claude per request.
+
+---
+
+## §5 Test execution
+
+```js
+playwrightConfig: './playwright.config.ts',
+baseURL: 'http://localhost:3000',
+```
+
+selfcure always appends `--trace=on-first-retry` so traces are available for healing.
+
+---
+
+## §6 Self-healing
+
+```js
+healingModel: 'claude-haiku-3-5',
+maxHealAttempts: 3,
+```
+
+After `maxHealAttempts` the test is left failing and flagged in the report.
+
+---
+
+## §7 Reporting
+
+```js
+reportDir: './selfcure-report',
+reportTitle: 'Selfcure Report',
+```
+
+Both `index.html` and `summary.json` are written to `reportDir`.
 
 ---
 
@@ -144,5 +233,25 @@ selfcure run --config ./config/selfcure.staging.js
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | Yes | Anthropic API key — never hardcode |
+| `ANTHROPIC_API_KEY` | **Yes** | Anthropic API key — never hardcode |
 | `PLAYWRIGHT_BASE_URL` | No | Overrides `baseURL` at runtime |
+| `SELFCURE_USERNAME` | Auth | Username for `form` / `httpCredentials` strategies |
+| `SELFCURE_PASSWORD` | Auth | Password for `form` / `httpCredentials` strategies |
+| `SELFCURE_TOKEN` | Auth | Bearer token for the `headers` strategy |
+| `SELFCURE_API_KEY` | Auth | Optional API key for the `headers` strategy |
+
+---
+
+## TypeScript types
+
+```ts
+import type {
+  SelfcureConfig,
+  AuthFormConfig,
+  AuthStorageStateConfig,
+  AuthHttpCredentialsConfig,
+  AuthHeadersConfig,
+  AuthConfig,
+  BrowserConfig,
+} from '@selfcure/cli';
+```

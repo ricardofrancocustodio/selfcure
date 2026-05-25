@@ -26,6 +26,11 @@ interface CrawlOptions {
   include: string[];
   /** Glob patterns to exclude */
   exclude: string[];
+  /**
+   * Optional framework hint — skips auto-detection when set.
+   * @default 'auto'
+   */
+  framework?: 'react' | 'vue' | 'angular' | 'auto';
 }
 
 type Framework = 'react' | 'vue' | 'angular' | 'unknown';
