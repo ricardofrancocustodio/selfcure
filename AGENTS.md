@@ -1,8 +1,11 @@
 # AGENTS.md — selfcure
 
 ## Project overview
-`selfcure` is a CLI + library that uses **Claude** (Anthropic) to generate, lint,
+`selfcure` is a CLI + library that uses an **LLM provider of your choice**
+(Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama) to generate
 and self-heal **Playwright** test suites for React / Vue / Angular projects.
+The provider abstraction lives in `packages/generator/src/ai.ts` and uses the
+Vercel AI SDK under the hood.
 
 ## Repository layout (npm workspaces monorepo)
 ```
@@ -15,7 +18,7 @@ packages/
   selfcure/       — @selfcure/selfcure— Self-healing loop: trace + error → Claude diff → patch + re-run
   reporter/       — @selfcure/reporter— HTML report + JSON summary + evidence (screenshots, diffs)
   web/            — @selfcure/web     — Local HTTP server + browser init wizard (selfcure web)
-selfcure.config.js — Config template for the TARGET project under test
+selfcure.config.mjs — Config template for the TARGET project under test
 package.json      — Workspace root (private, no runtime deps)
 tsconfig.json     — Shared base TypeScript config (extended by each package)
 ```
@@ -49,10 +52,14 @@ It contains the full document map, change → file matrix, and checklists for co
 - ESM-first (`"type": "module"` in package.json).
 - Every new module must have a corresponding `tests/*.test.ts`.
 - Never commit `.env` or any file containing API keys.
-- Claude API key read from `process.env.ANTHROPIC_API_KEY` only.
+- LLM API keys are read from env vars resolved by the provider — see
+  `PROVIDERS` in `packages/generator/src/ai.ts` (e.g. `ANTHROPIC_API_KEY`,
+  `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY`, `GROQ_API_KEY`,
+  `DEEPSEEK_API_KEY`). Ollama is keyless.
 
 ## Self-healing loop
 1. `selfcure run` executes tests → captures Playwright trace on failure.
-2. Trace + assertion error are serialised and sent to Claude via `@anthropic-ai/sdk`.
-3. Claude returns a unified diff; `healer.ts` applies it with `fs-extra`.
+2. Trace + assertion error are serialised and sent to the configured LLM via
+   `generateText` from the Vercel AI SDK (`ai` package).
+3. The LLM returns a unified diff; `healer.ts` applies it with `fs-extra`.
 4. Test is re-run once; if still failing, the diff is rejected and the error is logged.

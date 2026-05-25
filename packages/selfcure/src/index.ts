@@ -1,5 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { generateText } from 'ai';
 import fs from 'fs-extra';
+import { getModel, type AIConfig } from '@selfcure/generator';
 import type { TestResult } from '@selfcure/runner';
 
 // ---------------------------------------------------------------------------
@@ -7,8 +8,8 @@ import type { TestResult } from '@selfcure/runner';
 // ---------------------------------------------------------------------------
 
 export interface HealOptions {
-  /** Claude model for quick fix generation — default: claude-haiku-3-5 */
-  model?: string;
+  /** Resolved `ai` block from selfcure.config.mjs — provider + model overrides */
+  ai: AIConfig;
   /** How many times to attempt patching before giving up */
   maxAttempts?: number;
   /** Playwright config needed to re-run after patching */
@@ -64,16 +65,15 @@ function applyUnifiedDiff(original: string, diff: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * For each failing test result, ask Claude for a diff, apply it, and
- * re-validate by reading the patched file. Rejects the patch and rolls back
- * if the file cannot be parsed after patching.
+ * For each failing test result, ask the configured LLM for a diff, apply it,
+ * and re-validate by reading the patched file. Rejects the patch and rolls
+ * back if the file cannot be parsed after patching.
  */
 export async function heal(
   failedTests: TestResult[],
   options: HealOptions,
 ): Promise<HealResult[]> {
-  const client = new Anthropic();
-  const model = options.model ?? 'claude-haiku-3-5';
+  const model = getModel(options.ai, 'healing');
   const maxAttempts = options.maxAttempts ?? 3;
   const results: HealResult[] = [];
 
@@ -90,16 +90,11 @@ export async function heal(
       attempts++;
       const current = await fs.readFile(failed.filePath, 'utf-8');
 
-      const message = await client.messages.create({
+      const { text: diff } = await generateText({
         model,
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: buildHealPrompt(failed, current) }],
+        prompt: buildHealPrompt(failed, current),
+        maxOutputTokens: 2048,
       });
-
-      const diff = message.content
-        .filter((b) => b.type === 'text')
-        .map((b) => (b as Anthropic.TextBlock).text)
-        .join('');
 
       const patched = applyUnifiedDiff(current, diff);
 

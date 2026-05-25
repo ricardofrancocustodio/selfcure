@@ -1,6 +1,6 @@
 # Self-healing loop
 
-selfcure's self-healing loop is what differentiates it from a plain test generator. When a generated test fails, selfcure does not just report the error — it tries to fix the test automatically using Claude.
+selfcure's self-healing loop is what differentiates it from a plain test generator. When a generated test fails, selfcure does not just report the error — it tries to fix the test automatically using the configured LLM (`ai.provider` in `selfcure.config.mjs`).
 
 ---
 
@@ -13,7 +13,7 @@ TestResult (passed=false)
   Read test file source
        │
        ▼
-  Build heal prompt ──► Claude (claude-haiku-3-5)
+  Build heal prompt ──► the LLM (ai.healingModel)
        │
        ▼
   Receive unified diff
@@ -34,11 +34,11 @@ TestResult (passed=false)
 
 ## The healing prompt
 
-The prompt sent to Claude includes:
+The prompt sent to the LLM includes:
 
 1. **Full test file source** — the current state of the failing `.spec.ts` file.
 2. **Error message** — the raw assertion or timeout error from Playwright.
-3. **Constraints** — Claude must return only a unified diff (`--- a/test  +++ b/test`), no prose.
+3. **Constraints** — the LLM must return only a unified diff (`--- a/test  +++ b/test`), no prose.
 
 ```
 You are an expert Playwright test engineer fixing a failing test.
@@ -69,7 +69,7 @@ selfcure uses a **line-level patch algorithm** (`applyUnifiedDiff` in `packages/
 - Lines prefixed with `+` are appended.
 - Context lines (no prefix) are ignored.
 
-This is intentionally simple. Claude is instructed to produce minimal diffs targeting exactly the failing assertion or locator, so the algorithm handles realistic output well. A full diff engine (e.g. `diff`, `patch`) can replace this as the project matures.
+This is intentionally simple. the LLM is instructed to produce minimal diffs targeting exactly the failing assertion or locator, so the algorithm handles realistic output well. A full diff engine (e.g. `diff`, `patch`) can replace this as the project matures.
 
 ---
 
@@ -83,7 +83,7 @@ new Function(patched.replace(/^import .+$/gm, ''));
 
 This strips ES import statements (which `Function()` cannot evaluate) and attempts to parse the remainder as a function body. If the JavaScript engine throws a `SyntaxError`, the patch is rejected.
 
-> This check catches malformed output from Claude (e.g. incomplete diffs) but does **not** guarantee the test will pass — that is determined by re-running Playwright.
+> This check catches malformed output from the LLM (e.g. incomplete diffs) but does **not** guarantee the test will pass — that is determined by re-running Playwright.
 
 ---
 
@@ -102,14 +102,20 @@ The `original` variable is captured once at the start of the healing loop and is
 ## Configuring the loop
 
 ```js
-// selfcure.config.js
+// selfcure.config.mjs
 export default {
-  healingModel:    'claude-haiku-3-5',  // fast, cheap — ideal for iterations
-  maxHealAttempts: 3,                   // give up after 3 failed patches
+  ai: {
+    provider: 'anthropic',
+    healingModel: 'claude-haiku-4-5',   // fast, cheap — ideal for iterations
+  },
+  maxHealAttempts: 3,                    // give up after 3 failed patches
 };
 ```
 
-Increase `maxHealAttempts` for complex components where the first diff might partially fix the issue. Decrease it to limit API costs in large suites.
+The healing model defaults to a small, fast variant of whichever provider
+you pick (see [configuration.md §4](configuration.md#§4-ai-provider)).
+Increase `maxHealAttempts` for complex components where the first diff might
+partially fix the issue. Decrease it to limit API costs in large suites.
 
 ---
 

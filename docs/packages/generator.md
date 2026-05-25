@@ -1,6 +1,8 @@
 # @selfcure/generator
 
-Sends each `AnalysisResult` to **Claude** and receives a complete, runnable Playwright TypeScript spec file in return.
+Sends each `AnalysisResult` to the configured LLM (Anthropic / OpenAI / Google /
+Groq / DeepSeek / Ollama) and receives a complete, runnable Playwright TypeScript
+spec file in return. Multi-provider support is provided by the [Vercel AI SDK](https://sdk.vercel.ai).
 
 ## API
 
@@ -11,8 +13,12 @@ import { generate } from '@selfcure/generator';
 
 const tests = await generate(analyses, {
   testsDir: './selfcure-tests',
-  model: 'claude-opus-4-5',   // optional, defaults to claude-opus-4-5
-  maxInputTokens: 4096,       // optional
+  ai: {
+    provider: 'anthropic',
+    generationModel: 'claude-opus-4-7',
+    healingModel:    'claude-haiku-4-5',
+  },
+  maxInputTokens: 4096,
 });
 ```
 
@@ -20,8 +26,8 @@ const tests = await generate(analyses, {
 
 ```ts
 interface GeneratorOptions {
-  /** Claude model — default: 'claude-opus-4-5' */
-  model?: string;
+  /** Resolved `ai` block from selfcure.config.mjs */
+  ai: AIConfig;
   /** Directory where .spec.ts files will be written */
   testsDir: string;
   /** Token cap per request — default: 4096 */
@@ -35,11 +41,40 @@ interface GeneratedTest {
   testCode: string;
   generatedAt: Date;
 }
+
+interface AIConfig {
+  provider: ProviderId;        // 'anthropic' | 'openai' | 'google' | 'groq' | 'deepseek' | 'ollama'
+  generationModel?: string;    // falls back to PROVIDERS[provider].defaultGenerationModel
+  healingModel?: string;       // falls back to PROVIDERS[provider].defaultHealingModel
+  apiKeyEnv?: string;          // override the default env var name
+  baseURL?: string;            // override the endpoint (Ollama / self-hosted)
+}
 ```
+
+## Provider layer
+
+`@selfcure/generator` also exposes the provider resolver consumed by
+`@selfcure/selfcure` and `@selfcure/web`:
+
+```ts
+import { PROVIDERS, getModel } from '@selfcure/generator';
+
+const model = getModel({ provider: 'openai' }, 'generation');
+// → LanguageModel from @ai-sdk/openai
+```
+
+| Export | Description |
+|--------|-------------|
+| `PROVIDERS` | `Record<ProviderId, ProviderMeta>` — labels, env vars, default models, endpoints |
+| `getModel(ai, kind)` | Returns a Vercel AI SDK `LanguageModel` for the given config + role |
+| `AIConfig` / `ProviderId` / `ProviderMeta` / `ModelKind` | TypeScript types |
+
+See [docs/configuration.md §4](../configuration.md#§4-ai-provider) for the full
+provider table.
 
 ## Prompt structure
 
-The prompt sent to Claude for each component:
+The prompt sent to the LLM for each component:
 
 ```
 You are an expert Playwright test engineer.
@@ -64,6 +99,9 @@ Generate a complete, runnable Playwright TypeScript test file for the component 
 - Output ONLY the TypeScript code, no markdown fences.
 ```
 
+The prompt is plain text — provider-agnostic — and works the same against every
+supported model.
+
 ## Output file naming
 
 ```
@@ -72,17 +110,29 @@ Generate a complete, runnable Playwright TypeScript test file for the component 
 
 ## Required environment
 
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
+One env var, matching `ai.provider`:
+
+| Provider | Env var |
+|----------|---------|
+| `anthropic` | `ANTHROPIC_API_KEY` |
+| `openai` | `OPENAI_API_KEY` |
+| `google` | `GOOGLE_GENERATIVE_AI_API_KEY` |
+| `groq` | `GROQ_API_KEY` |
+| `deepseek` | `DEEPSEEK_API_KEY` |
+| `ollama` | *(none — local)* |
 
 ## Runtime dependencies
 
 | Package | Role |
 |---------|------|
-| `@anthropic-ai/sdk` | Claude API client |
+| `ai` | Vercel AI SDK core — `generateText` |
+| `@ai-sdk/anthropic` | Anthropic provider adapter |
+| `@ai-sdk/openai` | OpenAI provider adapter |
+| `@ai-sdk/google` | Gemini provider adapter |
+| `@ai-sdk/groq` | Groq provider adapter |
+| `@ai-sdk/openai-compatible` | DeepSeek + Ollama (both speak OpenAI dialect) |
 | `@selfcure/analyzer` | Typed inputs |
 
 ## Source
 
-`packages/generator/src/index.ts`
+`packages/generator/src/index.ts` (public API) · `packages/generator/src/ai.ts` (provider layer)

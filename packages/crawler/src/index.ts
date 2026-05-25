@@ -47,7 +47,81 @@ function detectFramework(filePath: string, source: string): Framework {
 }
 
 function deriveComponentName(filePath: string): string {
-  return path.basename(filePath).replace(/\.(tsx?|vue)$/, '');
+  return path.basename(filePath).replace(/\.(tsx?|vue|jsx?)$/, '');
+}
+
+// ---------------------------------------------------------------------------
+// Prop extraction from TypeScript AST
+// ---------------------------------------------------------------------------
+
+type AnyNode = Record<string, unknown>;
+
+function typeName(node: AnyNode | null | undefined): string {
+  if (!node) return 'unknown';
+  switch ((node as { type?: string }).type) {
+    case 'TSStringKeyword':    return 'string';
+    case 'TSNumberKeyword':    return 'number';
+    case 'TSBooleanKeyword':   return 'boolean';
+    case 'TSVoidKeyword':      return 'void';
+    case 'TSAnyKeyword':       return 'any';
+    case 'TSNullKeyword':      return 'null';
+    case 'TSUndefinedKeyword': return 'undefined';
+    case 'TSArrayType':        return `${typeName((node as { elementType?: AnyNode }).elementType)}[]`;
+    case 'TSFunctionType':     return 'function';
+    case 'TSTypeReference': {
+      const ref = node as { typeName?: { name?: string } };
+      return ref.typeName?.name ?? 'object';
+    }
+    case 'TSUnionType': {
+      const union = node as { types?: AnyNode[] };
+      return (union.types ?? []).map(typeName).join(' | ');
+    }
+    default: return 'unknown';
+  }
+}
+
+function extractPropsFromMembers(members: AnyNode[]): PropMeta[] {
+  return members
+    .filter((m) => (m as { type?: string }).type === 'TSPropertySignature')
+    .map((m) => {
+      const prop = m as {
+        key?: { name?: string };
+        optional?: boolean;
+        typeAnnotation?: { typeAnnotation?: AnyNode };
+      };
+      return {
+        name: prop.key?.name ?? '',
+        type: typeName(prop.typeAnnotation?.typeAnnotation ?? null),
+        required: !prop.optional,
+      } satisfies PropMeta;
+    })
+    .filter((p) => p.name !== '');
+}
+
+function extractProps(ast: ReturnType<typeof parse>): PropMeta[] {
+  const body = ((ast as unknown as { body?: AnyNode[] }).body) ?? [];
+
+  for (const node of body) {
+    const n = node as { type?: string; id?: { name?: string }; body?: { body?: AnyNode[] }; typeAnnotation?: { type?: string; members?: AnyNode[] } };
+
+    // interface FooProps { … }
+    if (n.type === 'TSInterfaceDeclaration') {
+      const name = n.id?.name ?? '';
+      if (name === 'Props' || name.endsWith('Props')) {
+        return extractPropsFromMembers(n.body?.body ?? []);
+      }
+    }
+
+    // type Props = { … }
+    if (n.type === 'TSTypeAliasDeclaration') {
+      const name = n.id?.name ?? '';
+      if ((name === 'Props' || name.endsWith('Props')) && n.typeAnnotation?.type === 'TSTypeLiteral') {
+        return extractPropsFromMembers(n.typeAnnotation.members ?? []);
+      }
+    }
+  }
+
+  return [];
 }
 
 // ---------------------------------------------------------------------------
@@ -86,7 +160,7 @@ export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
       filePath,
       componentName: deriveComponentName(filePath),
       framework: detectedFramework,
-      props: [], // TODO: walk AST declarations and extract prop types
+      props: extractProps(ast),
       ast,
     });
   }

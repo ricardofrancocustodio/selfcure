@@ -1,15 +1,19 @@
-#!/usr/bin/env node
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
 import path from 'node:path';
+import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { runInitWizard } from './init.js';
 import { startWebServer } from '@selfcure/web';
 import { crawl } from '@selfcure/crawler';
+import type { AIConfig, ProviderId } from '@selfcure/generator';
+
+// Re-export AI configuration types so selfcure.config.mjs can use them via JSDoc
+export type { AIConfig, ProviderId } from '@selfcure/generator';
 
 // ---------------------------------------------------------------------------
-// Public configuration types (re-exported so selfcure.config.js can use
+// Public configuration types (re-exported so selfcure.config.mjs can use
 //   /** @type {import('@selfcure/cli').SelfcureConfig} */
 // ---------------------------------------------------------------------------
 
@@ -72,7 +76,7 @@ export interface BrowserConfig {
   slowMo?: number;
 }
 
-/** Full selfcure configuration — used in selfcure.config.js */
+/** Full selfcure configuration — used in selfcure.config.mjs */
 export interface SelfcureConfig {
   // Source crawl
   rootDir: string;
@@ -87,9 +91,11 @@ export interface SelfcureConfig {
   // Browser
   browser?: BrowserConfig;
 
+  // AI provider (used by both test generation and self-healing)
+  ai: AIConfig;
+
   // Test generation
   testsDir: string;
-  generationModel?: string;
   maxInputTokens?: number;
 
   // Test execution
@@ -97,12 +103,38 @@ export interface SelfcureConfig {
   baseURL: string;
 
   // Self-healing
-  healingModel?: string;
   maxHealAttempts?: number;
 
   // Reporting
   reportDir: string;
   reportTitle?: string;
+}
+
+/**
+ * Resolve the config path the user passed via `-c`. When the default value
+ * (`./selfcure.config.mjs`) is in effect but only the legacy `./selfcure.config.js`
+ * exists, fall back to it so users who initialised with an earlier version
+ * keep working without re-running init.
+ */
+async function resolveConfigPath(provided: string): Promise<string> {
+  const DEFAULT = './selfcure.config.mjs';
+  const LEGACY  = './selfcure.config.js';
+
+  if (provided !== DEFAULT) {
+    return path.resolve(provided);
+  }
+
+  const mjs = path.resolve(DEFAULT);
+  const js  = path.resolve(LEGACY);
+
+  const mjsExists = await fs.stat(mjs).then(() => true).catch(() => false);
+  if (mjsExists) return mjs;
+
+  const jsExists = await fs.stat(js).then(() => true).catch(() => false);
+  if (jsExists) return js;
+
+  // Nothing found — return the default so the import error surfaces a familiar name
+  return mjs;
 }
 
 const program = new Command();
@@ -114,7 +146,7 @@ program
 
 program
   .command('init')
-  .description('Scaffold selfcure.config.js in the current project')
+  .description('Scaffold selfcure.config.mjs in the current project')
   .action(async () => {
     try {
       await runInitWizard(process.cwd());
@@ -127,23 +159,39 @@ program
 program
   .command('crawl [file]')
   .description('Crawl source files and extract component metadata')
-  .option('-c, --config <path>', 'path to selfcure.config.js', './selfcure.config.js')
+  .option('-c, --config <path>', 'path to selfcure.config.mjs (falls back to selfcure.config.js)', './selfcure.config.mjs')
   .action(async (file: string | undefined, opts) => {
     const spinner = ora('Crawling source files…').start();
     try {
-      const configUrl = pathToFileURL(path.resolve(opts.config)).href;
+      const configPath = await resolveConfigPath(opts.config);
+      const configUrl = pathToFileURL(configPath).href;
       const { default: config } = await import(configUrl);
 
       let components;
       if (file) {
-        // Single-file mode: crawl only the provided path
         const abs = path.resolve(file);
-        components = await crawl({
-          rootDir: path.dirname(abs),
-          include: [path.basename(abs)],
-          exclude: [],
-          framework: config.framework,
-        });
+        const stat = await fs.stat(abs).catch(() => null);
+        if (!stat) {
+          throw new Error(`Path not found: ${file}`);
+        }
+
+        if (stat.isDirectory()) {
+          // Directory mode: re-scope rootDir to this path, keep config globs
+          components = await crawl({
+            rootDir: abs,
+            include: config.include,
+            exclude: config.exclude,
+            framework: config.framework,
+          });
+        } else {
+          // Single-file mode: crawl exactly this file
+          components = await crawl({
+            rootDir: path.dirname(abs),
+            include: [path.basename(abs)],
+            exclude: [],
+            framework: config.framework,
+          });
+        }
       } else {
         components = await crawl({
           rootDir: config.rootDir,
@@ -155,7 +203,10 @@ program
 
       spinner.succeed(chalk.green(`Crawl complete — ${components.length} component(s) found`));
       for (const c of components) {
-        console.log(chalk.dim(`  ${c.framework}  ${c.componentName}  →  ${c.filePath}`));
+        const propsInfo = c.props.length
+          ? chalk.dim(` (${c.props.length} prop${c.props.length > 1 ? 's' : ''}: ${c.props.map((p) => p.name).join(', ')})`)
+          : '';
+        console.log(chalk.dim(`  ${c.framework}  ${chalk.white(c.componentName)}  →  ${c.filePath}${propsInfo}`));
       }
     } catch (err) {
       spinner.fail(chalk.red(String(err)));
@@ -166,7 +217,7 @@ program
 program
   .command('run')
   .description('Generate tests, run them, and self-heal failures automatically')
-  .option('-c, --config <path>', 'path to selfcure.config.js', './selfcure.config.js')
+  .option('-c, --config <path>', 'path to selfcure.config.mjs (falls back to selfcure.config.js)', './selfcure.config.mjs')
   .action(async (_opts) => {
     const spinner = ora('Running selfcure pipeline…').start();
     try {
@@ -181,7 +232,7 @@ program
 program
   .command('heal')
   .description('Attempt to heal failing tests without re-generating the full suite')
-  .option('-c, --config <path>', 'path to selfcure.config.js', './selfcure.config.js')
+  .option('-c, --config <path>', 'path to selfcure.config.mjs (falls back to selfcure.config.js)', './selfcure.config.mjs')
   .action(async (_opts) => {
     const spinner = ora('Healing failing tests…').start();
     try {
@@ -196,7 +247,7 @@ program
 program
   .command('report')
   .description('Generate HTML report from the last run results')
-  .option('-c, --config <path>', 'path to selfcure.config.js', './selfcure.config.js')
+  .option('-c, --config <path>', 'path to selfcure.config.mjs (falls back to selfcure.config.js)', './selfcure.config.mjs')
   .action(async (_opts) => {
     const spinner = ora('Generating report…').start();
     try {

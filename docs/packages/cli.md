@@ -8,7 +8,7 @@ Entry-point package. Provides the `selfcure` binary and orchestrates all other p
 selfcure [options] <command>
 
 Commands:
-  init    Interactive wizard — scaffold selfcure.config.js and .env
+  init    Interactive wizard — scaffold selfcure.config.mjs and .env
   crawl [file]  Crawl source files; if [file] is given, crawl only that file
   run     Full pipeline: crawl → analyze → generate → run → heal → report
   heal    Re-attempt healing on the last set of failures
@@ -16,7 +16,7 @@ Commands:
   web     Start the browser init wizard (default port 3333)
 
 Options:
-  -c, --config <path>  Path to selfcure.config.js  [default: ./selfcure.config.js]
+  -c, --config <path>  Path to selfcure.config.mjs  [default: ./selfcure.config.mjs]
   -p, --port <number>  Port for `selfcure web`       [default: 3333]
   -V, --version        Print version
   -h, --help           Show help

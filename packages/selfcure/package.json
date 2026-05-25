@@ -1,7 +1,7 @@
 {
   "name": "@selfcure/selfcure",
   "version": "0.1.0",
-  "description": "Self-healing loop — sends trace + error to Claude, applies diff, re-validates",
+  "description": "Self-healing loop — sends trace + error to the configured LLM, applies diff, re-validates",
   "type": "module",
   "main": "dist/index.js",
   "exports": {
@@ -13,9 +13,9 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "latest",
     "@selfcure/generator": "*",
     "@selfcure/runner": "*",
+    "ai": "latest",
     "fs-extra": "latest"
   },
   "devDependencies": {

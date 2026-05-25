@@ -14,7 +14,7 @@ const server = startWebServer(port?, cwd?);
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `port` | `number` | `3333` | Port to listen on (localhost only) |
-| `cwd` | `string` | `process.cwd()` | Directory where `selfcure.config.js` + `.env` are written |
+| `cwd` | `string` | `process.cwd()` | Directory where `selfcure.config.mjs` + `.env` are written |
 
 Returns a `http.Server` instance.
 
@@ -23,7 +23,44 @@ Returns a `http.Server` instance.
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/` | Serves the init wizard HTML page |
-| `POST` | `/api/init` | Writes `selfcure.config.js` + `.env`, returns `GenerateResult` JSON |
+| `GET` | `/api/dirs` | Returns the wizard `cwd` and its immediate subdirectories (used to populate the source-folder picker) |
+| `GET` | `/api/providers` | Returns the supported LLM providers + which env vars are already set in the server's environment |
+| `POST` | `/api/init` | Writes `selfcure.config.mjs` + `.env`, returns `GenerateResult` JSON |
+
+### GET `/api/dirs` response
+
+```typescript
+interface DirsResponse {
+  cwd:  string;     // absolute path of the working directory
+  dirs: string[];   // immediate subdirs as relative paths (e.g. "./src")
+                    // node_modules, dist, build, coverage, hidden dirs etc. are excluded
+}
+```
+
+### GET `/api/providers` response
+
+```typescript
+interface ProvidersResponse {
+  providers: ProviderListEntry[];
+  /** id of the first provider whose env var is already set — fallback default */
+  suggested: ProviderId;
+}
+
+interface ProviderListEntry {
+  id: ProviderId;                  // 'anthropic' | 'openai' | 'google' | 'groq' | 'deepseek' | 'ollama'
+  label: string;                   // human-readable label, e.g. "Anthropic"
+  envVar: string | null;           // null for keyless providers (Ollama)
+  envSet: boolean;                 // whether process.env[envVar] is currently set
+  defaultGenerationModel: string;
+  defaultHealingModel:    string;
+  defaultBaseURL?: string;         // present for Ollama / DeepSeek
+  hint: string;                    // short marketing line ("Free tier", etc.)
+  apiKeyPlaceholder: string;       // e.g. "sk-ant-…"
+}
+```
+
+The wizard pre-selects `suggested` and pre-checks "Use existing $VAR" when
+`envSet` is true. The env var **value** is never sent in the response.
 
 ### POST `/api/init` request body (`InitOptions`)
 
@@ -34,7 +71,22 @@ interface InitOptions {
   include:   string[]; // glob patterns, e.g. ["**/*.tsx", "**/*.jsx"]
   testsDir:  string;   // e.g. "./selfcure-tests"
   baseURL:   string;   // e.g. "http://localhost:5000"
-  apiKey:    string;   // Anthropic API key — written only to .env on disk
+  ai:        InitAIOptions;
+}
+
+interface InitAIOptions {
+  provider:         ProviderId;
+  generationModel:  string;
+  healingModel:     string;
+  /**
+   * API key value entered by the user. Empty when `useExistingEnv` is true
+   * — in that case the server reads the value from its own `process.env`
+   * so the key never crosses the wire from the browser.
+   */
+  apiKey:           string;
+  useExistingEnv:   boolean;
+  /** Endpoint override — used for Ollama / DeepSeek / self-hosted */
+  baseURL?:         string;
 }
 ```
 
@@ -42,7 +94,7 @@ interface InitOptions {
 
 ```typescript
 interface GenerateResult {
-  configContent: string;  // full text of selfcure.config.js
+  configContent: string;  // full text of selfcure.config.mjs
   configPath:    string;  // absolute path where the file was written
   envNote:       string;  // human-readable note; apiKey is NOT returned
 }
@@ -50,15 +102,20 @@ interface GenerateResult {
 
 ## Init page
 
-Plain semantic HTML — **no CSS framework or inline styles** (layout TBD).
-Fields mirror the CLI wizard exactly:
+Single self-contained HTML document with an inline `<style>` block —
+dev-tool minimalist aesthetic, single-column layout, light theme with
+automatic dark mode via `prefers-color-scheme`. No external CSS framework,
+no per-element inline styles. Fields mirror the CLI wizard exactly:
 
-- Project source directory (`rootDir`)
+- Project source directory (`rootDir`) — `<select>` populated from `GET /api/dirs`, with an "Other…" option that reveals a text input for custom paths
 - Framework (`select`: React / Vue / Angular / HTML)
 - Component extensions (`checkbox` — pre-checked per framework, user-editable)
 - Generated tests directory (`testsDir`)
 - Test environment URL (`baseURL`)
-- Anthropic API key (`password` input)
+- AI provider (`select` populated from `GET /api/providers`, with ✓ next to providers whose env var is already set)
+- Generation model + Healing model (`text` inputs, pre-filled from provider defaults)
+- API key (`password` input — hidden for Ollama, optional + disabled when "Use existing $VAR" is checked)
+- Endpoint URL (`url` input — shown only for Ollama / DeepSeek)
 
 On submit the page POSTs to `/api/init`, then shows the generated config
 with **Copy to clipboard** and **Download** buttons.
@@ -72,8 +129,8 @@ import { buildConfigContent, generateConfig, FRAMEWORK_EXTENSIONS } from '@selfc
 | Export | Description |
 |--------|-------------|
 | `FRAMEWORK_EXTENSIONS` | Maps `"react" \| "vue" \| "angular" \| "auto"` → default glob patterns |
-| `buildConfigContent(options)` | Returns `selfcure.config.js` as a string (no I/O) |
-| `generateConfig(options, cwd)` | Writes `selfcure.config.js` + `.env`, returns `GenerateResult` |
+| `buildConfigContent(options)` | Returns `selfcure.config.mjs` as a string (no I/O) |
+| `generateConfig(options, cwd)` | Writes `selfcure.config.mjs` + `.env`, returns `GenerateResult` |
 
 ## Source layout
 

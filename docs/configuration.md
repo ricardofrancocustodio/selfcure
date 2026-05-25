@@ -1,6 +1,6 @@
 # Configuration reference
 
-All options live in **`selfcure.config.js`** at the root of your target project.  
+All options live in **`selfcure.config.mjs`** at the root of your target project.  
 The file must use ES module syntax (`export default { … }`).
 
 The full TypeScript type is `SelfcureConfig` exported from `@selfcure/cli`.
@@ -21,12 +21,15 @@ The full TypeScript type is `SelfcureConfig` exported from `@selfcure/cli`.
 | `browser.viewport` | `object` | `{w:1280,h:720}` | Viewport size |
 | `browser.timeout` | `number` | `30000` | Nav + action timeout (ms) |
 | `browser.slowMo` | `number` | `0` | Delay between actions (ms) |
+| `ai.provider` | `string` | — | `'anthropic' \| 'openai' \| 'google' \| 'groq' \| 'deepseek' \| 'ollama'` |
+| `ai.generationModel` | `string` | per-provider | LLM model used for test generation |
+| `ai.healingModel` | `string` | per-provider | LLM model used for self-healing diffs |
+| `ai.apiKeyEnv` | `string` | per-provider | Env var holding the API key (override) |
+| `ai.baseURL` | `string` | per-provider | Endpoint override (Ollama / self-hosted) |
 | `testsDir` | `string` | `'./selfcure-tests'` | Generated spec output directory |
-| `generationModel` | `string` | `'claude-opus-4-5'` | Claude model for generation |
 | `maxInputTokens` | `number` | `4096` | Token cap per generation request |
 | `playwrightConfig` | `string` | `'./playwright.config.ts'` | Playwright config path |
 | `baseURL` | `string` | `'http://localhost:3000'` | App base URL for tests |
-| `healingModel` | `string` | `'claude-haiku-3-5'` | Claude model for healing diffs |
 | `maxHealAttempts` | `number` | `3` | Max patch attempts per test |
 | `reportDir` | `string` | `'./selfcure-report'` | Report output directory |
 | `reportTitle` | `string` | `'Selfcure Report'` | HTML report title |
@@ -174,19 +177,61 @@ browser: {
 
 ---
 
-## §4 Test generation
+## §4 AI provider
+
+selfcure is **BYOK (Bring Your Own Key)** — pick one provider and supply the matching
+API key via the environment. The provider layer ([packages/generator/src/ai.ts](../packages/generator/src/ai.ts))
+uses the [Vercel AI SDK](https://sdk.vercel.ai) under the hood.
 
 ```js
-testsDir: './selfcure-tests',
-generationModel: 'claude-opus-4-5',
-maxInputTokens: 4096,
+ai: {
+  provider: 'anthropic',
+  generationModel: 'claude-opus-4-7',
+  healingModel:    'claude-haiku-4-5',
+  // baseURL:   'http://localhost:11434/v1',   // override (Ollama / self-hosted)
+  // apiKeyEnv: 'MY_CUSTOM_VAR',               // override env var name
+},
 ```
 
-`maxInputTokens` caps the component source sent to Claude per request.
+### Supported providers
+
+| `provider` | Env var | Generation default | Healing default | Endpoint |
+|------------|---------|--------------------|-----------------|----------|
+| `anthropic` | `ANTHROPIC_API_KEY` | `claude-opus-4-7` | `claude-haiku-4-5` | api.anthropic.com |
+| `openai` | `OPENAI_API_KEY` | `gpt-4.1` | `gpt-4o-mini` | api.openai.com |
+| `google` | `GOOGLE_GENERATIVE_AI_API_KEY` | `gemini-2.0-flash-exp` | `gemini-2.0-flash-exp` | generativelanguage.googleapis.com |
+| `groq` | `GROQ_API_KEY` | `llama-3.3-70b-versatile` | `llama-3.1-8b-instant` | api.groq.com |
+| `deepseek` | `DEEPSEEK_API_KEY` | `deepseek-chat` | `deepseek-chat` | api.deepseek.com/v1 |
+| `ollama` | *(none)* | `qwen2.5-coder:14b` | `qwen2.5-coder:7b` | localhost:11434/v1 |
+
+`ollama` requires no key — install [Ollama](https://ollama.com), pull a coder model
+(`ollama pull qwen2.5-coder:14b`), and point `ai.baseURL` if it runs elsewhere.
+
+`ai.apiKeyEnv` lets you redirect any provider to a non-default env var name
+(useful when you already have a corporate-named secret like `MYCO_LLM_KEY`).
+
+### Switching providers
+
+There are three ways to change providers:
+
+1. **Edit `selfcure.config.mjs`** — change `ai.provider` and the matching env var.
+2. **Re-run `selfcure init`** — overwrites the file with the new picks.
+3. **Re-run `selfcure web`** — same wizard in the browser.
 
 ---
 
-## §5 Test execution
+## §5 Test generation
+
+```js
+testsDir: './selfcure-tests',
+maxInputTokens: 4096,
+```
+
+`maxInputTokens` caps the component source sent to the LLM per request.
+
+---
+
+## §6 Test execution
 
 ```js
 playwrightConfig: './playwright.config.ts',
@@ -197,18 +242,18 @@ selfcure always appends `--trace=on-first-retry` so traces are available for hea
 
 ---
 
-## §6 Self-healing
+## §7 Self-healing
 
 ```js
-healingModel: 'claude-haiku-3-5',
 maxHealAttempts: 3,
 ```
 
+The healing model is whatever `ai.healingModel` resolves to (see §4).
 After `maxHealAttempts` the test is left failing and flagged in the report.
 
 ---
 
-## §7 Reporting
+## §8 Reporting
 
 ```js
 reportDir: './selfcure-report',
@@ -231,14 +276,22 @@ selfcure run --config ./config/selfcure.staging.js
 
 ## Environment variables
 
+Exactly one LLM env var is required, matching `ai.provider`:
+
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ANTHROPIC_API_KEY` | **Yes** | Anthropic API key — never hardcode |
+| `ANTHROPIC_API_KEY` | When `ai.provider = 'anthropic'` | Anthropic API key |
+| `OPENAI_API_KEY` | When `ai.provider = 'openai'` | OpenAI API key |
+| `GOOGLE_GENERATIVE_AI_API_KEY` | When `ai.provider = 'google'` | Gemini API key |
+| `GROQ_API_KEY` | When `ai.provider = 'groq'` | Groq API key |
+| `DEEPSEEK_API_KEY` | When `ai.provider = 'deepseek'` | DeepSeek API key |
 | `PLAYWRIGHT_BASE_URL` | No | Overrides `baseURL` at runtime |
 | `SELFCURE_USERNAME` | Auth | Username for `form` / `httpCredentials` strategies |
 | `SELFCURE_PASSWORD` | Auth | Password for `form` / `httpCredentials` strategies |
 | `SELFCURE_TOKEN` | Auth | Bearer token for the `headers` strategy |
 | `SELFCURE_API_KEY` | Auth | Optional API key for the `headers` strategy |
+
+Ollama needs no key — it talks to a local daemon.
 
 ---
 
@@ -253,5 +306,7 @@ import type {
   AuthHeadersConfig,
   AuthConfig,
   BrowserConfig,
+  AIConfig,
+  ProviderId,
 } from '@selfcure/cli';
 ```

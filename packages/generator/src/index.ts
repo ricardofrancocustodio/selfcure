@@ -1,16 +1,28 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { generateText } from 'ai';
 import type { AnalysisResult } from '@selfcure/analyzer';
+import { getModel, type AIConfig } from './ai.js';
+
+// Re-export the provider layer so consumers can import everything from
+// @selfcure/generator without juggling subpaths.
+export {
+  PROVIDERS,
+  getModel,
+  type AIConfig,
+  type ProviderId,
+  type ProviderMeta,
+  type ModelKind,
+} from './ai.js';
 
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
 export interface GeneratorOptions {
-  /** Claude model for test generation — default: claude-opus-4-5 */
-  model?: string;
+  /** Resolved `ai` block from selfcure.config.mjs — provider + model overrides */
+  ai: AIConfig;
   /** Output directory where generated test files will be written */
   testsDir: string;
-  /** Cap per API request to avoid runaway costs */
+  /** Cap per LLM request to avoid runaway costs */
   maxInputTokens?: number;
 }
 
@@ -54,33 +66,31 @@ ${interactiveElements.map((e) => `- ${e.type} [${e.selector}] — actions: ${e.a
 // ---------------------------------------------------------------------------
 
 /**
- * For each analysed component, call Claude and receive a Playwright test file.
- * Requires ANTHROPIC_API_KEY in the environment.
+ * For each analysed component, call the configured LLM and receive a
+ * Playwright test file. The provider (Anthropic/OpenAI/Google/Groq/DeepSeek/
+ * Ollama) and model are resolved from `options.ai`.
+ *
+ * The required API key is read from the env var declared by the provider
+ * (e.g. ANTHROPIC_API_KEY, OPENAI_API_KEY, …).
  */
 export async function generate(
   analyses: AnalysisResult[],
   options: GeneratorOptions,
 ): Promise<GeneratedTest[]> {
-  const client = new Anthropic();
-  const model = options.model ?? 'claude-opus-4-5';
+  const model = getModel(options.ai, 'generation');
   const results: GeneratedTest[] = [];
 
   for (const analysis of analyses) {
-    const message = await client.messages.create({
+    const { text } = await generateText({
       model,
-      max_tokens: options.maxInputTokens ?? 4096,
-      messages: [{ role: 'user', content: buildPrompt(analysis) }],
+      prompt: buildPrompt(analysis),
+      maxOutputTokens: options.maxInputTokens ?? 4096,
     });
-
-    const testCode = message.content
-      .filter((b) => b.type === 'text')
-      .map((b) => (b as Anthropic.TextBlock).text)
-      .join('');
 
     results.push({
       filePath: `${options.testsDir}/${analysis.component.componentName}.spec.ts`,
       sourceComponent: analysis.component.filePath,
-      testCode,
+      testCode: text,
       generatedAt: new Date(),
     });
   }

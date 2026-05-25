@@ -1,6 +1,9 @@
 # @selfcure/selfcure
 
-Implements the self-healing loop: for each failing `TestResult`, asks Claude for a unified diff, applies it, validates the result, and rolls back on failure.
+Implements the self-healing loop: for each failing `TestResult`, asks the configured
+LLM for a unified diff, applies it, validates the result, and rolls back on failure.
+The LLM provider/model is resolved through the same layer as `@selfcure/generator`
+(`getModel` from `@selfcure/generator`).
 
 See [Self-healing loop](../self-healing.md) for the full design rationale.
 
@@ -13,8 +16,11 @@ import { heal } from '@selfcure/selfcure';
 
 const healResults = await heal(failedTests, {
   playwrightConfig: './playwright.config.ts',
-  model: 'claude-haiku-3-5',   // optional
-  maxAttempts: 3,               // optional
+  ai: {
+    provider: 'anthropic',
+    healingModel: 'claude-haiku-4-5',
+  },
+  maxAttempts: 3,
 });
 ```
 
@@ -22,8 +28,8 @@ const healResults = await heal(failedTests, {
 
 ```ts
 interface HealOptions {
-  /** Claude model — default: 'claude-haiku-3-5' */
-  model?: string;
+  /** Resolved `ai` block from selfcure.config.mjs */
+  ai: AIConfig;
   /** Max patch attempts per test — default: 3 */
   maxAttempts?: number;
   /** Playwright config path (needed for re-run after patch) */
@@ -40,6 +46,9 @@ interface HealResult {
   finalError?: string;
 }
 ```
+
+`AIConfig` is the same type used by `@selfcure/generator` —
+see [generator.md](generator.md#types).
 
 ## Healing prompt
 
@@ -72,17 +81,16 @@ A `SyntaxError` triggers a rollback to the original source and starts the next a
 
 ## Required environment
 
-```
-ANTHROPIC_API_KEY=sk-ant-...
-```
+Same as `@selfcure/generator` — one env var matching `ai.provider`
+(see [generator.md](generator.md#required-environment)).
 
 ## Runtime dependencies
 
 | Package | Role |
 |---------|------|
-| `@anthropic-ai/sdk` | Claude API client |
+| `ai` | Vercel AI SDK core — `generateText` |
+| `@selfcure/generator` | Provider resolver (`getModel`) + AIConfig type |
 | `@selfcure/runner` | Typed inputs (`TestResult`) |
-| `@selfcure/generator` | Typed inputs (`GeneratorOptions`) |
 | `fs-extra` | File read / write / rollback |
 
 ## Source

@@ -20,7 +20,7 @@ create / update / delete each one.
 
 | File | Covers |
 |------|--------|
-| `selfcure.config.js` | Config schema template for the target project under test |
+| `selfcure.config.mjs` | Config schema template for the target project under test |
 | `package.json` | Workspace root — workspaces list, scripts, devDependencies |
 | `tsconfig.json` | Shared TypeScript base config extended by every package |
 
@@ -29,7 +29,7 @@ create / update / delete each one.
 | File | Covers |
 |------|--------|
 | `docs/getting-started.md` | Prerequisites, install, API key, `selfcure run` walkthrough, CI recipe |
-| `docs/configuration.md` | Every `selfcure.config.js` option — types, defaults, examples |
+| `docs/configuration.md` | Every `selfcure.config.mjs` option — types, defaults, examples |
 | `docs/architecture.md` | Full pipeline diagram, per-stage descriptions, package dependency graph, design decisions |
 | `docs/self-healing.md` | Heal loop design, prompt structure, diff algorithm, sanity check, rollback, limitations |
 | `docs/packages/cli.md` | `@selfcure/cli` — commands, flags, pipeline orchestration |
@@ -53,7 +53,7 @@ Use this table to determine which files to update for any given code change.
 |--------------|-----------------|
 | New CLI command added | `AGENTS.md` (commands table) · `docs/packages/cli.md` |
 | CLI flag renamed or removed | `docs/packages/cli.md` · `docs/getting-started.md` (if referenced) |
-| `selfcure.config.js` option added / changed / removed | `selfcure.config.js` (JSDoc) · `docs/configuration.md` |
+| `selfcure.config.mjs` option added / changed / removed | `selfcure.config.mjs` (JSDoc) · `docs/configuration.md` |
 | New npm workspace package added | `AGENTS.md` (repo layout) · `CLAUDE.md` (if design-relevant) · `docs/architecture.md` · new `docs/packages/<name>.md` · `README.md` (architecture section) |
 | Existing package deleted | `AGENTS.md` · `docs/architecture.md` · delete `docs/packages/<name>.md` · `README.md` |
 | Public API signature changed (`crawl`, `analyze`, etc.) | Corresponding `docs/packages/<name>.md` |
@@ -159,9 +159,9 @@ interface <ReturnType> {
 - [ ] Update `README.md`
 - [ ] Remove from `packages/cli/package.json`
 
-### Adding a new `selfcure.config.js` option
+### Adding a new `selfcure.config.mjs` option
 
-- [ ] Add the option with JSDoc in `selfcure.config.js`
+- [ ] Add the option with JSDoc in `selfcure.config.mjs`
 - [ ] Add a row to the quick-reference table in `docs/configuration.md`
 - [ ] Add a full section in `docs/configuration.md` if the option needs detailed explanation
 - [ ] Update `docs/getting-started.md` if the option is commonly used during setup

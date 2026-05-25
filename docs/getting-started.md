@@ -6,7 +6,7 @@
 |-------------|---------|
 | Node.js | ≥ 20 |
 | npm | ≥ 10 (workspace support) |
-| Anthropic API key | [console.anthropic.com](https://console.anthropic.com) |
+| LLM API key | One of: [Anthropic](https://console.anthropic.com), [OpenAI](https://platform.openai.com), [Google AI Studio](https://aistudio.google.com), [Groq](https://console.groq.com), [DeepSeek](https://platform.deepseek.com). Or use **Ollama** locally for no key. |
 | A frontend project | React / Vue / Angular with TypeScript source |
 
 ---
@@ -29,14 +29,24 @@ npm install --save-dev @selfcure/cli
 
 ## 2 · API key
 
-selfcure never hardcodes credentials. Create a `.env` file in the **root of your target project** (not the selfcure repo):
+selfcure is **BYOK (Bring Your Own Key)** — pick one provider and supply the matching
+key via a `.env` file in the **root of your target project** (not the selfcure repo):
 
 ```bash
 # .env  — never commit this file
+# Use the one matching your ai.provider in selfcure.config.mjs
 ANTHROPIC_API_KEY=sk-ant-...
+# OPENAI_API_KEY=sk-...
+# GOOGLE_GENERATIVE_AI_API_KEY=AIza...
+# GROQ_API_KEY=gsk_...
+# DEEPSEEK_API_KEY=sk-...
 ```
 
-Load it automatically by adding `dotenv` to your project, or export it in your shell:
+For **Ollama** (local, keyless), install [Ollama](https://ollama.com) and pull a
+coder model: `ollama pull qwen2.5-coder:14b`.
+
+Load `.env` automatically by adding `dotenv` to your project, or export the var
+in your shell:
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...
@@ -52,10 +62,10 @@ Inside your target project (e.g. `my-app/`):
 selfcure init
 ```
 
-This creates a commented `selfcure.config.js` with sensible defaults:
+This creates a commented `selfcure.config.mjs` with sensible defaults:
 
 ```js
-// selfcure.config.js
+// selfcure.config.mjs
 export default {
   rootDir: './src',
   include: ['**/*.tsx', '**/*.vue', '**/*.component.ts'],
@@ -63,12 +73,19 @@ export default {
   testsDir: './selfcure-tests',
   playwrightConfig: './playwright.config.ts',
   baseURL: 'http://localhost:3000',
-  generationModel: 'claude-opus-4-5',
-  healingModel: 'claude-haiku-3-5',
+  ai: {
+    provider: 'anthropic',           // anthropic | openai | google | groq | deepseek | ollama
+    generationModel: 'claude-opus-4-7',
+    healingModel:    'claude-haiku-4-5',
+  },
   maxHealAttempts: 3,
   reportDir: './selfcure-report',
 };
 ```
+
+Prefer a graphical wizard? Run `selfcure web` — it opens a browser-based
+init at `http://localhost:3333` that auto-detects which provider keys you
+already have exported in your shell.
 
 Edit the values to match your project structure. See the full [configuration reference](configuration.md).
 

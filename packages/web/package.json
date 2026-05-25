@@ -13,6 +13,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@selfcure/generator": "*",
     "fs-extra": "latest"
   },
   "devDependencies": {

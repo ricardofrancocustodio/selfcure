@@ -85,12 +85,30 @@ export default {
     slowMo: 0,
   },
 
+  // ── AI provider ──────────────────────────────────────────────────────────
+  // Pick ONE provider. The required API key is read from the env var named
+  // below — selfcure never embeds the key in this file.
+  //
+  // Supported providers (id → env var):
+  //   anthropic → ANTHROPIC_API_KEY
+  //   openai    → OPENAI_API_KEY
+  //   google    → GOOGLE_GENERATIVE_AI_API_KEY
+  //   groq      → GROQ_API_KEY
+  //   deepseek  → DEEPSEEK_API_KEY        (uses baseURL https://api.deepseek.com/v1)
+  //   ollama    → (no key — runs locally at http://localhost:11434/v1)
+  ai: {
+    provider: 'anthropic',
+    /** Strong model for one-shot test generation */
+    generationModel: 'claude-opus-4-7',
+    /** Cheap, fast model for healing diffs */
+    healingModel: 'claude-haiku-4-5',
+    // baseURL: 'http://localhost:11434/v1',   // override for Ollama / self-hosted
+    // apiKeyEnv: 'MY_CUSTOM_VAR',             // override the default env var name
+  },
+
   // ── Test generation ──────────────────────────────────────────────────────
   /** Output directory for generated Playwright spec files */
   testsDir: './selfcure-tests',
-
-  /** Claude model used for test generation (high quality, higher cost) */
-  generationModel: 'claude-opus-4-5',
 
   /** Cap input tokens per generation request to avoid runaway costs */
   maxInputTokens: 4096,
@@ -103,9 +121,6 @@ export default {
   baseURL: 'http://localhost:3000',
 
   // ── Self-healing ─────────────────────────────────────────────────────────
-  /** Claude model used for healing fixes (fast, lower cost) */
-  healingModel: 'claude-haiku-3-5',
-
   /** Maximum patch attempts before a test is left as failing */
   maxHealAttempts: 3,
 
