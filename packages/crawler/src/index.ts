@@ -145,11 +145,18 @@ export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
 
   for (const filePath of files) {
     const source = await fs.readFile(filePath, 'utf-8');
-    const ast = parse(source, {
-      jsx: true,
-      loc: true,
-      range: true,
-    });
+
+    let ast: ReturnType<typeof parse>;
+    try {
+      ast = parse(source, {
+        jsx: true,
+        loc: true,
+        range: true,
+      });
+    } catch {
+      // Skip files that cannot be parsed as TypeScript/JSX (e.g. HTML, minified JS, SVG)
+      continue;
+    }
 
     const detectedFramework =
       framework !== 'auto'
