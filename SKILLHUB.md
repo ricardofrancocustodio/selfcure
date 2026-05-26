@@ -47,6 +47,13 @@ create / update / delete each one.
 |------|--------|
 | `docs/implementations/2026-05-25-web-crawl-page.md` | Web crawler/analyzer page, `/crawl`, `/api/crawl`, filters, and validation notes |
 
+### `site/` — public landing page (GitHub Pages)
+
+| File | Covers |
+|------|--------|
+| `site/index.html` | Marketing landing page hero, mantra, pipeline, providers table, quick-start, status — served via GitHub Pages from `/site` |
+| `site/.nojekyll` | Prevents Jekyll preprocessing — `site/` is plain HTML |
+
 ---
 
 ## 2. Change → document matrix

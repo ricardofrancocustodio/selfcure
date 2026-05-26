@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>selfcure — self-healing Playwright tests, any LLM</title>
+  <meta name="description" content="Selfcure cures tests, not components. Generate, run, and auto-patch Playwright tests with the LLM of your choice — Anthropic, OpenAI, Gemini, Groq, DeepSeek, or local Ollama.">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+
+  <meta property="og:title" content="selfcure — self-healing Playwright tests">
+  <meta property="og:description" content="Generate, run, and auto-patch Playwright tests with the LLM of your choice.">
+  <meta property="og:type" content="website">
+
+  <style>
+    :root {
+      --bg:        #ffffff;
+      --surface:   #fafafa;
+      --surface-2: #f3f4f6;
+      --text:      #0a0a0a;
+      --muted:     #6b7280;
+      --border:    #e5e7eb;
+      --border-strong: #d1d5db;
+      --accent:    #2563eb;
+      --accent-fg: #ffffff;
+      --accent-hover: #1d4ed8;
+      --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+      --success:   #16a34a;
+      --code-bg:   #f3f4f6;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:        #0a0a0a;
+        --surface:   #111111;
+        --surface-2: #161616;
+        --text:      #fafafa;
+        --muted:     #9ca3af;
+        --border:    #1f1f1f;
+        --border-strong: #2a2a2a;
+        --accent:    #3b82f6;
+        --accent-fg: #ffffff;
+        --accent-hover: #60a5fa;
+        --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+        --success:   #22c55e;
+        --code-bg:   #161616;
+      }
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ───────── Layout primitives ───────── */
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    section { padding: 64px 0; border-top: 1px solid var(--border); }
+    section:first-of-type { border-top: none; padding-top: 48px; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin: 0 0 12px;
+    }
+
+    h1, h2, h3 { letter-spacing: -0.015em; }
+    h1 { font-size: 44px; font-weight: 700; line-height: 1.1; margin: 0 0 16px; }
+    h2 { font-size: 26px; font-weight: 600; margin: 0 0 24px; }
+    h3 { font-size: 16px; font-weight: 600; margin: 0 0 8px; }
+
+    p { margin: 0 0 12px; }
+    .lede { font-size: 18px; color: var(--muted); max-width: 640px; margin: 0 0 32px; }
+    .small { font-size: 13px; color: var(--muted); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      overflow-x: auto;
+      margin: 0 0 16px;
+    }
+
+    pre code {
+      background: transparent;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    .token-comment { color: var(--muted); }
+    .token-keyword { color: var(--accent); }
+    .token-string  { color: var(--success); }
+
+    /* ───────── Header ───────── */
+
+    header.top {
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(8px);
+    }
+
+    header.top .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+
+    .brand {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text);
+    }
+    .brand::before {
+      content: "›";
+      color: var(--accent);
+      margin-right: 8px;
+    }
+
+    nav.top-nav {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    nav.top-nav a {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    nav.top-nav a:hover { color: var(--text); text-decoration: none; }
+
+    /* ───────── Hero ───────── */
+
+    .hero { padding: 80px 0 56px; border-top: none; }
+
+    .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin: 28px 0 0; }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      border-radius: 6px;
+      padding: 10px 18px;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+      text-decoration: none;
+      line-height: 1.2;
+      border: 1px solid transparent;
+    }
+
+    .button-primary {
+      background: var(--accent);
+      color: var(--accent-fg);
+      border-color: var(--accent);
+    }
+    .button-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      text-decoration: none;
+    }
+
+    .button-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border-color: var(--border-strong);
+    }
+    .button-secondary:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .hero-terminal {
+      margin-top: 48px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 1px 0 var(--border) inset;
+    }
+
+    .terminal-chrome {
+      display: flex;
+      gap: 6px;
+      padding: 10px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .terminal-dot {
+      width: 11px; height: 11px; border-radius: 50%;
+      background: var(--border-strong);
+    }
+    .terminal-body {
+      padding: 18px 20px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+    .term-prompt { color: var(--accent); }
+    .term-comment { color: var(--muted); }
+    .term-ok { color: var(--success); }
+
+    /* ───────── Mantra band ───────── */
+
+    .mantra {
+      padding: 48px 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .mantra blockquote {
+      font-size: 22px;
+      font-weight: 500;
+      margin: 0;
+      letter-spacing: -0.01em;
+      max-width: 720px;
+    }
+    .mantra blockquote::before {
+      content: "“";
+      color: var(--accent);
+      font-size: 36px;
+      line-height: 0;
+      vertical-align: -10px;
+      margin-right: 6px;
+    }
+    .mantra cite {
+      display: block;
+      margin-top: 16px;
+      font-style: normal;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* ───────── How it works ───────── */
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    @media (max-width: 720px) { .pipeline { grid-template-columns: 1fr; } }
+
+    .pipeline-step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+    }
+    .pipeline-step .step-num {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    /* ───────── Features grid ───────── */
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    @media (max-width: 720px) { .features { grid-template-columns: 1fr; } }
+
+    .feature {
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .feature h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature h3 .badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+    .feature p {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    /* ───────── Providers table ───────── */
+
+    .provider-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 14px;
+    }
+    .provider-table th,
+    .provider-table td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .provider-table th {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--surface);
+    }
+    .provider-table tr:hover td { background: var(--surface); }
+    .provider-table code { font-size: 12px; }
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-family: var(--mono);
+      padding: 1px 6px;
+      border-radius: 3px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      margin-left: 6px;
+    }
+    .tag-free { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
+
+    /* ───────── Footer ───────── */
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 0 48px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    footer .container {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); text-decoration: none; }
+
+    /* ───────── Utilities ───────── */
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <a href="#" class="brand">selfcure</a>
+    <nav class="top-nav">
+      <a href="#how">How it works</a>
+      <a href="#providers">Providers</a>
+      <a href="#quickstart">Quick start</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ── Hero ──────────────────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="container">
+      <p class="eyebrow">Self-healing Playwright tests · BYOK · open source</p>
+      <h1>Selfcure cures tests,<br>not components.</h1>
+      <p class="lede">
+        Crawl your frontend, generate Playwright tests with the LLM of your choice,
+        and let selfcure auto-patch flaky locators. When the test is fine but the component
+        is broken, selfcure tells you.
+      </p>
+
+      <div class="ctas">
+        <a class="button button-primary" href="https://github.com/ricardofrancocustodio/selfcure">
+          View on GitHub →
+        </a>
+        <a class="button button-secondary" href="#quickstart">Quick start</a>
+      </div>
+
+      <div class="hero-terminal" aria-hidden="true">
+        <div class="terminal-chrome">
+          <span class="terminal-dot"></span>
+          <span class="terminal-dot"></span>
+          <span class="terminal-dot"></span>
+        </div>
+<div class="terminal-body"><span class="term-prompt">$</span> selfcure run
+<span class="term-comment">crawl    →  18 components found</span>
+<span class="term-comment">analyze  →  avg testability score 72/100</span>
+<span class="term-comment">generate →  18 .spec.ts files written</span>
+<span class="term-comment">run      →  16 passed · 2 failed</span>
+<span class="term-comment">heal     →  2 healed (locator drift)</span>
+<span class="term-ok">────────────────────────────────────────
+  ✓ 18 passed · 2 healed · 0 needing review
+  Report: ./selfcure-report/index.html</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Mantra ───────────────────────────────────────────────────────── -->
+  <div class="mantra">
+    <div class="container">
+      <blockquote>
+        Selfcure distinguishes a bad test from a bad component.
+        It patches the test when the locator drifts. When the component has no stable
+        identifier, it tells you — and refuses to paper over a frontend bug.
+        <cite>— design principle, since v0.1</cite>
+      </blockquote>
+    </div>
+  </div>
+
+  <!-- ── How it works ─────────────────────────────────────────────────── -->
+  <section id="how">
+    <div class="container">
+      <p class="eyebrow">Pipeline</p>
+      <h2>How it works</h2>
+      <p class="small">A single command runs the whole pipeline. Each stage is its own npm workspace package — pick and choose.</p>
+
+      <div class="pipeline">
+        <div class="pipeline-step">
+          <div class="step-num">01 · CRAWL</div>
+          <h3>Read your source</h3>
+          <p class="small">Static AST via <code>@typescript-eslint/parser</code> + dynamic DOM capture via Playwright codegen. Outputs a structured component map.</p>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">02 · GENERATE</div>
+          <h3>LLM writes the tests</h3>
+          <p class="small">Component analysis + interactive-element map go to the LLM. Returns one ready-to-run <code>.spec.ts</code> per component.</p>
+        </div>
+        <div class="pipeline-step">
+          <div class="step-num">03 · HEAL</div>
+          <h3>Patch on failure</h3>
+          <p class="small">Failures get classified. Locator drift → ask LLM for a diff, sanity-check, apply, retry. Component-level bugs → flagged for human review.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Features grid ────────────────────────────────────────────────── -->
+  <section>
+    <div class="container">
+      <p class="eyebrow">Capabilities</p>
+      <h2>What you get</h2>
+
+      <div class="features">
+        <div class="feature">
+          <h3>Multi-provider <span class="badge">BYOK</span></h3>
+          <p>Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama. Swap providers with one config line. No vendor lock-in.</p>
+        </div>
+        <div class="feature">
+          <h3>Self-healing loop</h3>
+          <p>Failed locator? selfcure asks the LLM for a unified diff, applies it under a parse sanity check, and rolls back on failure. Max attempts configurable.</p>
+        </div>
+        <div class="feature">
+          <h3>Testability score</h3>
+          <p>Every component gets a 0–100 score. Low score? You learn that the FE needs <code>data-testid</code> — not that "tests are flaky."</p>
+        </div>
+        <div class="feature">
+          <h3>Browser-based init <span class="badge">selfcure web</span></h3>
+          <p>Open a wizard at <code>localhost:3333</code>. Auto-detects which provider keys you've already exported. Picks <code>./src</code>, <code>./app</code>, etc. from your project.</p>
+        </div>
+        <div class="feature">
+          <h3>Playwright-native</h3>
+          <p>Generated tests are plain <code>@playwright/test</code> code. No proprietary runner, no lock-in. Trace + screenshot on every failure.</p>
+        </div>
+        <div class="feature">
+          <h3>HTML report</h3>
+          <p>Per-test status, applied diffs (collapsible), and a "Components needing FE intervention" section that calls out unfixable items.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Providers ────────────────────────────────────────────────────── -->
+  <section id="providers">
+    <div class="container">
+      <p class="eyebrow">Provider matrix</p>
+      <h2>Bring your own key</h2>
+      <p class="small">Pick the LLM that fits your wallet, compliance, or hardware. Switch any time — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.</p>
+
+      <div style="overflow-x:auto">
+      <table class="provider-table">
+        <thead>
+          <tr>
+            <th>Provider</th>
+            <th>Default generation</th>
+            <th>Default healing</th>
+            <th>Env var</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Anthropic</strong></td>
+            <td><code>claude-opus-4-7</code></td>
+            <td><code>claude-haiku-4-5</code></td>
+            <td><code>ANTHROPIC_API_KEY</code></td>
+          </tr>
+          <tr>
+            <td><strong>OpenAI</strong></td>
+            <td><code>gpt-4.1</code></td>
+            <td><code>gpt-4o-mini</code></td>
+            <td><code>OPENAI_API_KEY</code></td>
+          </tr>
+          <tr>
+            <td><strong>Google Gemini</strong> <span class="tag tag-free">free tier</span></td>
+            <td><code>gemini-2.0-flash-exp</code></td>
+            <td><code>gemini-2.0-flash-exp</code></td>
+            <td><code>GOOGLE_GENERATIVE_AI_API_KEY</code></td>
+          </tr>
+          <tr>
+            <td><strong>Groq</strong> <span class="tag tag-free">free tier</span></td>
+            <td><code>llama-3.3-70b-versatile</code></td>
+            <td><code>llama-3.1-8b-instant</code></td>
+            <td><code>GROQ_API_KEY</code></td>
+          </tr>
+          <tr>
+            <td><strong>DeepSeek</strong></td>
+            <td><code>deepseek-chat</code></td>
+            <td><code>deepseek-chat</code></td>
+            <td><code>DEEPSEEK_API_KEY</code></td>
+          </tr>
+          <tr>
+            <td><strong>Ollama</strong> <span class="tag tag-free">local · no key</span></td>
+            <td><code>qwen2.5-coder:14b</code></td>
+            <td><code>qwen2.5-coder:7b</code></td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Quick start ──────────────────────────────────────────────────── -->
+  <section id="quickstart">
+    <div class="container">
+      <p class="eyebrow">Get going</p>
+      <h2>Quick start</h2>
+      <p class="small">selfcure is pre-publish — install from source while we stabilise the API.</p>
+
+      <h3 style="margin-top:24px">1 · Link the CLI from source</h3>
+<pre><code><span class="token-comment"># Clone and build</span>
+git clone https://github.com/ricardofrancocustodio/selfcure.git
+cd selfcure
+npm install
+npm run build
+
+<span class="token-comment"># Register the binary globally (symlink, so rebuilds reflect automatically)</span>
+cd packages/cli
+npm link
+</code></pre>
+
+      <h3>2 · Configure in your target project</h3>
+<pre><code><span class="token-comment"># From your frontend project's root</span>
+cd ~/path/to/your-app
+selfcure web        <span class="token-comment"># browser wizard at http://localhost:3333</span>
+<span class="token-comment"># or</span>
+selfcure init       <span class="token-comment"># terminal wizard</span>
+</code></pre>
+
+      <p class="small">The wizard detects which provider keys you already have exported in your shell and pre-selects them. Picks Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama from a dropdown.</p>
+
+      <h3>3 · Run</h3>
+<pre><code><span class="token-comment"># Start your dev server in another terminal first</span>
+npm run dev
+
+<span class="token-comment"># Then in your-app root</span>
+selfcure crawl ./src    <span class="token-comment"># sanity-check the crawler</span>
+selfcure run            <span class="token-comment"># full pipeline: crawl → generate → run → heal → report</span>
+</code></pre>
+
+      <p style="margin-top:24px">
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">
+          Read the full getting-started guide →
+        </a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Status / call to action ──────────────────────────────────────── -->
+  <section>
+    <div class="container">
+      <p class="eyebrow">Status</p>
+      <h2>Where it stands</h2>
+      <p>
+        selfcure is at <code>v0.1.0</code> — a working monorepo with the full pipeline scaffolded
+        and the LLM provider layer in place. The crawl / analyze / generate / run / heal /
+        report stages are wired end-to-end; some stages still have placeholder logic while
+        the AI integration is hardened.
+      </p>
+      <p>
+        Best place to follow progress, file issues, or contribute is the GitHub repo. Stars
+        help; PRs help more.
+      </p>
+      <div class="ctas" style="margin-top:16px">
+        <a class="button button-primary" href="https://github.com/ricardofrancocustodio/selfcure">Star on GitHub</a>
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/issues">Open an issue</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <div>
+      <span class="brand">selfcure</span>
+      <span style="margin-left:16px;color:var(--muted)">MIT · © ricardofrancocustodio</span>
+    </div>
+    <div class="row">
+      <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
+      <span>·</span>
+      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">Docs</a>
+      <span>·</span>
+      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/configuration.md">Configuration</a>
+      <span>·</span>
+      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/architecture.md">Architecture</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
