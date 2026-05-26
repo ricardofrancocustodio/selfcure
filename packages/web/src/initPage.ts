@@ -59,10 +59,32 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
       -webkit-font-smoothing: antialiased;
     }
 
+    /* ── Nav ─────────────────────────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 4px;
+      padding: 0 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      height: 44px;
+    }
+    .nav-brand {
+      font-family: var(--mono); font-size: 13px; font-weight: 700;
+      color: var(--accent); text-decoration: none; margin-right: 8px;
+    }
+    .nav-sep { color: var(--border-strong); margin: 0 2px; }
+    .nav-link {
+      font-size: 13px; padding: 4px 10px; border-radius: 5px;
+      color: var(--muted); text-decoration: none;
+      transition: background 120ms, color 120ms;
+    }
+    .nav-link:hover { background: var(--code-bg); color: var(--text); }
+    .nav-link.active { background: var(--code-bg); color: var(--text); font-weight: 500; }
+
     main {
       max-width: 640px;
       margin: 0 auto;
-      padding: 48px 24px 96px;
+      padding: 40px 24px 96px;
     }
 
     h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px; }
@@ -284,6 +306,14 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
   </style>
 </head>
 <body>
+
+<nav>
+  <a class="nav-brand" href="/">selfcure</a>
+  <span class="nav-sep">/</span>
+  <a class="nav-link active" href="/">init</a>
+  <a class="nav-link" href="/crawl">crawl</a>
+  <a class="nav-link" href="/lint">lint</a>
+</nav>
 
 <main>
 
