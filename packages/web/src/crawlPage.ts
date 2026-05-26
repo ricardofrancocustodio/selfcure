@@ -307,6 +307,31 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     }
     .empty-msg { font-size: 12px; color: var(--muted); font-style: italic; padding: 4px 0; }
 
+    /* ── Legend ─────────────────────────────────────────────────────────── */
+    .legend { margin-top: 4px; }
+    .legend-toggle {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted);
+      cursor: pointer; list-style: none; user-select: none;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .legend-toggle::-webkit-details-marker { display: none; }
+    .legend-toggle::after { content: '›'; font-size: 13px; transition: transform 150ms; }
+    details.legend[open] .legend-toggle::after { transform: rotate(90deg); }
+    .legend-body { padding-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .legend-section {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--border-strong);
+      margin: 4px 0 2px;
+    }
+    .legend-row {
+      display: flex; align-items: flex-start; gap: 6px;
+      font-size: 11px; color: var(--muted); line-height: 1.4;
+    }
+    .legend-row .badge,
+    .legend-row .score-pill { flex-shrink: 0; }
+    .legend-desc { font-size: 11px; color: var(--muted); }
+
     /* ── Initial state (no results) ──────────────────────────────────────── */
     .welcome {
       flex: 1; display: flex; flex-direction: column;
@@ -421,6 +446,62 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
         <option value="filePath">File path</option>
       </select>
     </div>
+
+    <hr class="sidebar-divider">
+
+    <details class="legend">
+      <summary class="legend-toggle">Legend</summary>
+      <div class="legend-body">
+
+        <p class="legend-section">Complexity</p>
+        <div class="legend-row">
+          <span class="badge badge-low">low</span>
+          <span class="legend-desc">0–2 interactive elements — simple page</span>
+        </div>
+        <div class="legend-row">
+          <span class="badge badge-medium">medium</span>
+          <span class="legend-desc">3–6 elements — moderate interactions</span>
+        </div>
+        <div class="legend-row">
+          <span class="badge badge-high">high</span>
+          <span class="legend-desc">&gt; 6 elements — many test scenarios</span>
+        </div>
+
+        <p class="legend-section">Score (0–100)</p>
+        <div class="legend-row">
+          <span class="score-pill score-high">75+</span>
+          <span class="legend-desc">Good — most elements have labels or IDs</span>
+        </div>
+        <div class="legend-row">
+          <span class="score-pill score-mid">55–74</span>
+          <span class="legend-desc">Fair — some elements lack labels</span>
+        </div>
+        <div class="legend-row">
+          <span class="score-pill score-low">&lt;55</span>
+          <span class="legend-desc">Fragile — selectors may break easily</span>
+        </div>
+        <div class="legend-row" style="font-size:10px;color:var(--muted);margin-top:2px">
+          Base 40 pts + 15 per labeled element
+        </div>
+
+        <p class="legend-section">Element types</p>
+        <div class="legend-row"><code>button</code><span class="legend-desc">Clickable button</span></div>
+        <div class="legend-row"><code>input</code><span class="legend-desc">Text / checkbox / radio</span></div>
+        <div class="legend-row"><code>link</code><span class="legend-desc">Anchor &lt;a&gt; tag</span></div>
+        <div class="legend-row"><code>select</code><span class="legend-desc">Dropdown list</span></div>
+        <div class="legend-row"><code>textarea</code><span class="legend-desc">Multi-line text area</span></div>
+        <div class="legend-row"><code>form</code><span class="legend-desc">Form container</span></div>
+
+        <p class="legend-section">Actions (Playwright)</p>
+        <div class="legend-row"><code>click</code><span class="legend-desc">Click the element</span></div>
+        <div class="legend-row"><code>fill</code><span class="legend-desc">Type text into field</span></div>
+        <div class="legend-row"><code>clear</code><span class="legend-desc">Clear field content</span></div>
+        <div class="legend-row"><code>press</code><span class="legend-desc">Send a keyboard key</span></div>
+        <div class="legend-row"><code>check</code><span class="legend-desc">Check a checkbox</span></div>
+        <div class="legend-row"><code>select</code><span class="legend-desc">Choose a dropdown option</span></div>
+
+      </div>
+    </details>
   </aside>
 
   <div id="mainArea" style="flex:1;min-width:0;">
@@ -531,11 +612,19 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
 
   function scorePill(score) {
     const cls = score >= 75 ? 'score-high' : score >= 55 ? 'score-mid' : 'score-low';
-    return '<span class="score-pill ' + cls + '">' + esc(score) + '</span>';
+    const tip = score >= 75 ? 'Good testability — most elements are labeled'
+              : score >= 55 ? 'Fair — some elements lack labels or IDs'
+              : 'Fragile — selectors may break; add aria-label or id attributes';
+    return '<span class="score-pill ' + cls + '" title="Score ' + score + '/100: ' + tip + '">' + esc(score) + '</span>';
   }
 
   function complexityBadge(cx) {
-    return '<span class="badge badge-' + esc(cx) + '">' + esc(cx) + '</span>';
+    const tips = {
+      low:    '0–2 interactive elements — simple page, easy to write tests for',
+      medium: '3–6 interactive elements — moderate number of test scenarios',
+      high:   'More than 6 interactive elements — complex page with many test scenarios',
+    };
+    return '<span class="badge badge-' + esc(cx) + '" title="Complexity: ' + (tips[cx] || cx) + '">' + esc(cx) + '</span>';
   }
 
   function renderElements(elements) {
