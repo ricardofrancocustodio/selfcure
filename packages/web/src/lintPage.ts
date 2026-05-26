@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
-// selfcure lint — web page
-// Layout: dev-tool minimalist, full-width results list, light + auto-dark.
+// selfcure lint — web page  (GitHub "Files changed" style)
+// Layout: sticky file sidebar + collapsible diff cards per file.
 // Self-contained <style> block; no external CSS framework.
 // ---------------------------------------------------------------------------
 
@@ -12,313 +12,223 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   <title>selfcure — lint</title>
   <style>
     :root {
-      --bg:        #ffffff;
-      --surface:   #fafafa;
-      --surface2:  #f3f4f6;
-      --text:      #0a0a0a;
-      --muted:     #6b7280;
-      --border:    #e5e7eb;
-      --border-strong: #d1d5db;
-      --accent:    #2563eb;
-      --accent-fg: #ffffff;
-      --accent-hover: #1d4ed8;
-      --success:   #16a34a;
-      --success-bg:#f0fdf4;
-      --success-border: #bbf7d0;
-      --warning:   #d97706;
-      --warning-bg:#fffbeb;
-      --warning-border: #fde68a;
-      --error:     #dc2626;
-      --error-bg:  #fef2f2;
-      --error-border: #fecaca;
-      --pro:       #7c3aed;
-      --pro-bg:    #f5f3ff;
-      --pro-border:#ddd6fe;
-      --code-bg:   #f3f4f6;
-      --score-low: #dc2626;
-      --score-mid: #d97706;
-      --score-high:#16a34a;
+      /* GitHub light palette */
+      --bg:          #ffffff;
+      --canvas:      #f6f8fa;
+      --canvas-sub:  #eaeef2;
+      --text:        #1f2328;
+      --muted:       #656d76;
+      --border:      #d0d7de;
+      --border-hi:   #afb8c1;
+      --accent:      #0969da;
+      --success:     #1a7f37;
+      --success-bg:  #dafbe1;
+      --success-em:  #acf2bd;
+      --warning:     #9a6700;
+      --warning-bg:  #fff8c5;
+      --error:       #cf222e;
+      --error-bg:    #ffebe9;
+      --error-em:    #ffd7d5;
+      --hunk-bg:     #ddf4ff;
+      --hunk-ln:     #b6e3ff;
+      --hunk-text:   #0550ae;
+      --del-bg:      #ffebe9;
+      --del-ln:      #ffd7d5;
+      --del-mk:      #cf222e;
+      --add-bg:      #dafbe1;
+      --add-ln:      #acf2bd;
+      --add-mk:      #1a7f37;
+      --pro:         #8250df;
+      --pro-bg:      #fbefff;
+      --pro-bdr:     #d8b9f8;
+      --sc-low:      #cf222e;
+      --sc-mid:      #9a6700;
+      --sc-hi:       #1a7f37;
       --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+      --nav-h: 44px;
     }
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg:        #0a0a0a;
-        --surface:   #111111;
-        --surface2:  #161616;
-        --text:      #fafafa;
-        --muted:     #9ca3af;
-        --border:    #1f1f1f;
-        --border-strong: #2a2a2a;
-        --accent:    #3b82f6;
-        --accent-fg: #ffffff;
-        --accent-hover: #60a5fa;
-        --success:   #22c55e;
-        --success-bg:#052e16;
-        --success-border: #14532d;
-        --warning:   #f59e0b;
-        --warning-bg:#1c1407;
-        --warning-border: #78350f;
-        --error:     #f87171;
-        --error-bg:  #1a0e0e;
-        --error-border: #7f1d1d;
-        --pro:       #a78bfa;
-        --pro-bg:    #13101f;
-        --pro-border:#3b1f7a;
-        --code-bg:   #161616;
-        --score-low: #f87171;
-        --score-mid: #fbbf24;
-        --score-high:#4ade80;
+        --bg:          #0d1117;
+        --canvas:      #161b22;
+        --canvas-sub:  #21262d;
+        --text:        #e6edf3;
+        --muted:       #7d8590;
+        --border:      #30363d;
+        --border-hi:   #6e7681;
+        --accent:      #4493f8;
+        --success:     #3fb950;
+        --success-bg:  #0f2c18;
+        --success-em:  #196c2e;
+        --warning:     #d29922;
+        --warning-bg:  #2d1f00;
+        --error:       #f85149;
+        --error-bg:    #2d0f0f;
+        --error-em:    #6e2020;
+        --hunk-bg:     #0c2d6b;
+        --hunk-ln:     #0c2d6b;
+        --hunk-text:   #79c0ff;
+        --del-bg:      #2d0f0f;
+        --del-ln:      #6e2020;
+        --del-mk:      #f85149;
+        --add-bg:      #0f2c18;
+        --add-ln:      #196c2e;
+        --add-mk:      #3fb950;
+        --pro:         #a371f7;
+        --pro-bg:      #1e1533;
+        --pro-bdr:     #6e40c9;
+        --sc-low:      #f85149;
+        --sc-mid:      #d29922;
+        --sc-hi:       #3fb950;
       }
     }
     *, *::before, *::after { box-sizing: border-box; }
     html, body { margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--sans);
-      font-size: 14px;
-      line-height: 1.55;
-      -webkit-font-smoothing: antialiased;
-    }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 
     /* ── Nav ─────────────────────────────────────────────────────────────── */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      display: flex; align-items: center; gap: 4px;
-      padding: 0 20px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      height: 44px;
-    }
-    .nav-brand {
-      font-family: var(--mono); font-size: 13px; font-weight: 700;
-      color: var(--accent); text-decoration: none; margin-right: 8px;
-    }
-    .nav-sep { color: var(--border-strong); margin: 0 2px; }
-    .nav-link {
-      font-size: 13px; padding: 4px 10px; border-radius: 5px;
-      color: var(--muted); text-decoration: none;
-      transition: background 120ms, color 120ms;
-    }
-    .nav-link:hover { background: var(--surface2); color: var(--text); }
-    .nav-link.active { background: var(--surface2); color: var(--text); font-weight: 500; }
+    nav { position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 4px; padding: 0 16px; background: var(--canvas); border-bottom: 1px solid var(--border); height: var(--nav-h); }
+    .nav-brand { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; margin-right: 8px; }
+    .nav-sep { color: var(--border-hi); margin: 0 2px; }
+    .nav-link { font-size: 13px; padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; transition: background 100ms, color 100ms; }
+    .nav-link:hover { background: var(--canvas-sub); color: var(--text); }
+    .nav-link.active { background: var(--canvas-sub); color: var(--text); font-weight: 600; }
 
     /* ── Run bar ─────────────────────────────────────────────────────────── */
-    .run-bar {
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      padding: 12px 20px;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
+    .run-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg); }
     .run-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
-    .run-bar input[type="text"] {
-      flex: 1; min-width: 160px;
-      font-family: var(--mono); font-size: 13px;
-      color: var(--text); background: var(--bg);
-      border: 1px solid var(--border-strong); border-radius: 5px;
-      padding: 6px 10px;
-    }
-    .run-bar input[type="text"]:focus { outline: none; border-color: var(--accent); }
-    .threshold-wrap {
-      display: flex; align-items: center; gap: 6px;
-    }
-    .threshold-wrap input[type="number"] {
-      width: 58px; font-family: var(--mono); font-size: 13px;
-      color: var(--text); background: var(--bg);
-      border: 1px solid var(--border-strong); border-radius: 5px;
-      padding: 6px 8px; text-align: center;
-    }
-    .threshold-wrap input[type="number"]:focus { outline: none; border-color: var(--accent); }
-    .threshold-wrap span { font-size: 12px; color: var(--muted); }
-    .btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--sans); font-size: 13px; font-weight: 500;
-      padding: 7px 16px; border-radius: 5px; border: none; cursor: pointer;
-      transition: background 120ms, opacity 120ms;
-      white-space: nowrap;
-    }
-    .btn-primary { background: var(--accent); color: var(--accent-fg); }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-    .run-status { font-size: 12px; color: var(--muted); white-space: nowrap; }
-    .run-error {
-      font-size: 12px; color: var(--error);
-      background: var(--error-bg); border: 1px solid var(--error-border);
-      border-radius: 4px; padding: 4px 10px;
-    }
+    .run-bar input[type="text"] { flex: 1; min-width: 180px; font-family: var(--mono); font-size: 12px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 10px; }
+    .run-bar input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9,105,218,0.12); }
+    .thr-wrap { display: flex; align-items: center; gap: 6px; }
+    .thr-wrap input[type="number"] { width: 58px; text-align: center; font-family: var(--mono); font-size: 12px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; }
+    .thr-wrap input[type="number"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9,105,218,0.12); }
+    .btn { display: inline-flex; align-items: center; gap: 6px; font-family: var(--sans); font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: 6px; border: 1px solid transparent; cursor: pointer; transition: filter 100ms; white-space: nowrap; }
+    .btn-run { background: var(--success); color: #fff; border-color: rgba(27,31,36,0.15); }
+    .btn-run:hover { filter: brightness(0.9); }
+    .btn-run:disabled { opacity: 0.55; cursor: not-allowed; }
+    .run-status { font-size: 12px; color: var(--muted); }
+    .run-error { font-size: 12px; color: var(--error); background: var(--error-bg); border: 1px solid var(--error); border-radius: 6px; padding: 4px 10px; }
 
-    /* ── Pro options bar ─────────────────────────────────────────────────── */
-    .pro-bar {
-      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-      padding: 10px 20px;
-      background: var(--pro-bg);
-      border-bottom: 1px solid var(--pro-border);
-    }
-    .pro-bar-label {
-      font-size: 11px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--pro); white-space: nowrap;
-    }
-    .pro-option {
-      display: flex; align-items: center; gap: 6px; cursor: pointer;
-    }
-    .pro-option input[type="checkbox"] { cursor: pointer; accent-color: var(--pro); }
-    .pro-option-label { font-size: 13px; color: var(--text); }
-    .pro-option-hint  { font-size: 12px; color: var(--muted); }
-    .pro-badge {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
-      background: var(--pro); color: #fff;
-      border-radius: 3px; padding: 1px 5px;
-      vertical-align: middle; margin-left: 2px;
-    }
+    /* ── Pro bar ─────────────────────────────────────────────────────────── */
+    .pro-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 8px 16px; background: var(--pro-bg); border-bottom: 1px solid var(--pro-bdr); }
+    .pro-label { font-size: 11px; font-weight: 700; color: var(--pro); text-transform: uppercase; letter-spacing: 0.08em; }
+    .pro-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+    .pro-opt input { cursor: pointer; accent-color: var(--pro); }
+    .pro-hint { font-size: 12px; color: var(--muted); }
 
-    /* ── Stats bar ───────────────────────────────────────────────────────── */
-    .stats-bar {
-      display: flex; gap: 0;
-      border-bottom: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .stat-item {
-      flex: 1; padding: 12px 20px;
-      display: flex; flex-direction: column; gap: 2px;
-      border-right: 1px solid var(--border);
-    }
-    .stat-item:last-child { border-right: none; }
-    .stat-value {
-      font-size: 22px; font-weight: 700; line-height: 1;
-      font-family: var(--mono); color: var(--text);
-    }
-    .stat-value.ok    { color: var(--score-high); }
-    .stat-value.warn  { color: var(--score-mid);  }
-    .stat-value.bad   { color: var(--score-low);  }
-    .stat-label {
-      font-size: 11px; color: var(--muted);
-      text-transform: uppercase; letter-spacing: 0.06em;
-    }
+    /* ── Diff summary bar ───────────────────────────────────────────────── */
+    .diff-sum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; background: var(--bg); }
+    .ds-stat { font-weight: 600; }
+    .ds-stat.red   { color: var(--error); }
+    .ds-stat.green { color: var(--success); }
+    .ds-sep { color: var(--border-hi); }
+    .sq-row { display: inline-flex; gap: 2px; align-items: center; }
+    .sq { width: 10px; height: 10px; border-radius: 2px; }
+    .sq.s-del   { background: var(--error); }
+    .sq.s-ok    { background: var(--success); }
+    .sq.s-empty { background: var(--border-hi); opacity: 0.35; }
+    .btn-ghost { margin-left: auto; background: none; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--muted); padding: 4px 10px; cursor: pointer; }
+    .btn-ghost:hover { background: var(--canvas-sub); color: var(--text); }
 
-    /* ── Main content ────────────────────────────────────────────────────── */
-    .content { max-width: 960px; margin: 0 auto; padding: 24px 20px 60px; }
+    /* ── Page layout ─────────────────────────────────────────────────────── */
+    .page-wrap { display: flex; align-items: flex-start; }
 
-    /* ── Empty / placeholder state ────────────────────────────────────────── */
-    .placeholder {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 80px 20px; gap: 12px;
-      color: var(--muted); text-align: center;
-    }
-    .placeholder-icon { font-size: 36px; line-height: 1; }
-    .placeholder-title { font-size: 15px; font-weight: 600; color: var(--text); }
-    .placeholder-body  { font-size: 13px; max-width: 380px; }
+    /* ── File sidebar ────────────────────────────────────────────────────── */
+    .file-sidebar { width: 256px; flex-shrink: 0; border-right: 1px solid var(--border); position: sticky; top: var(--nav-h); max-height: calc(100vh - var(--nav-h)); overflow-y: auto; background: var(--bg); }
+    .sb-head { padding: 10px 12px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+    .sb-filter { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .sb-filter input { width: 100%; font-size: 12px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); }
+    .sb-filter input:focus { outline: none; border-color: var(--accent); }
+    .fn-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; text-decoration: none; border-left: 3px solid transparent; transition: background 80ms; }
+    .fn-item:hover { background: var(--canvas-sub); border-left-color: var(--border-hi); }
+    .fn-name { flex: 1; font-size: 12px; font-family: var(--mono); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fn-badge { font-size: 11px; font-weight: 600; border-radius: 20px; padding: 1px 7px; }
+    .fn-badge.err { color: var(--error);   background: var(--error-bg); }
+    .fn-badge.ok  { color: var(--success); background: var(--success-bg); }
 
-    /* ── All-clear state ─────────────────────────────────────────────────── */
-    .all-clear {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; padding: 80px 20px; gap: 10px; text-align: center;
-    }
-    .all-clear-icon {
-      font-size: 42px; line-height: 1;
-    }
-    .all-clear-title {
-      font-size: 16px; font-weight: 700; color: var(--success);
-    }
-    .all-clear-body { font-size: 13px; color: var(--muted); max-width: 380px; }
+    /* ── Diff content area ───────────────────────────────────────────────── */
+    .diff-area { flex: 1; min-width: 0; padding: 16px 16px 60px; }
 
-    /* ── File group ──────────────────────────────────────────────────────── */
-    .file-group { margin-bottom: 24px; }
-    .file-header {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 0 6px;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 2px;
-    }
-    .file-icon { font-size: 14px; }
-    .file-path {
-      font-family: var(--mono); font-size: 13px;
-      font-weight: 600; color: var(--text);
-    }
-    .file-count {
-      font-size: 11px; color: var(--muted);
-      background: var(--surface2); border-radius: 10px;
-      padding: 1px 7px; margin-left: 4px;
-    }
+    /* ── Diff card (per file) ────────────────────────────────────────────── */
+    .diff-card { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
+    .diff-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--canvas); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+    .diff-head:hover { background: var(--canvas-sub); }
+    .caret { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 10px; padding: 2px 4px; line-height: 1; flex-shrink: 0; }
+    .diff-fp { flex: 1; font-family: var(--mono); font-size: 12px; }
+    .diff-fp-dir  { color: var(--muted); }
+    .diff-fp-name { color: var(--text); font-weight: 600; }
+    .issue-pill { font-size: 11px; font-weight: 600; border-radius: 20px; padding: 2px 9px; white-space: nowrap; border: 1px solid; }
+    .issue-pill.open    { color: var(--error);   background: var(--error-bg);   border-color: rgba(207,34,46,0.3); }
+    .issue-pill.patched { color: var(--success); background: var(--success-bg); border-color: rgba(26,127,55,0.3); }
+    .card-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
+    .card-btn:hover { background: var(--canvas-sub); color: var(--text); border-color: var(--border-hi); }
+    .diff-body.collapsed { display: none; }
 
-    /* ── Issue row ───────────────────────────────────────────────────────── */
-    .issue-row {
-      display: grid;
-      grid-template-columns: 70px 1fr 80px auto;
-      align-items: center; gap: 10px;
-      padding: 8px 10px;
-      border-radius: 5px;
-      transition: background 80ms;
-    }
-    .issue-row:hover { background: var(--surface2); }
-    .issue-row.patched { background: var(--success-bg); border: 1px solid var(--success-border); margin: 2px 0; }
-    .issue-type {
-      font-family: var(--mono); font-size: 12px;
-      color: var(--accent); font-weight: 600;
-    }
-    .issue-selector {
-      font-family: var(--mono); font-size: 12px;
-      color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .issue-score {
-      font-family: var(--mono); font-size: 12px; font-weight: 700; text-align: right;
-    }
-    .issue-score.low  { color: var(--score-low); }
-    .issue-score.mid  { color: var(--score-mid); }
-    .issue-suggestion {
-      font-size: 12px; display: flex; align-items: center; gap: 6px;
-    }
-    .testid-chip {
-      font-family: var(--mono); font-size: 11px;
-      background: var(--code-bg); border: 1px solid var(--border);
-      border-radius: 4px; padding: 2px 6px;
-      color: var(--text); white-space: nowrap;
-    }
-    .issue-patch-note {
-      font-size: 11px; color: var(--success); font-weight: 600;
-    }
-
-    /* ── PR banner ───────────────────────────────────────────────────────── */
-    .pr-banner {
-      margin-top: 24px;
-      background: var(--success-bg); border: 1px solid var(--success-border);
-      border-radius: 8px; padding: 14px 18px;
-      display: flex; align-items: center; gap: 12px;
-    }
-    .pr-banner-icon { font-size: 20px; }
-    .pr-banner-text { font-size: 13px; }
-    .pr-banner-link {
-      color: var(--accent); font-weight: 600; text-decoration: none;
-    }
-    .pr-banner-link:hover { text-decoration: underline; }
-
-    /* ── Summary bar ─────────────────────────────────────────────────────── */
-    .summary-bar {
-      margin-top: 24px; padding: 12px 16px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 7px; font-size: 13px;
-      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    }
-    .summary-ok   { color: var(--success); font-weight: 600; }
-    .summary-info { color: var(--muted); }
-    .summary-pro  { color: var(--pro); font-weight: 600; }
-
-    /* ── Spinner ─────────────────────────────────────────────────────────── */
-    .spinner {
-      display: inline-block; width: 14px; height: 14px;
-      border: 2px solid var(--border-strong);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
+    /* ── Diff table ──────────────────────────────────────────────────────── */
+    .diff-tbl { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; line-height: 1.6; }
+    .diff-tbl tbody + tbody { border-top: 1px solid var(--border); }
+    .ln { width: 44px; min-width: 44px; text-align: right; padding: 2px 10px 2px 8px; color: var(--muted); user-select: none; vertical-align: top; opacity: 0.7; }
+    .mk { width: 22px; min-width: 22px; text-align: center; padding: 2px 4px; font-weight: 700; vertical-align: top; user-select: none; }
+    .cd { padding: 2px 14px 2px 8px; vertical-align: top; }
+    /* hunk */
+    .r-hunk .ln { background: var(--hunk-ln); }
+    .r-hunk .mk { background: var(--hunk-ln); color: var(--hunk-text); }
+    .r-hunk .cd { background: var(--hunk-bg); color: var(--hunk-text); white-space: normal; }
+    /* del */
+    .r-del .ln { background: var(--del-ln); }
+    .r-del .mk { background: var(--del-ln); color: var(--del-mk); }
+    .r-del .cd { background: var(--del-bg); color: var(--error); }
+    /* add */
+    .r-add .ln { background: var(--add-ln); }
+    .r-add .mk { background: var(--add-ln); color: var(--add-mk); }
+    .r-add .cd { background: var(--add-bg); color: var(--success); font-weight: 500; }
+    /* detail */
+    .r-detail .ln { background: var(--bg); }
+    .r-detail .mk { background: var(--bg); color: var(--muted); font-size: 10px; }
+    .r-detail .cd { background: var(--bg); padding-top: 5px; padding-bottom: 5px; }
+    /* hunk inline */
+    .h-type { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 20px; margin-right: 6px; background: rgba(9,105,218,0.12); color: var(--accent); }
+    .h-score { font-weight: 700; margin: 0 3px; }
+    .h-score.low { color: var(--sc-low); }
+    .h-score.mid { color: var(--sc-mid); }
+    .h-score.hi  { color: var(--sc-hi);  }
+    .pips { display: inline-flex; gap: 2px; margin: 0 4px; vertical-align: middle; }
+    .pip { display: inline-block; width: 8px; height: 8px; border-radius: 1px; }
+    .pip.low-f { background: var(--sc-low); }
+    .pip.mid-f { background: var(--sc-mid); }
+    .pip.hi-f  { background: var(--sc-hi); }
+    .pip.empty { background: var(--border-hi); opacity: 0.35; }
+    .h-comp { opacity: 0.75; font-size: 11px; }
+    .h-acts { opacity: 0.65; font-size: 11px; margin-left: 4px; }
+    /* strategy tags */
+    .stag { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
+    .stag-ok  { background: rgba(26,127,55,0.1);  color: var(--success); border: 1px solid rgba(26,127,55,0.25); }
+    .stag-mid { background: rgba(154,103,0,0.1);  color: var(--warning); border: 1px solid rgba(154,103,0,0.25); }
+    .stag-bad { background: rgba(207,34,46,0.1);  color: var(--error);   border: 1px solid rgba(207,34,46,0.25); }
+    /* selector candidates */
+    .cands { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 3px 0; }
+    .cands-lbl { font-size: 11px; color: var(--muted); flex-shrink: 0; }
+    .cand { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); background: var(--canvas); }
+    .cand .cs { color: var(--muted); font-size: 10px; }
+    .cand .cv { color: var(--text); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cand .csc { font-weight: 700; margin-left: 3px; font-size: 10px; }
+    .cand.c-ok  { background: var(--success-bg); border-color: rgba(26,127,55,0.35); }
+    .cand.c-mid { background: var(--warning-bg); border-color: rgba(154,103,0,0.35); }
+    .cand.c-bad { background: var(--error-bg);   border-color: rgba(207,34,46,0.35); }
+    .cand-miss  { opacity: 0.65; font-style: italic; }
+    /* states */
+    .state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 12px; text-align: center; }
+    .state-icon  { font-size: 42px; }
+    .state-title { font-size: 15px; font-weight: 600; }
+    .state-body  { font-size: 13px; color: var(--muted); max-width: 380px; }
+    .state-ok .state-title { color: var(--success); }
+    /* PR banner */
+    .pr-banner { display: flex; align-items: center; gap: 10px; background: var(--success-bg); border: 1px solid var(--success); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; }
+    .pr-banner a { color: var(--accent); font-weight: 600; }
+    /* spinner */
+    .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border-hi); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Threshold slider visual ─────────────────────────────────────────── */
-    .threshold-visual {
-      font-size: 11px; color: var(--muted);
-      background: var(--surface2); border-radius: 3px;
-      padding: 2px 6px; font-family: var(--mono);
-    }
   </style>
 </head>
 <body>
@@ -331,258 +241,357 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   <a class="nav-link active" href="/lint">lint</a>
 </nav>
 
-<form id="lintForm">
-  <div class="run-bar">
-    <label for="configPath">Config</label>
-    <input id="configPath" name="configPath" type="text"
-      value="selfcure.config.mjs" autocomplete="off" spellcheck="false">
-
-    <div class="threshold-wrap">
-      <label for="threshold" style="white-space:nowrap">Threshold</label>
-      <input id="threshold" name="threshold" type="number"
-        min="1" max="100" value="65">
-      <span class="threshold-visual" id="thresholdLabel">score &lt; 65</span>
-    </div>
-
-    <button class="btn btn-primary" type="submit" id="runBtn">
-      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-        <path d="M3 2.5a.5.5 0 0 1 .765-.424l10 5.5a.5.5 0 0 1 0 .848l-10 5.5A.5.5 0 0 1 3 13.5v-11z"/>
-      </svg>
-      Run lint
-    </button>
-    <span class="run-status" id="status" role="status"></span>
-    <span class="run-error" id="errorMsg" role="alert" hidden></span>
+<form id="lintForm"><div class="run-bar">
+  <label for="configPath">Config</label>
+  <input id="configPath" type="text" value="selfcure.config.mjs" autocomplete="off" spellcheck="false">
+  <div class="thr-wrap">
+    <label for="threshold">Threshold</label>
+    <input id="threshold" type="number" min="1" max="100" value="65">
+    <span id="thrLabel" style="font-size:12px;color:var(--muted)">score &lt; 65</span>
   </div>
-</form>
+  <button class="btn btn-run" type="submit" id="runBtn">
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M3 2.5a.5.5 0 0 1 .765-.424l10 5.5a.5.5 0 0 1 0 .848l-10 5.5A.5.5 0 0 1 3 13.5z"/>
+    </svg>
+    Run lint
+  </button>
+  <span id="runStatus" class="run-status" role="status"></span>
+  <span id="errorMsg" class="run-error" role="alert" hidden></span>
+</div></form>
 
 <div class="pro-bar">
-  <span class="pro-bar-label">&#9670; Pro</span>
-  <label class="pro-option" id="fixOption">
+  <span class="pro-label">&#9670; Pro</span>
+  <label class="pro-opt">
     <input type="checkbox" id="fixCheck">
-    <span class="pro-option-label">Auto-fix <span class="pro-badge">PRO</span></span>
-    <span class="pro-option-hint">— inject data-testid into source files</span>
+    <span>Auto-fix</span>
+    <span class="pro-hint">— inject data-testid into source files</span>
   </label>
-  <label class="pro-option" id="prOption">
+  <label class="pro-opt">
     <input type="checkbox" id="prCheck" disabled>
-    <span class="pro-option-label">Open GitHub PR <span class="pro-badge">PRO</span></span>
-    <span class="pro-option-hint">— commit fixes and create a PR (requires --fix)</span>
+    <span>Open GitHub PR</span>
+    <span class="pro-hint">— requires Auto-fix</span>
   </label>
 </div>
 
-<div class="stats-bar" id="statsBar" hidden>
-  <div class="stat-item">
-    <span class="stat-value" id="statFiles">—</span>
-    <span class="stat-label">Files scanned</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-value" id="statIssues">—</span>
-    <span class="stat-label">Issues found</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-value" id="statFixed">—</span>
-    <span class="stat-label">Patched</span>
-  </div>
-  <div class="stat-item">
-    <span class="stat-value" id="statSkipped">—</span>
-    <span class="stat-label">Skipped (no id)</span>
-  </div>
+<div id="diffSum" class="diff-sum" hidden>
+  <span id="sumFiles" class="ds-stat">—</span>
+  <span class="ds-sep">files &nbsp;·&nbsp;</span>
+  <span id="sumIssues" class="ds-stat red">—</span>
+  <span class="ds-sep">issues</span>
+  <span id="sumFixed" class="ds-stat green"></span>
+  <div id="sqRow" class="sq-row"></div>
+  <button id="toggleAll" class="btn-ghost">Collapse all</button>
 </div>
 
-<div class="content" id="content">
-  <div class="placeholder" id="placeholder">
-    <div class="placeholder-icon">&#128270;</div>
-    <div class="placeholder-title">Ready to lint</div>
-    <div class="placeholder-body">
-      Configure the threshold score (1–100). Elements below this score lack a stable
-      selector and will be flagged. Default: <strong>65</strong> (no data-testid, id, or aria-label).
+<div class="page-wrap">
+  <aside id="sidebar" class="file-sidebar" hidden>
+    <div class="sb-head">
+      <span>Jump to file</span>
+      <span id="sbCount" style="font-weight:400"></span>
+    </div>
+    <div class="sb-filter">
+      <input id="fileFilter" type="text" placeholder="Filter files…">
+    </div>
+    <div id="navList"></div>
+  </aside>
+  <div id="diffArea" class="diff-area">
+    <div id="placeholder" class="state">
+      <div class="state-icon">&#128270;</div>
+      <div class="state-title">Ready to lint</div>
+      <div class="state-body">
+        Threshold (1–100): elements scoring below this are flagged as having no stable selector.
+        Default <strong>65</strong> — those without data-testid, id, or aria-label.
+      </div>
     </div>
   </div>
 </div>
-
-<div id="elemDetailOverlay" class="elem-detail-overlay" hidden></div>
 
 <script>
 (function () {
   'use strict';
 
-  const form        = document.getElementById('lintForm');
-  const runBtn      = document.getElementById('runBtn');
-  const configInput = document.getElementById('configPath');
-  const threshInput = document.getElementById('threshold');
-  const threshLabel = document.getElementById('thresholdLabel');
-  const statusEl    = document.getElementById('status');
-  const errorEl     = document.getElementById('errorMsg');
-  const statsBar    = document.getElementById('statsBar');
-  const content     = document.getElementById('content');
-  const placeholder = document.getElementById('placeholder');
-  const fixCheck    = document.getElementById('fixCheck');
-  const prCheck     = document.getElementById('prCheck');
+  const $ = id => document.getElementById(id);
+  const form      = $('lintForm');
+  const runBtn    = $('runBtn');
+  const cfgInput  = $('configPath');
+  const thrInput  = $('threshold');
+  const thrLabel  = $('thrLabel');
+  const runStatus = $('runStatus');
+  const errorMsg  = $('errorMsg');
+  const fixCheck  = $('fixCheck');
+  const prCheck   = $('prCheck');
+  const diffSum   = $('diffSum');
+  const sumFiles  = $('sumFiles');
+  const sumIssues = $('sumIssues');
+  const sumFixed  = $('sumFixed');
+  const sqRow     = $('sqRow');
+  const toggleAll = $('toggleAll');
+  const sidebar   = $('sidebar');
+  const sbCount   = $('sbCount');
+  const navList   = $('navList');
+  const fileFilter= $('fileFilter');
+  const diffArea  = $('diffArea');
 
-  // Live threshold label
-  threshInput.addEventListener('input', () => {
-    threshLabel.textContent = 'score < ' + (threshInput.value || '65');
+  let allExpanded = true;
+
+  thrInput.addEventListener('input', () => {
+    thrLabel.textContent = 'score < ' + (thrInput.value || '65');
   });
 
-  // PR checkbox requires fix checkbox
   fixCheck.addEventListener('change', () => {
     prCheck.disabled = !fixCheck.checked;
     if (!fixCheck.checked) prCheck.checked = false;
   });
 
-  // ── Run ──────────────────────────────────────────────────────────────────
-  form.addEventListener('submit', async (e) => {
+  toggleAll.addEventListener('click', () => {
+    allExpanded = !allExpanded;
+    document.querySelectorAll('.diff-body').forEach(b => b.classList.toggle('collapsed', !allExpanded));
+    document.querySelectorAll('.caret').forEach(c => { c.textContent = allExpanded ? '\u25bc' : '\u25b6'; });
+    toggleAll.textContent = allExpanded ? 'Collapse all' : 'Expand all';
+  });
+
+  fileFilter.addEventListener('input', () => {
+    const q = fileFilter.value.toLowerCase();
+    document.querySelectorAll('.fn-item').forEach(it => {
+      it.style.display = it.dataset.fp.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     runBtn.disabled = true;
-    statusEl.innerHTML = '<span class="spinner"></span> Running lint\u2026';
-    errorEl.hidden  = true;
-    statsBar.hidden = true;
-    content.innerHTML = '';
+    runStatus.innerHTML = '<span class="spinner"></span> Running\u2026';
+    errorMsg.hidden = true;
+    diffSum.hidden  = true;
+    sidebar.hidden  = true;
+    diffArea.innerHTML = '';
 
     const body = {
-      configPath: configInput.value.trim() || 'selfcure.config.mjs',
-      threshold:  Number(threshInput.value) || 65,
-      fix:        fixCheck.checked,
-      pr:         prCheck.checked && fixCheck.checked,
+      configPath: cfgInput.value.trim() || 'selfcure.config.mjs',
+      threshold:  Number(thrInput.value) || 65,
+      fix:  fixCheck.checked,
+      pr:   prCheck.checked && fixCheck.checked,
     };
 
     try {
-      const res = await fetch('/api/lint', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      });
+      const res  = await fetch('/api/lint', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lint failed');
       render(data, body.threshold);
     } catch (err) {
-      errorEl.textContent = String(err.message || err);
-      errorEl.hidden = false;
+      errorMsg.textContent = String(err.message || err);
+      errorMsg.hidden = false;
     } finally {
-      runBtn.disabled = false;
-      statusEl.textContent = '';
+      runBtn.disabled  = false;
+      runStatus.textContent = '';
     }
   });
 
-  // ── Render results ────────────────────────────────────────────────────────
-  function scoreClass(s) { return s < 35 ? 'low' : s < 65 ? 'mid' : ''; }
-
+  /* ── helpers ─────────────────────────────────────────────────────────── */
   function esc(s) {
-    return String(s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function scCls(n)  { return n < 35 ? 'low' : n < 65 ? 'mid' : 'hi'; }
+  function pips(score) {
+    const f = Math.round(score / 10), c = scCls(score);
+    let s = '<span class="pips">';
+    for (let i = 0; i < 10; i++) s += '<span class="pip ' + (i < f ? c + '-f' : 'empty') + '"></span>';
+    return s + '</span>';
+  }
+  function stratCls(st) {
+    return ['data-testid','aria-label','id','name'].includes(st) ? 'stag-ok' : 'stag-bad';
+  }
+  function splitFp(fp) {
+    const parts = fp.replace(/\\/g, '/').split('/');
+    const name  = parts.pop();
+    return { dir: parts.length ? parts.join('/') + '/' : '', name };
   }
 
+  /* ── render ──────────────────────────────────────────────────────────── */
   function render(data, threshold) {
-    const { issues, totalFiles, fixedCount, skippedCount, prUrl } = data;
+    const { issues, totalFiles, fixedCount, prUrl } = data;
 
-    // ── Stats ──────────────────────────────────────────────────────────────
-    const statFiles   = document.getElementById('statFiles');
-    const statIssues  = document.getElementById('statIssues');
-    const statFixed   = document.getElementById('statFixed');
-    const statSkipped = document.getElementById('statSkipped');
+    sumFiles.textContent  = totalFiles;
+    sumIssues.textContent = issues.length;
+    sumFixed.textContent  = fixedCount > 0 ? '(' + fixedCount + ' patched)' : '';
 
-    statFiles.textContent   = totalFiles;
-    statFiles.className     = 'stat-value';
+    /* score squares — proportion of flagged files */
+    const rc = Math.max(0, Math.min(10, Math.round(10 * issues.length / Math.max(totalFiles, 1))));
+    let sv = '';
+    for (let i = 0; i < 10; i++) sv += '<span class="sq ' + (i < rc ? 's-del' : 's-empty') + '"></span>';
+    sqRow.innerHTML = sv;
+    diffSum.hidden  = false;
+    allExpanded     = true;
+    toggleAll.textContent = 'Collapse all';
 
-    statIssues.textContent  = issues.length;
-    statIssues.className    = 'stat-value ' + (issues.length === 0 ? 'ok' : issues.length > 10 ? 'bad' : 'warn');
-
-    statFixed.textContent   = fixedCount;
-    statFixed.className     = 'stat-value ' + (fixedCount > 0 ? 'ok' : '');
-
-    statSkipped.textContent = skippedCount;
-    statSkipped.className   = 'stat-value ' + (skippedCount > 0 ? 'warn' : '');
-
-    statsBar.hidden = false;
-
-    // ── All-clear ──────────────────────────────────────────────────────────
     if (issues.length === 0) {
-      content.innerHTML =
-        '<div class="all-clear">' +
-          '<div class="all-clear-icon">&#10003;</div>' +
-          '<div class="all-clear-title">No issues found</div>' +
-          '<div class="all-clear-body">' + totalFiles + ' file(s) scanned &mdash; ' +
-          'all elements have a testability score &ge; ' + threshold + '.</div>' +
+      diffArea.innerHTML =
+        '<div class="state state-ok">' +
+          '<div class="state-icon">&#10003;</div>' +
+          '<div class="state-title">No issues found</div>' +
+          '<div class="state-body">' + totalFiles + ' file(s) scanned \u2014 all elements score \u2265 ' + threshold + '/100.</div>' +
         '</div>';
+      sidebar.hidden = true;
       return;
     }
 
-    // ── Group by file ──────────────────────────────────────────────────────
+    /* group by file */
     const byFile = new Map();
     for (const issue of issues) {
       if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
       byFile.get(issue.filePath).push(issue);
     }
 
+    /* sidebar */
+    let nav = '', idx = 0;
+    for (const [fp, fi] of byFile) {
+      const { name } = splitFp(fp);
+      const allOk    = fi.every(i => i.fixApplied);
+      nav +=
+        '<a class="fn-item" href="#f' + idx + '" data-fp="' + esc(fp) + '">' +
+          '<span class="fn-name" title="' + esc(fp) + '">' + esc(name) + '</span>' +
+          '<span class="fn-badge ' + (allOk ? 'ok' : 'err') + '">' + fi.length + '</span>' +
+        '</a>';
+      idx++;
+    }
+    navList.innerHTML = nav;
+    sbCount.textContent = byFile.size + ' file' + (byFile.size !== 1 ? 's' : '');
+    sidebar.hidden = false;
+
+    /* diff cards */
     let html = '';
+    if (prUrl) html += '<div class="pr-banner">&#128279; PR: <a href="' + esc(prUrl) + '" target="_blank" rel="noreferrer">' + esc(prUrl) + '</a></div>';
 
-    // PR banner
-    if (prUrl) {
+    idx = 0;
+    for (const [fp, fi] of byFile) {
+      const { dir, name } = splitFp(fp);
+      const allOk = fi.every(i => i.fixApplied);
+      const cnt   = fi.length;
+
       html +=
-        '<div class="pr-banner">' +
-          '<div class="pr-banner-icon">&#128279;</div>' +
-          '<div class="pr-banner-text">' +
-            'PR opened: <a class="pr-banner-link" href="' + esc(prUrl) + '" target="_blank" rel="noreferrer">' +
-            esc(prUrl) + '</a>' +
-          '</div>' +
-        '</div>';
-    }
+        '<div class="diff-card" id="f' + idx + '">' +
+        '<div class="diff-head" onclick="toggleCard(this)">' +
+          '<button class="caret" aria-label="collapse">&#9660;</button>' +
+          '<span class="diff-fp">' +
+            '<span class="diff-fp-dir">'  + esc(dir)  + '</span>' +
+            '<span class="diff-fp-name">' + esc(name) + '</span>' +
+          '</span>' +
+          '<span class="issue-pill ' + (allOk ? 'patched' : 'open') + '">' +
+            (allOk ? '&#10003; ' : '') + cnt + ' issue' + (cnt !== 1 ? 's' : '') +
+          '</span>' +
+          '<button class="card-btn" onclick="copyFp(event,' + JSON.stringify(fp) + ')">&#8984; Copy path</button>' +
+        '</div>' +
+        '<div class="diff-body">' +
+        '<table class="diff-tbl">';
 
-    html += '<div style="margin-bottom:12px;font-size:13px;color:var(--muted)">' +
-      issues.length + ' issue(s) across ' + byFile.size + ' file(s) &nbsp;&middot;&nbsp; ' +
-      'threshold: <strong>' + threshold + '</strong>/100' +
-      '</div>';
+      let ln = 1;
+      for (const issue of fi) {
+        const el      = issue.element;
+        const score   = el.testabilityScore;
+        const cls     = scCls(score);
+        const sel     = el.selector || el.selectors?.cssSelector || '';
+        const acts    = (el.actions || []).join(', ') || 'click';
+        const ranking = el.selectorRanking || [];
+        const patched = issue.fixApplied === true;
+        const bestSt  = ranking[0] ? ranking[0].strategy : 'css';
+        const sTagCls = stratCls(bestSt);
+        const hasTestid = ranking.some(r => r.strategy === 'data-testid');
 
-    for (const [filePath, fileIssues] of byFile) {
-      html +=
-        '<div class="file-group">' +
-          '<div class="file-header">' +
-            '<span class="file-icon">&#128196;</span>' +
-            '<span class="file-path">' + esc(filePath) + '</span>' +
-            '<span class="file-count">' + fileIssues.length + '</span>' +
-          '</div>';
-
-      for (const issue of fileIssues) {
-        const score     = issue.element.testabilityScore;
-        const sClass    = scoreClass(score);
-        const selector  = issue.element.selector || issue.element.selectors?.css || '';
-        const patched   = issue.fixApplied === true;
-
+        /* hunk */
         html +=
-          '<div class="issue-row' + (patched ? ' patched' : '') + '">' +
-            '<span class="issue-type">' + esc(issue.element.type) + '</span>' +
-            '<span class="issue-selector" title="' + esc(selector) + '">' + esc(selector) + '</span>' +
-            '<span class="issue-score ' + sClass + '">' + score + '/100</span>' +
-            '<span class="issue-suggestion">' +
-              (patched
-                ? '<span class="issue-patch-note">&#10003; patched</span>'
-                : 'add <span class="testid-chip">data-testid=&quot;' + esc(issue.suggestedTestId) + '&quot;</span>') +
-            '</span>' +
-          '</div>';
+          '<tbody>' +
+          '<tr class="r-hunk">' +
+            '<td class="ln" colspan="2">@@</td>' +
+            '<td class="cd">' +
+              '<span class="h-type">' + esc(el.type) + '</span>' +
+              pips(score) +
+              '<span class="h-score ' + cls + '">' + score + '/100</span>' +
+              (el.label ? ' &middot; <em>' + esc(el.label) + '</em>' : '') +
+              ' &middot; <span class="h-comp">' + esc(issue.componentName) + '</span>' +
+              '<span class="h-acts"> &middot; ' + esc(acts) + '</span>' +
+            ' @@</td>' +
+          '</tr>';
+
+        /* del — current best selector */
+        html +=
+          '<tr class="r-del">' +
+            '<td class="ln">' + ln + '</td>' +
+            '<td class="mk">-</td>' +
+            '<td class="cd">' +
+              esc(sel) +
+              '<span class="stag ' + sTagCls + '">' + esc(bestSt) + '</span>' +
+            '</td>' +
+          '</tr>';
+
+        /* detail — all selector candidates */
+        let candsHtml = '<div class="cands"><span class="cands-lbl">Selectors:</span>';
+        for (const c of ranking.slice(0, 6)) {
+          const cc = c.score >= 70 ? 'c-ok' : c.score >= 40 ? 'c-mid' : 'c-bad';
+          candsHtml +=
+            '<span class="cand ' + cc + '">' +
+              '<span class="cs">' + esc(c.strategy) + '</span>' +
+              '<span class="cv" title="' + esc(c.value) + '">' + esc(c.value) + '</span>' +
+              '<span class="csc">' + c.score + '</span>' +
+            '</span>';
+        }
+        if (!hasTestid) {
+          candsHtml += '<span class="cand c-bad cand-miss"><span class="cs">data-testid</span><span class="cv">not found</span></span>';
+        }
+        candsHtml += '</div>';
+        html +=
+          '<tr class="r-detail">' +
+            '<td class="ln"></td>' +
+            '<td class="mk" style="color:var(--muted)">&#8597;</td>' +
+            '<td class="cd">' + candsHtml + '</td>' +
+          '</tr>';
+
+        /* add — suggested fix */
+        if (patched) {
+          html +=
+            '<tr class="r-add">' +
+              '<td class="ln">' + (ln + 1) + '</td>' +
+              '<td class="mk">+</td>' +
+              '<td class="cd">&#10003; patched &mdash; data-testid=&quot;' + esc(issue.suggestedTestId) + '&quot;<span class="stag stag-ok">applied</span></td>' +
+            '</tr>';
+        } else {
+          html +=
+            '<tr class="r-add">' +
+              '<td class="ln">' + (ln + 1) + '</td>' +
+              '<td class="mk">+</td>' +
+              '<td class="cd">data-testid=&quot;' + esc(issue.suggestedTestId) + '&quot;<span class="stag stag-ok">suggested</span></td>' +
+            '</tr>';
+        }
+
+        html += '</tbody>';
+        ln += 2;
       }
 
-      html += '</div>'; // .file-group
+      html += '</table></div></div>';
+      idx++;
     }
 
-    // ── Summary bar ──────────────────────────────────────────────────────
-    html += '<div class="summary-bar">';
-    if (fixedCount > 0) {
-      html += '<span class="summary-ok">&#10003; ' + fixedCount + ' element(s) patched</span>';
-      if (skippedCount > 0) {
-        html += '<span class="summary-info">&nbsp;&middot;&nbsp; ' + skippedCount + ' skipped (no unique id/name/aria-label)</span>';
-      }
-    } else if (!fixCheck.checked) {
-      html +=
-        '<span class="summary-pro">&#9670; Enable Auto-fix (Pro) to inject data-testid into source files</span>';
-    }
-    html += '</div>';
-
-    content.innerHTML = html;
+    diffArea.innerHTML = html;
   }
+
+  window.toggleCard = function (hd) {
+    const body = hd.nextElementSibling;
+    const btn  = hd.querySelector('.caret');
+    const c    = body.classList.toggle('collapsed');
+    btn.textContent = c ? '\u25b6' : '\u25bc';
+  };
+
+  window.copyFp = function (e, fp) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(fp).catch(() => {});
+    const btn  = e.currentTarget;
+    const orig = btn.innerHTML;
+    btn.textContent = '\u2713 Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  };
+
 })();
 </script>
 </body>
 </html>
 `;
+
