@@ -40,6 +40,12 @@ export interface GeneratedTest {
 
 function buildPrompt(analysis: AnalysisResult): string {
   const { component, interactiveElements, score } = analysis;
+
+  const ambiguous = interactiveElements.filter((e) => e.ambiguous);
+  const ambiguitySection = ambiguous.length
+    ? `\n\n## Ambiguous locators\nThe following elements have no unique locator in this component — multiple nodes share the best available selector. For each, narrow the locator (e.g. \`page.getByRole('button', { name: ... })\`, \`.filter({ hasText })\`, \`.nth(i)\`, or scope under a parent) so each test targets exactly one node:\n${ambiguous.map((e) => `- ${e.type} [${e.selector}]${e.label ? ` — label: "${e.label}"` : ''} (${e.ambiguityReason ?? 'matches multiple elements'})`).join('\n')}`
+    : '';
+
   return `You are an expert Playwright test engineer.
 
 Generate a complete, runnable Playwright TypeScript test file for the component described below.
@@ -51,12 +57,13 @@ Generate a complete, runnable Playwright TypeScript test file for the component 
 - Testability score: ${score}/100
 
 ## Interactive elements
-${interactiveElements.map((e) => `- ${e.type} [${e.selector}] — actions: ${e.actions.join(', ')}`).join('\n')}
+${interactiveElements.map((e) => `- ${e.type} [${e.selector}]${e.ambiguous ? ' ⚠ ambiguous' : ''} — actions: ${e.actions.join(', ')}`).join('\n')}${ambiguitySection}
 
 ## Rules
 - Use \`@playwright/test\` imports only.
 - Each test must be independent (no shared state).
 - Use accessible-name selectors (getByRole, getByLabel) over CSS selectors where possible.
+- For elements flagged as ambiguous, never use the bare selector — always combine with a name, text, or scoping locator so the query resolves to exactly one node.
 - Include at least one positive and one negative test case per interactive element.
 - Output ONLY the TypeScript code, no markdown fences.`;
 }

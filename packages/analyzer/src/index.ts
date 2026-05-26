@@ -13,6 +13,12 @@ export interface SelectorCandidate {
   value: string;
   /** Stability score 0–100: higher = less likely to break on UI changes */
   score: number;
+  /** How many elements within the same component match this selector value */
+  matchCount?: number;
+  /** How many elements across all analysed components match this selector value */
+  crossMatchCount?: number;
+  /** True when the selector matches more than one element in the same component */
+  ambiguous?: boolean;
 }
 
 export interface ElementSelectors {
@@ -39,6 +45,13 @@ export interface InteractiveElement {
   selectorRanking: SelectorCandidate[];
   /** Testability score for this element 0–100 */
   testabilityScore: number;
+  /**
+   * True when the best available selector also matches another element in
+   * the same component — Playwright would resolve to multiple nodes.
+   */
+  ambiguous: boolean;
+  /** Human-readable explanation when {@link ambiguous} is true */
+  ambiguityReason?: string;
 }
 
 export interface AnalysisResult {
@@ -183,7 +196,6 @@ function buildLabel(attrs: Record<string, string | undefined>): string | undefin
 
 function extractInteractiveElements(ast: unknown): InteractiveElement[] {
   const elements: InteractiveElement[] = [];
-  const seen = new Set<string>();
 
   walkAST(ast, (node) => {
     if (node['type'] !== 'JSXOpeningElement') return;
@@ -203,9 +215,6 @@ function extractInteractiveElements(ast: unknown): InteractiveElement[] {
     }
 
     const selector = buildSelector(tag, attrs);
-    if (seen.has(selector)) return;
-    seen.add(selector);
-
     const type = TAG_TYPE[tag]!;
     const ranking = buildSelectorRanking(tag, attrs);
     elements.push({
@@ -216,6 +225,7 @@ function extractInteractiveElements(ast: unknown): InteractiveElement[] {
       selectors: buildElementSelectors(tag, attrs),
       selectorRanking: ranking,
       testabilityScore: elementTestabilityScore(attrs),
+      ambiguous: false,
     });
   });
 
@@ -228,13 +238,10 @@ function extractInteractiveElements(ast: unknown): InteractiveElement[] {
 
 function extractInteractiveElementsFromHtml(htmlElements: HtmlElementMeta[]): InteractiveElement[] {
   const elements: InteractiveElement[] = [];
-  const seen = new Set<string>();
 
   for (const { tag, attrs } of htmlElements) {
     if (!TAG_TYPE[tag]) continue;
     const selector = buildSelector(tag, attrs);
-    if (seen.has(selector)) continue;
-    seen.add(selector);
     const type = TAG_TYPE[tag]!;
     const ranking = buildSelectorRanking(tag, attrs);
     elements.push({
@@ -245,10 +252,85 @@ function extractInteractiveElementsFromHtml(htmlElements: HtmlElementMeta[]): In
       selectors: buildElementSelectors(tag, attrs),
       selectorRanking: ranking,
       testabilityScore: elementTestabilityScore(attrs),
+      ambiguous: false,
     });
   }
 
   return elements;
+}
+
+// ---------------------------------------------------------------------------
+// Ambiguity detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Penalty applied to a candidate's score when it matches more than one element
+ * in the same component. 0.4 means an ambiguous `data-testid` drops 100 → 40,
+ * which is below the default lint threshold and naturally surfaces it.
+ */
+const INTRA_AMBIGUITY_PENALTY = 0.4;
+
+/** Strategies that are inherently shared by tag/type (e.g. `button`, `input[type="text"]`).
+ *  These are weak by definition, so we do not call them out as "ambiguous" — they
+ *  are already scored low. Only the *strong* strategies surprise the user when shared. */
+const STRONG_STRATEGIES: ReadonlySet<SelectorCandidate['strategy']> = new Set([
+  'data-testid',
+  'id',
+  'aria-label',
+  'name',
+]);
+
+function countSelectorValues(elements: InteractiveElement[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const el of elements) {
+    for (const cand of el.selectorRanking) {
+      counts.set(cand.value, (counts.get(cand.value) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+/**
+ * Annotate each candidate with how many elements share its selector value
+ * (within the component and across all analysed components), penalise the
+ * score when more than one element matches inside the same component, and
+ * re-derive each element's best selector + testability score.
+ */
+function applyAmbiguity(
+  elements: InteractiveElement[],
+  intraCounts: Map<string, number>,
+  crossCounts: Map<string, number>,
+): void {
+  for (const el of elements) {
+    for (const cand of el.selectorRanking) {
+      const intra = intraCounts.get(cand.value) ?? 1;
+      const cross = crossCounts.get(cand.value) ?? intra;
+      cand.matchCount      = intra;
+      cand.crossMatchCount = cross;
+      if (intra > 1) {
+        cand.ambiguous = true;
+        cand.score     = Math.round(cand.score * INTRA_AMBIGUITY_PENALTY);
+      }
+    }
+
+    el.selectorRanking.sort((a, b) => b.score - a.score);
+
+    const best = el.selectorRanking[0];
+    if (best) {
+      el.selector         = best.value;
+      el.testabilityScore = best.score;
+      el.ambiguous        = best.ambiguous === true;
+      if (el.ambiguous && STRONG_STRATEGIES.has(best.strategy)) {
+        el.ambiguityReason =
+          `Selector \`${best.value}\` (${best.strategy}) matches ${best.matchCount} elements ` +
+          `in this component — Playwright will resolve to multiple nodes.`;
+      } else if (el.ambiguous) {
+        el.ambiguityReason =
+          `No unique selector available — best candidate \`${best.value}\` matches ` +
+          `${best.matchCount} elements in this component.`;
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -276,18 +358,32 @@ function classifyComplexity(elements: InteractiveElement[]): Complexity {
  * testability score, and flag overall complexity.
  */
 export async function analyze(components: ComponentMeta[]): Promise<AnalysisResult[]> {
-  return components.map((component) => {
-    const interactiveElements = component.htmlElements
+  // First pass: extract interactive elements per component.
+  const perComponent = components.map((component) => ({
+    component,
+    interactiveElements: component.htmlElements
       ? extractInteractiveElementsFromHtml(component.htmlElements)
-      : extractInteractiveElements(component.ast);
+      : extractInteractiveElements(component.ast),
+  }));
 
-    return {
-      component,
-      score: computeScore(interactiveElements),
-      interactiveElements,
-      complexity: classifyComplexity(interactiveElements),
-    };
-  });
+  // Second pass: detect ambiguous locators.
+  //   • Intra-component counts decide whether a selector is *ambiguous now*
+  //     (Playwright would match multiple nodes on the same rendered page).
+  //   • Cross-component counts are informational only — independent tests on
+  //     different pages can legitimately reuse a `data-testid`.
+  const crossCounts = countSelectorValues(perComponent.flatMap((p) => p.interactiveElements));
+
+  for (const { interactiveElements } of perComponent) {
+    const intraCounts = countSelectorValues(interactiveElements);
+    applyAmbiguity(interactiveElements, intraCounts, crossCounts);
+  }
+
+  return perComponent.map(({ component, interactiveElements }) => ({
+    component,
+    score: computeScore(interactiveElements),
+    interactiveElements,
+    complexity: classifyComplexity(interactiveElements),
+  }));
 }
 
 export default analyze;

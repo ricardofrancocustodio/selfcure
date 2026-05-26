@@ -151,14 +151,14 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .diff-area { flex: 1; min-width: 0; padding: 16px 16px 60px; }
 
     /* ── Diff card (per file) ────────────────────────────────────────────── */
-    .diff-card { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 16px; overflow: hidden; }
-    .diff-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--canvas); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
+    .diff-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .diff-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--canvas); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
     .diff-head:hover { background: var(--canvas-sub); }
     .caret { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 10px; padding: 2px 4px; line-height: 1; flex-shrink: 0; }
-    .diff-fp { flex: 1; font-family: var(--mono); font-size: 12px; }
-    .diff-fp-dir  { color: var(--muted); }
-    .diff-fp-name { color: var(--text); font-weight: 600; }
-    .issue-pill { font-size: 11px; font-weight: 600; border-radius: 20px; padding: 2px 9px; white-space: nowrap; border: 1px solid; }
+    .diff-fp { flex: 1; font-family: var(--mono); font-size: 12px; min-width: 0; }
+    .diff-fp-dir  { color: var(--muted); font-size: 11px; }
+    .diff-fp-name { color: var(--text); font-weight: 700; font-size: 13px; }
+    .issue-pill { font-size: 11px; font-weight: 600; border-radius: 20px; padding: 3px 10px; white-space: nowrap; border: 1px solid; }
     .issue-pill.open    { color: var(--error);   background: var(--error-bg);   border-color: rgba(207,34,46,0.3); }
     .issue-pill.patched { color: var(--success); background: var(--success-bg); border-color: rgba(26,127,55,0.3); }
     .card-btn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 3px 8px; cursor: pointer; white-space: nowrap; }
@@ -167,29 +167,28 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 
     /* ── Diff table ──────────────────────────────────────────────────────── */
     .diff-tbl { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; line-height: 1.6; }
-    .diff-tbl tbody + tbody { border-top: 1px solid var(--border); }
     .ln { width: 44px; min-width: 44px; text-align: right; padding: 2px 10px 2px 8px; color: var(--muted); user-select: none; vertical-align: top; opacity: 0.7; }
-    .mk { width: 22px; min-width: 22px; text-align: center; padding: 2px 4px; font-weight: 700; vertical-align: top; user-select: none; }
-    .cd { padding: 2px 14px 2px 8px; vertical-align: top; }
+    .mk { width: 26px; min-width: 26px; text-align: center; padding: 2px 4px; font-weight: 700; vertical-align: top; user-select: none; font-size: 14px; }
+    .cd { padding: 4px 14px 4px 10px; vertical-align: top; }
     /* hunk */
     .r-hunk .ln { background: var(--hunk-ln); }
     .r-hunk .mk { background: var(--hunk-ln); color: var(--hunk-text); }
-    .r-hunk .cd { background: var(--hunk-bg); color: var(--hunk-text); white-space: normal; }
+    .r-hunk .cd { background: var(--hunk-bg); color: var(--hunk-text); white-space: normal; padding: 8px 14px 8px 10px; }
     /* del */
     .r-del .ln { background: var(--del-ln); }
     .r-del .mk { background: var(--del-ln); color: var(--del-mk); }
-    .r-del .cd { background: var(--del-bg); color: var(--error); }
+    .r-del .cd { background: var(--del-bg); color: var(--error); padding: 6px 14px 6px 10px; display: flex; align-items: baseline; gap: 0; }
     /* add */
     .r-add .ln { background: var(--add-ln); }
     .r-add .mk { background: var(--add-ln); color: var(--add-mk); }
-    .r-add .cd { background: var(--add-bg); color: var(--success); font-weight: 500; }
+    .r-add .cd { background: var(--add-bg); color: var(--success); font-weight: 500; padding: 6px 14px 6px 10px; display: flex; align-items: baseline; }
     /* detail */
     .r-detail .ln { background: var(--bg); }
     .r-detail .mk { background: var(--bg); color: var(--muted); font-size: 10px; }
-    .r-detail .cd { background: var(--bg); padding-top: 5px; padding-bottom: 5px; }
+    .r-detail .cd { background: var(--canvas); padding: 8px 14px 8px 10px; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); }
     /* hunk inline */
-    .h-type { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 20px; margin-right: 6px; background: rgba(9,105,218,0.12); color: var(--accent); }
-    .h-score { font-weight: 700; margin: 0 3px; }
+    .h-type { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 20px; background: rgba(9,105,218,0.15); color: var(--accent); border: 1px solid rgba(9,105,218,0.2); }
+    .h-score { font-weight: 700; margin: 0 4px; }
     .h-score.low { color: var(--sc-low); }
     .h-score.mid { color: var(--sc-mid); }
     .h-score.hi  { color: var(--sc-hi);  }
@@ -200,12 +199,22 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .pip.hi-f  { background: var(--sc-hi); }
     .pip.empty { background: var(--border-hi); opacity: 0.35; }
     .h-comp { opacity: 0.75; font-size: 11px; }
-    .h-acts { opacity: 0.65; font-size: 11px; margin-left: 4px; }
+    .h-acts { opacity: 0.65; font-size: 11px; }
     /* strategy tags */
     .stag { display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
     .stag-ok  { background: rgba(26,127,55,0.1);  color: var(--success); border: 1px solid rgba(26,127,55,0.25); }
     .stag-mid { background: rgba(154,103,0,0.1);  color: var(--warning); border: 1px solid rgba(154,103,0,0.25); }
     .stag-bad { background: rgba(207,34,46,0.1);  color: var(--error);   border: 1px solid rgba(207,34,46,0.25); }
+    /* row labels (Current / Fix) */
+    .row-lbl { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-right: 10px; width: 52px; flex-shrink: 0; }
+    .r-del .row-lbl { color: var(--del-mk); }
+    .r-add .row-lbl { color: var(--add-mk); }
+    /* hunk element info lines */
+    .h-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .h-bot { margin-top: 3px; font-size: 11px; color: var(--hunk-text); opacity: 0.8; padding-left: 2px; }
+    /* issue group separator */
+    .diff-tbl tbody { border-top: 2px solid var(--border); }
+    .diff-tbl tbody:first-child { border-top: none; }
     /* selector candidates */
     .cands { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 3px 0; }
     .cands-lbl { font-size: 11px; color: var(--muted); flex-shrink: 0; }
@@ -217,6 +226,16 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .cand.c-mid { background: var(--warning-bg); border-color: rgba(154,103,0,0.35); }
     .cand.c-bad { background: var(--error-bg);   border-color: rgba(207,34,46,0.35); }
     .cand-miss  { opacity: 0.65; font-style: italic; }
+    /* tag syntax highlight */
+    .tag-disp { font-family: var(--mono); font-size: 12px; line-height: 1.5; word-break: break-all; }
+    .tok-bracket { color: var(--muted); }
+    .tok-tag  { color: var(--accent); font-weight: 700; }
+    .tok-attr { color: var(--text); opacity: 0.85; }
+    .tok-val  { color: var(--warning); }
+    .tok-text { color: var(--muted); font-style: italic; }
+    .tok-new  { color: var(--add-mk); font-weight: 700; background: rgba(26,127,55,0.18); border-radius: 3px; padding: 0 3px; }
+    .r-del .tok-tag { color: var(--del-mk); }
+    .r-del .tok-bracket { color: var(--del-mk); opacity: 0.5; }
     /* states */
     .state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 12px; text-align: center; }
     .state-icon  { font-size: 42px; }
@@ -402,9 +421,50 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     return ['data-testid','aria-label','id','name'].includes(st) ? 'stag-ok' : 'stag-bad';
   }
   function splitFp(fp) {
-    const parts = fp.replace(/\\/g, '/').split('/');
+    const parts = fp.replace(/\\\\/g, '/').split('/');
     const name  = parts.pop();
     return { dir: parts.length ? parts.join('/') + '/' : '', name };
+  }
+
+  /* Build a syntax-highlighted tag snippet from element data.
+     isFix=true adds data-testid as the first (highlighted) attribute. */
+  function buildTagHtml(el, suggestedTestId, isFix) {
+    const tag = el.type === 'link' ? 'a' : el.type === 'input' ? 'input' : el.type === 'form' ? 'form' : 'button';
+    const isVoid = tag === 'input';
+
+    // Extract attribute values from selectorRanking (string-based to avoid template-literal regex escaping)
+    const a = {};
+    function attrVal(v, attr) {
+      const needle = '[' + attr + '="';
+      const si = v.indexOf(needle);
+      if (si === -1) return null;
+      const ei = v.indexOf('"', si + needle.length);
+      return ei === -1 ? null : v.slice(si + needle.length, ei);
+    }
+    for (const c of (el.selectorRanking || [])) {
+      const v = c.value;
+      if (c.strategy === 'id' && v.startsWith('#'))   { a.id = v.slice(1); }
+      else if (c.strategy === 'aria-label') { const x = attrVal(v, 'aria-label'); if (x !== null) a['aria-label'] = x; }
+      else if (c.strategy === 'name')       { const x = attrVal(v, 'name');       if (x !== null) a.name = x; }
+      else if (c.strategy === 'css')        { const x = attrVal(v, 'type');       if (x !== null) a.type = x; }
+    }
+
+    // Build attribute HTML
+    let attrsHtml = '';
+    if (isFix) {
+      attrsHtml += ' <span class="tok-new">data-testid=&quot;' + esc(suggestedTestId) + '&quot;</span>';
+    }
+    for (const k of ['id', 'aria-label', 'name', 'type']) {
+      if (a[k]) attrsHtml += ' <span class="tok-attr">' + esc(k) + '=</span><span class="tok-val">&quot;' + esc(a[k]) + '&quot;</span>';
+    }
+
+    const br  = (t) => '<span class="tok-bracket">' + t + '</span>';
+    const tg  = (t) => '<span class="tok-tag">'     + t + '</span>';
+    const open = br('&lt;') + tg(tag) + attrsHtml + br('&gt;');
+    if (isVoid) return '<span class="tag-disp">' + open + '</span>';
+    const text  = el.label ? '<span class="tok-text">' + esc(el.label) + '</span>' : '<span class="tok-text">&hellip;</span>';
+    const close = br('&lt;/') + tg(tag) + br('&gt;');
+    return '<span class="tag-disp">' + open + text + close + '</span>';
   }
 
   /* ── render ──────────────────────────────────────────────────────────── */
@@ -501,25 +561,29 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
         html +=
           '<tbody>' +
           '<tr class="r-hunk">' +
-            '<td class="ln" colspan="2">@@</td>' +
+            '<td class="ln" colspan="2" style="font-size:10px;text-align:center;color:var(--hunk-text);opacity:0.6">@@</td>' +
             '<td class="cd">' +
-              '<span class="h-type">' + esc(el.type) + '</span>' +
-              pips(score) +
-              '<span class="h-score ' + cls + '">' + score + '/100</span>' +
-              (el.label ? ' &middot; <em>' + esc(el.label) + '</em>' : '') +
-              ' &middot; <span class="h-comp">' + esc(issue.componentName) + '</span>' +
-              '<span class="h-acts"> &middot; ' + esc(acts) + '</span>' +
-            ' @@</td>' +
+              '<div class="h-top">' +
+                '<span class="h-type">' + esc(el.type) + '</span>' +
+                pips(score) +
+                '<span class="h-score ' + cls + '">' + score + '/100</span>' +
+                (el.label ? '<span style="color:var(--hunk-text);opacity:0.9">&middot; <em>' + esc(el.label) + '</em></span>' : '') +
+              '</div>' +
+              '<div class="h-bot">' +
+                '<span class="h-comp">&#128196; ' + esc(issue.componentName) + '</span>' +
+                ' &nbsp;&middot;&nbsp; <span class="h-acts">&#9654; ' + esc(acts) + '</span>' +
+              '</div>' +
+            '</td>' +
           '</tr>';
 
-        /* del — current best selector */
+        /* del — current tag */
         html +=
           '<tr class="r-del">' +
             '<td class="ln">' + ln + '</td>' +
-            '<td class="mk">-</td>' +
+            '<td class="mk">&#8722;</td>' +
             '<td class="cd">' +
-              esc(sel) +
-              '<span class="stag ' + sTagCls + '">' + esc(bestSt) + '</span>' +
+              '<span class="row-lbl">Current</span>' +
+              buildTagHtml(el, null, false) +
             '</td>' +
           '</tr>';
 
@@ -545,20 +609,28 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
             '<td class="cd">' + candsHtml + '</td>' +
           '</tr>';
 
-        /* add — suggested fix */
+        /* add — fixed tag */
         if (patched) {
           html +=
             '<tr class="r-add">' +
               '<td class="ln">' + (ln + 1) + '</td>' +
               '<td class="mk">+</td>' +
-              '<td class="cd">&#10003; patched &mdash; data-testid=&quot;' + esc(issue.suggestedTestId) + '&quot;<span class="stag stag-ok">applied</span></td>' +
+              '<td class="cd">' +
+                '<span class="row-lbl">Fix</span>' +
+                buildTagHtml(el, issue.suggestedTestId, true) +
+                '<span class="stag stag-ok">&#10003; applied</span>' +
+              '</td>' +
             '</tr>';
         } else {
           html +=
             '<tr class="r-add">' +
               '<td class="ln">' + (ln + 1) + '</td>' +
               '<td class="mk">+</td>' +
-              '<td class="cd">data-testid=&quot;' + esc(issue.suggestedTestId) + '&quot;<span class="stag stag-ok">suggested</span></td>' +
+              '<td class="cd">' +
+                '<span class="row-lbl">Fix</span>' +
+                buildTagHtml(el, issue.suggestedTestId, true) +
+                '<span class="stag stag-ok">suggested</span>' +
+              '</td>' +
             '</tr>';
         }
 
