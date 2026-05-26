@@ -173,31 +173,34 @@ export function startWebServer(
   cwd = process.cwd(),
 ): http.Server {
   const server = http.createServer((req, res) => {
-    if (req.method === 'GET' && req.url === '/') {
+    const parsed = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
+    const pathname = parsed.pathname;
+
+    if (req.method === 'GET' && pathname === '/') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(initPageHtml);
       return;
     }
 
-    if (req.method === 'GET' && req.url === '/crawl') {
+    if (req.method === 'GET' && pathname === '/crawl') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(crawlPageHtml);
       return;
     }
 
-    if (req.method === 'GET' && req.url === '/api/dirs') {
+    if (req.method === 'GET' && pathname === '/api/dirs') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ cwd, dirs: listSourceDirs(cwd) }));
       return;
     }
 
-    if (req.method === 'GET' && req.url === '/api/providers') {
+    if (req.method === 'GET' && pathname === '/api/providers') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(listProviders()));
       return;
     }
 
-    if (req.method === 'POST' && req.url === '/api/init') {
+    if (req.method === 'POST' && pathname === '/api/init') {
       let body = '';
       req.on('data', (chunk: Buffer) => {
         body += chunk.toString();
@@ -257,7 +260,7 @@ export function startWebServer(
       return;
     }
 
-    if (req.method === 'POST' && req.url === '/api/crawl') {
+    if (req.method === 'POST' && pathname === '/api/crawl') {
       readJsonBody(req)
         .then((rawBody) => runCrawlAnalysis(cwd, rawBody as CrawlRequestBody))
         .then((result) => {
