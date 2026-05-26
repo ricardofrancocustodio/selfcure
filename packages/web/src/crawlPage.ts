@@ -851,7 +851,7 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     if (fmt === 'csv') {
       const csvEsc = function(v) {
         const s = String(v != null ? v : '');
-        const needsQuote = s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0;
+        const needsQuote = s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf(String.fromCharCode(10)) >= 0;
         return needsQuote ? '"' + s.replace(/"/g, '""') + '"' : s;
       };
       const BOM  = String.fromCharCode(65279);
