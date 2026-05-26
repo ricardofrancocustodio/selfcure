@@ -403,6 +403,78 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     .es-mid  { background: var(--warning-bg); color: var(--score-mid); }
     .es-low  { background: var(--error-bg);   color: var(--score-low); }
 
+    /* ── Element detail drawer ───────────────────────────────────────────── */
+    .elem-row { cursor: pointer; }
+    .elem-row:hover > td { background: var(--surface2); }
+    .elem-detail-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.35);
+      z-index: 300; backdrop-filter: blur(2px);
+    }
+    .elem-detail-drawer {
+      position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 92vw);
+      background: var(--bg); border-left: 1px solid var(--border);
+      z-index: 301; display: flex; flex-direction: column;
+      box-shadow: -4px 0 24px rgba(0,0,0,.18);
+      transform: translateX(100%);
+      transition: transform .2s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+    }
+    .elem-detail-drawer.open { transform: translateX(0); }
+    .drawer-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
+    }
+    .drawer-title { font-size: 13px; font-weight: 700; color: var(--text); }
+    .drawer-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 16px; padding: 2px 6px;
+      border-radius: 4px; line-height: 1;
+    }
+    .drawer-close:hover { background: var(--surface2); color: var(--text); }
+    .drawer-body {
+      flex: 1; overflow-y: auto; padding: 16px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .drawer-hero { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .drawer-label { font-size: 13px; color: var(--text); font-family: var(--mono); }
+    .drawer-section { display: flex; flex-direction: column; gap: 8px; }
+    .drawer-section-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .6px; color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .drawer-count {
+      background: var(--surface2); border-radius: 10px; padding: 1px 6px;
+      font-size: 10px; font-weight: 600; color: var(--muted);
+      text-transform: none; letter-spacing: 0;
+    }
+    .drawer-score-row { display: flex; align-items: center; gap: 10px; }
+    .drawer-score-desc { font-size: 12px; color: var(--muted); }
+    .drawer-strats { display: flex; flex-direction: column; gap: 8px; }
+    .drawer-strat-card {
+      border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 6px; background: var(--surface);
+    }
+    .drawer-strat-card.is-best { border-color: var(--success); background: var(--success-bg); }
+    .drawer-strat-head { display: flex; align-items: center; gap: 6px; }
+    .best-badge { font-size: 10px; font-weight: 700; color: var(--success); }
+    .strat-score { font-size: 11px; color: var(--muted); margin-left: auto; font-family: var(--mono); }
+    .drawer-strat-value { display: flex; align-items: center; gap: 8px; }
+    .strat-code {
+      font-family: var(--mono); font-size: 11px; color: var(--text);
+      flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      background: var(--surface2); padding: 4px 8px; border-radius: 4px;
+    }
+    .copy-btn {
+      flex-shrink: 0; font-size: 10px; font-weight: 600;
+      padding: 3px 8px; border-radius: 4px; cursor: pointer;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); transition: background .15s, color .15s, border-color .15s;
+    }
+    .copy-btn:hover { background: var(--surface); }
+    .copy-btn.copy-ok { background: var(--success-bg); color: var(--success); border-color: var(--success); }
+
     /* ── Initial state (no results) ──────────────────────────────────────── */
     .welcome {
       flex: 1; display: flex; flex-direction: column;
@@ -619,6 +691,16 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
   </div>
 </div>
 
+<div id="elemDetailOverlay" class="elem-detail-overlay" hidden></div>
+<aside id="elemDetailDrawer" class="elem-detail-drawer" hidden
+  aria-modal="true" role="dialog" aria-labelledby="elemDrawerTitle">
+  <div class="drawer-header">
+    <div class="drawer-title" id="elemDrawerTitle">Element details</div>
+    <button class="drawer-close" id="elemDrawerClose" aria-label="Close">&#x2715;</button>
+  </div>
+  <div class="drawer-body" id="elemDrawerBody"></div>
+</aside>
+
 <script>
   let crawlData = [];
   const cardSortState = {};
@@ -768,7 +850,7 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
       '<th>Actions</th>' +
       '</tr></thead><tbody>' +
       sorted.map(el =>
-        '<tr>' +
+        '<tr class="elem-row" data-elem="' + encodeURIComponent(JSON.stringify(el)) + '">' +
         '<td><span class="badge badge-framework">' + esc(el.type) + '</span></td>' +
         '<td>' + elemScore(el.testabilityScore) + '</td>' +
         '<td>' + renderSelectors(el.selectorRanking) + '</td>' +
@@ -993,6 +1075,110 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     const item = crawlData.find(function(d) { return d.filePath === path; });
     if (!item) return;
     table.outerHTML = renderElements(item.interactiveElements, path, col, dir);
+  });
+
+  // ── Element detail drawer ─────────────────────────────────────────────────
+  const detailOverlay = document.getElementById('elemDetailOverlay');
+  const detailDrawer  = document.getElementById('elemDetailDrawer');
+  const drawerBody    = document.getElementById('elemDrawerBody');
+  const drawerClose   = document.getElementById('elemDrawerClose');
+
+  function closeDrawer() {
+    detailDrawer.classList.remove('open');
+    setTimeout(function() {
+      detailOverlay.hidden = true;
+      detailDrawer.hidden  = true;
+    }, 210);
+  }
+
+  function openDrawer(el) {
+    const stratBadge = function(s) {
+      const cls = { 'data-testid': 's-datatestid', id: 's-id', 'aria-label': 's-arialabel', name: 's-name', css: 's-css', xpath: 's-xpath' }[s] || 's-css';
+      return '<span class="sel-strategy ' + cls + '">' + esc(s) + '</span>';
+    };
+    const score    = el.testabilityScore != null ? el.testabilityScore : null;
+    const scoreCls = score >= 75 ? 'es-high' : score >= 50 ? 'es-mid' : 'es-low';
+    const scoreTip = score >= 75 ? 'Strong — stable selector' : score >= 50 ? 'Moderate — name attribute' : 'Fragile — add data-testid or id';
+    let html = '';
+
+    html += '<div class="drawer-hero">' +
+      '<span class="badge badge-framework">' + esc(el.type) + '</span>' +
+      (el.label ? '<span class="drawer-label">' + esc(el.label) + '</span>' : '') +
+      '</div>';
+
+    html += '<div class="drawer-section">' +
+      '<div class="drawer-section-title">Testability Score</div>' +
+      '<div class="drawer-score-row">' +
+        '<span class="elem-score ' + scoreCls + '" style="width:36px;height:36px;font-size:12px">' +
+          (score != null ? score : '?') +
+        '</span>' +
+        '<span class="drawer-score-desc">' + esc(scoreTip) + '</span>' +
+      '</div>' +
+      '</div>';
+
+    if (el.actions && el.actions.length) {
+      html += '<div class="drawer-section">' +
+        '<div class="drawer-section-title">Actions</div>' +
+        '<div class="action-pills">' +
+          el.actions.map(function(a) { return '<span class="action-pill">' + esc(a) + '</span>'; }).join('') +
+        '</div>' +
+        '</div>';
+    }
+
+    if (el.selectorRanking && el.selectorRanking.length) {
+      html += '<div class="drawer-section">' +
+        '<div class="drawer-section-title">Selector strategies ' +
+          '<span class="drawer-count">' + el.selectorRanking.length + '</span>' +
+        '</div>' +
+        '<div class="drawer-strats">' +
+          el.selectorRanking.map(function(c, i) {
+            const best = i === 0;
+            return '<div class="drawer-strat-card' + (best ? ' is-best' : '') + '">' +
+              '<div class="drawer-strat-head">' +
+                stratBadge(c.strategy) +
+                (best ? '<span class="best-badge">&#x2605; best</span>' : '') +
+                '<span class="strat-score">' + c.score + '/100</span>' +
+              '</div>' +
+              '<div class="drawer-strat-value">' +
+                '<code class="strat-code" title="' + esc(c.value) + '">' + esc(c.value) + '</code>' +
+                '<button class="copy-btn" data-copy="' + esc(c.value) + '">Copy</button>' +
+              '</div>' +
+              '</div>';
+          }).join('') +
+        '</div>' +
+        '</div>';
+    }
+
+    drawerBody.innerHTML = html;
+
+    drawerBody.querySelectorAll('.copy-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        navigator.clipboard.writeText(btn.dataset.copy || '').then(function() {
+          const orig = btn.textContent;
+          btn.textContent = 'Copied!';
+          btn.classList.add('copy-ok');
+          setTimeout(function() { btn.textContent = orig; btn.classList.remove('copy-ok'); }, 1500);
+        });
+      });
+    });
+
+    detailOverlay.hidden = false;
+    detailDrawer.hidden  = false;
+    requestAnimationFrame(function() { detailDrawer.classList.add('open'); });
+  }
+
+  drawerClose.addEventListener('click', closeDrawer);
+  detailOverlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
+
+  componentList.addEventListener('click', function(e) {
+    if (e.target.closest('th.sortable')) return;
+    if (e.target.closest('.copy-btn')) return;
+    const row = e.target.closest('tr.elem-row');
+    if (!row || !row.dataset.elem) return;
+    try {
+      openDrawer(JSON.parse(decodeURIComponent(row.dataset.elem)));
+    } catch (_) {}
   });
 </script>
 </body>
