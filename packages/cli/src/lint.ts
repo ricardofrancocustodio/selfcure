@@ -6,7 +6,8 @@
 import { crawl }    from '@selfcure/crawler';
 import { analyze }  from '@selfcure/analyzer';
 import type { AnalysisResult, InteractiveElement } from '@selfcure/analyzer';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
+import os           from 'node:os';
 import path         from 'node:path';
 import { execSync } from 'node:child_process';
 
@@ -252,61 +253,148 @@ export async function runLint(
   let prUrl: string | undefined;
 
   if (opts.pr && fixedCount > 0) {
-    const cwd    = path.resolve(config.rootDir);
-    const branch = `selfcure/lint-fix-${Date.now()}`;
+    // ── 4a. Localizar raiz do git (pode ser diferente de rootDir) ────────────
+    const cwd = path.resolve(config.rootDir);
+    let gitRoot: string;
+    try {
+      gitRoot = (execSync('git rev-parse --show-toplevel', {
+        cwd, stdio: 'pipe', encoding: 'utf-8',
+      }) as string).trim();
+    } catch {
+      throw new Error(
+        '[selfcure --pr] Not inside a git repository. ' +
+        'Run selfcure from a directory tracked by git.',
+      );
+    }
 
+    // ── 4b. Verificar que gh CLI está instalado e autenticado ─────────────────
+    try {
+      execSync('gh auth status', { stdio: 'pipe' });
+    } catch {
+      throw new Error(
+        '[selfcure --pr] GitHub CLI (gh) is not installed or not authenticated. ' +
+        'Install from https://cli.github.com then run: gh auth login',
+      );
+    }
+
+    // ── 4c. Coletar APENAS os arquivos que o selfcure efetivamente tocou ──────
+    const patchedFiles = [...byFile.keys()]
+      .filter(f => byFile.get(f)!.some(i => i.fixApplied));
+
+    // ── 4d. Avisar sobre arquivos sujos não relacionados (não serão incluídos) ─
+    try {
+      const statusOut = (execSync('git status --porcelain', {
+        cwd: gitRoot, stdio: 'pipe', encoding: 'utf-8',
+      }) as string).trim();
+      if (statusOut) {
+        const patchedSet = new Set(
+          patchedFiles.map(f => path.relative(gitRoot, f).replace(/\\/g, '/')),
+        );
+        const dirtyUnrelated = statusOut
+          .split('\n')
+          .map(l => l.slice(3).trim())
+          .filter(f => !patchedSet.has(f));
+        if (dirtyUnrelated.length > 0) {
+          console.warn(
+            `[selfcure --pr] Warning: ${dirtyUnrelated.length} unrelated file(s) have uncommitted ` +
+            `changes — they will NOT be included in the PR:\n` +
+            dirtyUnrelated.map(f => `  • ${f}`).join('\n'),
+          );
+        }
+      }
+    } catch { /* non-fatal */ }
+
+    // ── 4e. Construir título e body da PR ─────────────────────────────────────
     const applied      = issues.filter(i => i.fixApplied);
     const ambiguousCnt = applied.filter(i => i.kind === 'ambiguous').length;
     const lowScoreCnt  = applied.length - ambiguousCnt;
 
-    const summary: string[] = [];
+    const fileRows = patchedFiles.map(f => {
+      const rel        = path.relative(gitRoot, f).replace(/\\/g, '/');
+      const fileIssues = byFile.get(f)!.filter(i => i.fixApplied);
+      const ids        = fileIssues.map(i => `\`data-testid="${i.suggestedTestId}"\``).join(', ');
+      return `| \`${rel}\` | ${fileIssues.length} | ${ids} |`;
+    });
+
+    const whySummary: string[] = [];
     if (lowScoreCnt > 0) {
-      summary.push(
-        `- **${lowScoreCnt}** element(s) with unstable selectors ` +
-        `(testability score < ${opts.threshold}/100) — added \`data-testid\`.`,
+      whySummary.push(
+        `- **${lowScoreCnt}** element(s) had no stable selector ` +
+        `(score < ${opts.threshold}/100) — \`data-testid\` added.`,
       );
     }
     if (ambiguousCnt > 0) {
-      summary.push(
-        `- **${ambiguousCnt}** ambiguous locator(s) — rewrote \`data-testid\` ` +
-        `(or added one) so each element resolves to exactly one node.`,
+      whySummary.push(
+        `- **${ambiguousCnt}** locator(s) matched multiple elements in the same component ` +
+        `— \`data-testid\` rewritten to a unique value.`,
       );
     }
 
     const body = [
       '## selfcure lint — automated `data-testid` patches',
       '',
-      `Total elements patched: **${fixedCount}**.`,
+      '| Metric | Value |',
+      '|--------|-------|',
+      `| Files changed | ${patchedFiles.length} |`,
+      `| Elements patched | ${fixedCount} |`,
+      `| Unstable selectors fixed | ${lowScoreCnt} |`,
+      `| Ambiguous locators fixed | ${ambiguousCnt} |`,
       '',
-      ...summary,
+      '### Changed files',
       '',
-      '### Changes',
-      ...applied.map(
-        i => `- \`${path.relative(cwd, i.filePath)}\` — \`${i.element.type}\` ` +
-             `→ \`data-testid="${i.suggestedTestId}"\`` +
-             (i.kind === 'ambiguous' ? ' _(ambiguous)_' : ''),
-      ),
+      '| File | Elements | Attributes added |',
+      '|------|----------|-----------------|',
+      ...fileRows,
       '',
-      '> _Generated automatically by [selfcure](https://github.com/ricardofrancocustodio/selfcure)_',
+      '### Why these changes?',
+      '',
+      ...whySummary,
+      '',
+      '> **Review before merging** — rename any `data-testid` value that does not match ' +
+      "your project's naming convention.",
+      '> _Generated automatically by [selfcure](https://github.com/ricardofrancocustodio/selfcure)._',
     ].join('\n');
 
-    // Escape double-quotes for shell argument safety
-    const safeBody = body.replace(/"/g, '\\"');
+    // ── 4f. Gravar body em arquivo temp (evita todos os problemas de shell-escaping) ─
+    const tmpDir   = await mkdtemp(path.join(os.tmpdir(), 'selfcure-pr-'));
+    const bodyFile = path.join(tmpDir, 'body.md');
+    await writeFile(bodyFile, body, 'utf-8');
 
-    execSync(`git checkout -b "${branch}"`,      { cwd, stdio: 'pipe' });
-    execSync('git add -A',                        { cwd, stdio: 'pipe' });
-    execSync(
-      `git commit -m "chore(testids): add data-testid attributes via selfcure lint\n\n${fixedCount} element(s) patched"`,
-      { cwd, stdio: 'pipe' },
-    );
-    execSync(`git push -u origin "${branch}"`,   { cwd, stdio: 'pipe' });
+    // ── 4g. Branch → staged only → commit → push → gh pr create ─────────────
+    const date   = new Date().toISOString().slice(0, 10);   // YYYY-MM-DD
+    const short  = Date.now().toString(36).slice(-4);        // desambiguador curto
+    const branch = `selfcure/lint-fix-${date}-${short}`;
+    const title  =
+      `chore(testids): add data-testid to ${fixedCount} element(s) — selfcure lint`;
 
-    const result = execSync(
-      `gh pr create --title "chore(testids): add data-testid attributes (selfcure lint)" --body "${safeBody}" --head "${branch}"`,
-      { cwd, stdio: 'pipe', encoding: 'utf-8' },
-    ) as string;
+    try {
+      execSync(`git checkout -b ${branch}`, { cwd: gitRoot, stdio: 'pipe' });
 
-    prUrl = result.trim();
+      // Stage SOMENTE os arquivos que o selfcure tocou — nunca changes não-relacionadas
+      const relPaths = patchedFiles
+        .map(f => JSON.stringify(path.relative(gitRoot, f)))
+        .join(' ');
+      execSync(`git add -- ${relPaths}`, { cwd: gitRoot, stdio: 'pipe' });
+
+      const commitMsg =
+        `chore(testids): add data-testid via selfcure lint\n\n` +
+        `Patched ${fixedCount} element(s) across ${patchedFiles.length} file(s).\n` +
+        `Threshold: ${opts.threshold}/100`;
+      execSync(`git commit -m ${JSON.stringify(commitMsg)}`, { cwd: gitRoot, stdio: 'pipe' });
+
+      execSync(`git push -u origin ${branch}`, { cwd: gitRoot, stdio: 'pipe' });
+
+      const result = execSync(
+        `gh pr create --title ${JSON.stringify(title)} ` +
+        `--body-file ${JSON.stringify(bodyFile)} --head ${branch}`,
+        { cwd: gitRoot, stdio: 'pipe', encoding: 'utf-8' },
+      ) as string;
+
+      prUrl = result.trim();
+    } finally {
+      // Remover sempre o arquivo temporário, mesmo em caso de erro
+      await rm(tmpDir, { recursive: true, force: true });
+    }
   }
 
   return { issues, totalFiles: results.length, fixedCount, skippedCount, prUrl };
