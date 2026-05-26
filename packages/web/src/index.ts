@@ -2,12 +2,13 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { analyze } from '@selfcure/analyzer';
+import { analyze, type InteractiveElement } from '@selfcure/analyzer';
 import { crawl } from '@selfcure/crawler';
 import { PROVIDERS, type ProviderId } from '@selfcure/generator';
 import { generateConfig, type InitOptions } from './generator.js';
 import { crawlPageHtml } from './crawlPage.js';
 import { initPageHtml } from './initPage.js';
+import { lintPageHtml } from './lintPage.js';
 
 // Directories that should never appear in the source-folder picker
 const IGNORED_DIRS = new Set([
@@ -121,6 +122,150 @@ async function runCrawlAnalysis(cwd: string, body: CrawlRequestBody) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Lint helpers (mirrors packages/cli/src/lint.ts — no circular dep)
+// ---------------------------------------------------------------------------
+
+interface LintRequestBody {
+  configPath?: string;
+  threshold?: number;
+  fix?: boolean;
+  pr?: boolean;
+}
+
+interface LintIssue {
+  filePath:        string;
+  componentName:   string;
+  element:         InteractiveElement;
+  suggestedTestId: string;
+  fixApplied?:     boolean;
+}
+
+function toKebab(s: string): string {
+  return s.trim()
+    .replace(/([A-Z])/g, '-$1')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+}
+
+function suggestTestId(el: InteractiveElement, index: number): string {
+  if (el.label)              return toKebab(el.label);
+  if (el.selectors?.id)      return toKebab(el.selectors.id.replace(/^#/, ''));
+  if (el.selectors?.name) {
+    const m = el.selectors.name.match(/\[name=["']?([^"'\]]+)["']?\]/);
+    if (m) return toKebab(m[1]);
+  }
+  if (el.selectors?.ariaLabel) {
+    const m = el.selectors.ariaLabel.match(/\[aria-label=["']?([^"'\]]+)["']?\]/);
+    if (m) return toKebab(m[1]);
+  }
+  return `${el.type}-${index + 1}`;
+}
+
+function escRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function patchSource(source: string, issue: LintIssue, testId: string): string {
+  const sels = issue.element.selectors;
+  let attr: string | undefined;
+  let val: string | undefined;
+
+  if (sels.id) {
+    attr = 'id'; val = sels.id.replace(/^#/, '');
+  } else if (sels.name) {
+    const m = sels.name.match(/\[name=["']?([^"'\]]+)["']?\]/);
+    if (m) { attr = 'name'; val = m[1]; }
+  } else if (sels.ariaLabel) {
+    const m = sels.ariaLabel.match(/\[aria-label=["']?([^"'\]]+)["']?\]/);
+    if (m) { attr = 'aria-label'; val = m[1]; }
+  }
+
+  if (!attr || !val) return source;
+
+  const pat = new RegExp(
+    `(<[a-zA-Z][^>]*?\\b${escRe(attr)}=["']${escRe(val)}["'][^>]*?)(?=\\s*/?>)`,
+    'g',
+  );
+  let patched = false;
+  return source.replace(pat, (match) => {
+    if (patched || match.includes('data-testid')) return match;
+    patched = true;
+    return `${match} data-testid="${testId}"`;
+  });
+}
+
+async function runLintAnalysis(cwd: string, body: LintRequestBody) {
+  const config = await loadCrawlConfig(cwd, body.configPath);
+  const rootDir = path.resolve(cwd, config.rootDir);
+  const threshold = body.threshold ?? 65;
+
+  const components = await crawl({
+    rootDir,
+    include: config.include,
+    exclude: config.exclude,
+    framework: config.framework,
+  });
+
+  const results = await analyze(components);
+
+  const issues: LintIssue[] = [];
+  for (const r of results) {
+    r.interactiveElements.forEach((el, i) => {
+      if (el.testabilityScore < threshold) {
+        issues.push({
+          filePath:        r.component.filePath,
+          componentName:   r.component.componentName,
+          element:         el,
+          suggestedTestId: suggestTestId(el, i),
+        });
+      }
+    });
+  }
+
+  let fixedCount   = 0;
+  let skippedCount = 0;
+
+  if (body.fix && issues.length > 0) {
+    const fse = await import('fs-extra');
+    const byFile = new Map<string, LintIssue[]>();
+    for (const issue of issues) {
+      if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
+      byFile.get(issue.filePath)!.push(issue);
+    }
+
+    for (const [filePath, fileIssues] of byFile) {
+      let source  = await fse.readFile(filePath, 'utf-8');
+      let updated = source;
+
+      for (const issue of fileIssues) {
+        const patched = patchSource(updated, issue, issue.suggestedTestId);
+        if (patched !== updated) {
+          updated = patched;
+          issue.fixApplied = true;
+          fixedCount++;
+        } else {
+          skippedCount++;
+        }
+      }
+
+      if (updated !== source) {
+        await fse.writeFile(filePath, updated, 'utf-8');
+      }
+    }
+  }
+
+  return {
+    issues,
+    totalFiles:   results.length,
+    fixedCount,
+    skippedCount,
+    prUrl: undefined, // PR creation not supported from web UI (requires git + gh CLI auth)
+  };
+}
+
 function listProviders(): {
   providers: ProviderListEntry[];
   suggested: ProviderId;
@@ -185,6 +330,12 @@ export function startWebServer(
     if (req.method === 'GET' && pathname === '/crawl') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(crawlPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/lint') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(lintPageHtml);
       return;
     }
 
@@ -263,6 +414,20 @@ export function startWebServer(
     if (req.method === 'POST' && pathname === '/api/crawl') {
       readJsonBody(req)
         .then((rawBody) => runCrawlAnalysis(cwd, rawBody as CrawlRequestBody))
+        .then((result) => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        })
+        .catch((err) => {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: String(err) }));
+        });
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/lint') {
+      readJsonBody(req)
+        .then((rawBody) => runLintAnalysis(cwd, rawBody as LintRequestBody))
         .then((result) => {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
