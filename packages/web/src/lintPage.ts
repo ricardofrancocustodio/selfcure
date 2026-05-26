@@ -479,7 +479,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
           '<span class="issue-pill ' + (allOk ? 'patched' : 'open') + '">' +
             (allOk ? '&#10003; ' : '') + cnt + ' issue' + (cnt !== 1 ? 's' : '') +
           '</span>' +
-          '<button class="card-btn" onclick="copyFp(event,' + JSON.stringify(fp) + ')">&#8984; Copy path</button>' +
+          '<button class="card-btn" onclick="copyFp(event,' + JSON.stringify(fp).replace(/"/g, '&quot;') + ')">&#8984; Copy path</button>' +
         '</div>' +
         '<div class="diff-body">' +
         '<table class="diff-tbl">';
