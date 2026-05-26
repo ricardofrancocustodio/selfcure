@@ -4,6 +4,7 @@ import ora from 'ora';
 import path from 'node:path';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
+import { execSync } from 'node:child_process';
 import { runInitWizard } from './init.js';
 import { startWebServer } from '@selfcure/web';
 import { crawl } from '@selfcure/crawler';
@@ -266,6 +267,31 @@ program
   .action((opts) => {
     const port = Number(opts.port);
     startWebServer(port, process.cwd());
+  });
+
+program
+  .command('stop')
+  .description('Kill any selfcure web server running on the given port')
+  .option('-p, --port <number>', 'port to kill', '3333')
+  .action((opts) => {
+    const port = Number(opts.port);
+    try {
+      if (process.platform === 'win32') {
+        execSync(
+          `powershell -NonInteractive -Command "` +
+          `Get-NetTCPConnection -LocalPort ${port} -ErrorAction SilentlyContinue ` +
+          `| Select-Object -ExpandProperty OwningProcess | Sort-Object -Unique ` +
+          `| ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"`,
+          { stdio: 'inherit' },
+        );
+      } else {
+        // macOS / Linux
+        execSync(`lsof -ti :${port} | xargs kill -9`, { stdio: 'inherit' });
+      }
+      console.log(chalk.green(`Port ${port} cleared.`));
+    } catch {
+      console.log(chalk.yellow(`No process found on port ${port}.`));
+    }
   });
 
 program.parse();

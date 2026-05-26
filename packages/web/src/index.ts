@@ -277,7 +277,17 @@ export function startWebServer(
 
   server.listen(port, '127.0.0.1', () => {
     console.log(`selfcure web  →  http://localhost:${port}`);
+    console.log('Press Ctrl+C to stop.');
   });
+
+  const shutdown = () => {
+    process.stdout.write('\nselfcure web  →  shutting down…\n');
+    server.close(() => process.exit(0));
+    // Force-exit if keep-alive connections prevent clean close
+    setTimeout(() => process.exit(0), 2000).unref();
+  };
+  process.on('SIGINT',  shutdown);
+  process.on('SIGTERM', shutdown);
 
   return server;
 }
