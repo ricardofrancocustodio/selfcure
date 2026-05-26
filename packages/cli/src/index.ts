@@ -6,6 +6,7 @@ import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { execSync } from 'node:child_process';
 import { runInitWizard } from './init.js';
+import { runLint }       from './lint.js';
 import { startWebServer } from '@selfcure/web';
 import { crawl } from '@selfcure/crawler';
 import type { AIConfig, ProviderId } from '@selfcure/generator';
@@ -254,6 +255,106 @@ program
     try {
       // TODO: call @selfcure/reporter with persisted run/heal results
       spinner.succeed(chalk.green('Report generated'));
+    } catch (err) {
+      spinner.fail(chalk.red(String(err)));
+      process.exit(1);
+    }
+  });
+
+program
+  .command('lint')
+  .description('[Pro] Lint source files for unstable test selectors and suggest data-testid patches')
+  .option('-c, --config <path>', 'path to selfcure.config.mjs (falls back to selfcure.config.js)', './selfcure.config.mjs')
+  .option('--threshold <n>', 'testability score below which an element is flagged', '65')
+  .option('--fix', '[Pro] apply data-testid patches to source files automatically')
+  .option('--pr',  '[Pro] create a GitHub PR with the applied fixes (requires --fix)')
+  .action(async (opts) => {
+    const spinner = ora('Analysing source files…').start();
+    try {
+      const configPath = await resolveConfigPath(opts.config);
+      const configUrl  = pathToFileURL(configPath).href;
+      const { default: config } = await import(configUrl);
+
+      const threshold = Number(opts.threshold ?? 65);
+      const isPro     = config.pro === true || process.env['SELFCURE_PRO'] === '1';
+
+      // Pro-gate: --fix and --pr require Pro
+      if ((opts.fix || opts.pr) && !isPro) {
+        spinner.stop();
+        console.log('');
+        console.log(chalk.bold.yellow('✦ Pro feature'));
+        console.log(chalk.dim('  --fix and --pr are available on the Pro plan and above.'));
+        console.log(chalk.dim('  Enable Pro by setting SELFCURE_PRO=1 or pro: true in your config.'));
+        console.log('');
+        // Fall through and run the report-only mode
+      }
+
+      const fix = opts.fix && isPro;
+      const pr  = opts.pr  && isPro && fix;
+
+      const summary = await runLint(config, { threshold, fix, pr });
+      spinner.stop();
+
+      const { issues, totalFiles, fixedCount, skippedCount, prUrl } = summary;
+
+      // ── Report header ────────────────────────────────────────────────────
+      console.log('');
+      if (issues.length === 0) {
+        console.log(chalk.green.bold('✔ selfcure lint — no issues found'));
+        console.log(chalk.dim(`  ${totalFiles} file(s) scanned — all elements have a testability score ≥ ${threshold}`));
+        return;
+      }
+
+      console.log(
+        chalk.bold(`selfcure lint — ${chalk.yellow(issues.length)} issue(s) across `) +
+        chalk.bold(`${[...new Set(issues.map(i => i.filePath))].length} file(s)`) +
+        chalk.dim(` · threshold: ${threshold}/100`),
+      );
+      console.log('');
+
+      // ── Per-file issue list ───────────────────────────────────────────────
+      const byFile = new Map<string, typeof issues>();
+      for (const issue of issues) {
+        if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
+        byFile.get(issue.filePath)!.push(issue);
+      }
+
+      for (const [filePath, fileIssues] of byFile) {
+        console.log(chalk.underline(path.relative(process.cwd(), filePath)));
+        for (const issue of fileIssues) {
+          const score   = issue.element.testabilityScore;
+          const scoreTxt = score >= 50
+            ? chalk.yellow(`score: ${score}`)
+            : chalk.red(`score: ${score}`);
+          const fixTxt = issue.fixApplied
+            ? chalk.green(' ✔ patched')
+            : chalk.dim(` → add data-testid="${issue.suggestedTestId}"`);
+          console.log(
+            `  ${chalk.cyan(issue.element.type.padEnd(8))}` +
+            `  ${chalk.dim(issue.element.selector.padEnd(30))}` +
+            `  ${scoreTxt}` +
+            fixTxt,
+          );
+        }
+        console.log('');
+      }
+
+      // ── Summary line ─────────────────────────────────────────────────────
+      if (fix) {
+        if (fixedCount > 0) {
+          console.log(chalk.green(`✔ ${fixedCount} element(s) patched`) +
+            (skippedCount > 0 ? chalk.dim(` · ${skippedCount} skipped (no unique identifier found)`) : ''));
+        }
+        if (prUrl) {
+          console.log(chalk.bold.green(`✔ PR opened: ${prUrl}`));
+        } else if (pr) {
+          console.log(chalk.yellow('  PR creation skipped (no files changed).'));
+        }
+      } else if (!isPro) {
+        console.log(chalk.bold.yellow('✦ Run with --fix to auto-patch source files  (Pro)'));
+        console.log(chalk.bold.yellow('✦ Run with --fix --pr to open a GitHub PR   (Pro)'));
+      }
+      console.log('');
     } catch (err) {
       spinner.fail(chalk.red(String(err)));
       process.exit(1);

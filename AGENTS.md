@@ -41,6 +41,9 @@ packages/<name>/
 | `npm run lint` | TypeScript type-check (`tsc --noEmit`) |
 | `npm run build -w packages/cli` | Build a single workspace package |
 | `npx selfcure run` | Execute the full crawl → generate → run → heal → report pipeline |
+| `npx selfcure lint` | Lint source files for unstable selectors and suggest data-testid patches |
+| `npx selfcure lint --fix` | [Pro] Auto-apply data-testid patches to source files |
+| `npx selfcure lint --fix --pr` | [Pro] Auto-patch + open a GitHub PR with the changes |
 | `npx selfcure web` | Open the browser init wizard at http://localhost:3333 |
 
 ## Documentation maintenance
