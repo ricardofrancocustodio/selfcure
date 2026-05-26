@@ -1,5 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { analyze, type InteractiveElement } from '@selfcure/analyzer';
@@ -229,7 +230,6 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
   let skippedCount = 0;
 
   if (body.fix && issues.length > 0) {
-    const fse = await import('fs-extra');
     const byFile = new Map<string, LintIssue[]>();
     for (const issue of issues) {
       if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
@@ -237,7 +237,7 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
     }
 
     for (const [filePath, fileIssues] of byFile) {
-      let source  = await fse.readFile(filePath, 'utf-8');
+      let source  = await readFile(filePath, 'utf-8');
       let updated = source;
 
       for (const issue of fileIssues) {
@@ -252,7 +252,7 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
       }
 
       if (updated !== source) {
-        await fse.writeFile(filePath, updated, 'utf-8');
+        await writeFile(filePath, updated, 'utf-8');
       }
     }
   }

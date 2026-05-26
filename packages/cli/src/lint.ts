@@ -6,7 +6,7 @@
 import { crawl }    from '@selfcure/crawler';
 import { analyze }  from '@selfcure/analyzer';
 import type { AnalysisResult, InteractiveElement } from '@selfcure/analyzer';
-import fse          from 'fs-extra';
+import { readFile, writeFile } from 'node:fs/promises';
 import path         from 'node:path';
 import { execSync } from 'node:child_process';
 
@@ -163,7 +163,7 @@ export async function runLint(
     }
 
     for (const [filePath, fileIssues] of byFile) {
-      let source  = await fse.readFile(filePath, 'utf-8');
+      let source  = await readFile(filePath, 'utf-8');
       let updated = source;
 
       for (const issue of fileIssues) {
@@ -178,7 +178,7 @@ export async function runLint(
       }
 
       if (updated !== source) {
-        await fse.writeFile(filePath, updated, 'utf-8');
+        await writeFile(filePath, updated, 'utf-8');
       }
     }
   }
