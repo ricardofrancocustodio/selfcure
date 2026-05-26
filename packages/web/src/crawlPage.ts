@@ -332,6 +332,45 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     .legend-row .score-pill { flex-shrink: 0; }
     .legend-desc { font-size: 11px; color: var(--muted); }
 
+    /* ── Export dropdown ─────────────────────────────────────────────────── */
+    .export-wrap { position: relative; }
+    .btn-sm {
+      font-size: 12px; padding: 5px 12px; border-radius: 5px;
+      border: 1px solid var(--border-strong); background: var(--surface);
+      color: var(--text); cursor: pointer; display: inline-flex;
+      align-items: center; gap: 5px; font-family: var(--sans);
+      font-weight: 500; transition: background 120ms;
+    }
+    .btn-sm:hover { background: var(--surface2); }
+    .btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
+    .export-menu {
+      position: absolute; right: 0; top: calc(100% + 4px); z-index: 200;
+      background: var(--surface); border: 1px solid var(--border-strong);
+      border-radius: 7px; padding: 4px; min-width: 200px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      display: none;
+    }
+    .export-menu.open { display: block; }
+    .export-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 4px;
+      font-size: 12px; color: var(--text); cursor: pointer;
+      user-select: none; transition: background 100ms;
+    }
+    .export-item:hover { background: var(--surface2); }
+    .export-sep { border: none; border-top: 1px solid var(--border); margin: 3px 0; }
+    .export-tag {
+      margin-left: auto; font-size: 10px; font-family: var(--mono);
+      background: var(--surface2); color: var(--muted);
+      border-radius: 3px; padding: 1px 5px;
+    }
+
+    /* ── Sortable table headers ──────────────────────────────────────────── */
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { background: var(--border-strong); color: var(--text); }
+    th.sort-asc::after  { content: ' ↑'; font-weight: 400; }
+    th.sort-desc::after { content: ' ↓'; font-weight: 400; }
+
     /* ── Initial state (no results) ──────────────────────────────────────── */
     .welcome {
       flex: 1; display: flex; flex-direction: column;
@@ -514,6 +553,22 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     <div class="results-area" id="resultsArea" hidden>
       <div class="results-header">
         <span class="results-count" id="resultsCount"></span>
+        <div class="export-wrap">
+          <button class="btn-sm" id="exportBtn" disabled>
+            Export
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="currentColor" aria-hidden="true"><path d="M4 6L0 2h8z"/></svg>
+          </button>
+          <div class="export-menu" id="exportMenu">
+            <div class="export-item" data-fmt="csv" data-scope="filtered">&#x1F4C4; CSV &mdash; current view <span class="export-tag">csv</span></div>
+            <div class="export-item" data-fmt="csv" data-scope="all">&#x1F4C4; CSV &mdash; all results <span class="export-tag">csv</span></div>
+            <hr class="export-sep">
+            <div class="export-item" data-fmt="xls" data-scope="filtered">&#x1F4CA; XLS &mdash; current view <span class="export-tag">xls</span></div>
+            <div class="export-item" data-fmt="xls" data-scope="all">&#x1F4CA; XLS &mdash; all results <span class="export-tag">xls</span></div>
+            <hr class="export-sep">
+            <div class="export-item" data-fmt="pdf" data-scope="filtered">&#x1F5A8; PDF &mdash; current view <span class="export-tag">pdf</span></div>
+            <div class="export-item" data-fmt="pdf" data-scope="all">&#x1F5A8; PDF &mdash; all results <span class="export-tag">pdf</span></div>
+          </div>
+        </div>
       </div>
       <div class="card-list" id="componentList"></div>
       <div class="no-results" id="noResults" hidden>
@@ -526,6 +581,7 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
 
 <script>
   let crawlData = [];
+  const cardSortState = {};
 
   const form        = document.getElementById('crawlForm');
   const runBtn      = document.getElementById('runBtn');
@@ -540,6 +596,8 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
   const noResults     = document.getElementById('noResults');
   const minScoreInput = document.getElementById('minScore');
   const minScoreVal   = document.getElementById('minScoreVal');
+  const exportBtn     = document.getElementById('exportBtn');
+  const exportMenu    = document.getElementById('exportMenu');
 
   minScoreInput.addEventListener('input', () => {
     minScoreVal.textContent = minScoreInput.value;
@@ -627,10 +685,28 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     return '<span class="badge badge-' + esc(cx) + '" title="Complexity: ' + (tips[cx] || cx) + '">' + esc(cx) + '</span>';
   }
 
-  function renderElements(elements) {
+  function renderElements(elements, filePath, sortCol, sortDir) {
     if (!elements.length) return '<p class="empty-msg">No interactive elements found in this page.</p>';
-    return '<table><thead><tr><th>Type</th><th>Selector</th><th>Label</th><th>Actions</th></tr></thead><tbody>' +
-      elements.map(el =>
+    let sorted = elements;
+    if (sortCol) {
+      sorted = [...elements].sort((a, b) => {
+        const va = String(a[sortCol] != null ? a[sortCol] : '').toLowerCase();
+        const vb = String(b[sortCol] != null ? b[sortCol] : '').toLowerCase();
+        return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+      });
+    }
+    const thCls = col => {
+      const active = sortCol === col;
+      return 'class="sortable' + (active ? ' sort-' + sortDir : '') + '" data-col="' + esc(col) + '"';
+    };
+    return '<table class="elem-table" data-path="' + esc(filePath || '') + '">' +
+      '<thead><tr>' +
+      '<th ' + thCls('type') + '>Type</th>' +
+      '<th ' + thCls('selector') + '>Selector</th>' +
+      '<th ' + thCls('label') + '>Label</th>' +
+      '<th>Actions</th>' +
+      '</tr></thead><tbody>' +
+      sorted.map(el =>
         '<tr>' +
         '<td><span class="badge badge-framework">' + esc(el.type) + '</span></td>' +
         '<td><code>' + esc(el.selector) + '</code></td>' +
@@ -674,7 +750,7 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
         '</summary>' +
         '<div class="card-body">' +
           '<p class="card-section-title">Interactive elements</p>' +
-          renderElements(item.interactiveElements) +
+          renderElements(item.interactiveElements, item.filePath, cardSortState[item.filePath] && cardSortState[item.filePath].col, cardSortState[item.filePath] && cardSortState[item.filePath].dir) +
           renderProps(item.props) +
         '</div>' +
       '</details>' +
@@ -725,6 +801,8 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
       refreshFilterOptions();
       updateStats();
       render();
+      exportBtn.disabled = false;
+      Object.keys(cardSortState).forEach(k => delete cardSortState[k]);
 
       statsBar.hidden = false;
       sidebar.hidden  = false;
@@ -739,6 +817,113 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     } finally {
       runBtn.disabled = false;
     }
+  });
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  const EXPORT_HEADERS = ['Component','Framework','Complexity','Score','File Path','Type','Selector','Label','Actions'];
+
+  function flattenRows(data) {
+    const rows = [];
+    for (const d of data) {
+      if (d.interactiveElements.length === 0) {
+        rows.push([d.componentName, d.framework, d.complexity, d.score, d.filePath, '', '', '', '']);
+      } else {
+        for (const el of d.interactiveElements) {
+          rows.push([d.componentName, d.framework, d.complexity, d.score, d.filePath,
+            el.type, el.selector, el.label || '', (el.actions||[]).join(', ')]);
+        }
+      }
+    }
+    return rows;
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function exportData(data, fmt, suffix) {
+    const date = new Date().toISOString().slice(0, 10);
+    const name = 'selfcure-crawl-' + suffix + '-' + date;
+    if (fmt === 'csv') {
+      const csvEsc = function(v) {
+        const s = String(v != null ? v : '');
+        const needsQuote = s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0;
+        return needsQuote ? '"' + s.replace(/"/g, '""') + '"' : s;
+      };
+      const BOM  = String.fromCharCode(65279);
+      const CRLF = String.fromCharCode(13) + String.fromCharCode(10);
+      const lines = [EXPORT_HEADERS].concat(flattenRows(data)).map(function(r) { return r.map(csvEsc).join(','); });
+      downloadBlob(new Blob([BOM + lines.join(CRLF)], { type: 'text/csv;charset=utf-8;' }), name + '.csv');
+    } else if (fmt === 'xls') {
+      const rows = [EXPORT_HEADERS].concat(flattenRows(data));
+      const htmlRows = rows.map(function(row, i) {
+        const tag = i === 0 ? 'th' : 'td';
+        return '<tr>' + row.map(function(v) { return '<' + tag + '>' + esc(String(v != null ? v : '')) + '</' + tag + '>'; }).join('') + '</tr>';
+      }).join('');
+      const BOM = String.fromCharCode(65279);
+      const xls = '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+        'xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+        '<head><meta charset="UTF-8"></head><body><table>' + htmlRows + '</table></body></html>';
+      downloadBlob(new Blob([BOM + xls], { type: 'application/vnd.ms-excel;charset=utf-8;' }), name + '.xls');
+    } else if (fmt === 'pdf') {
+      const rows = [EXPORT_HEADERS].concat(flattenRows(data));
+      const htmlRows = rows.map(function(row, i) {
+        const tag = i === 0 ? 'th' : 'td';
+        return '<tr>' + row.map(function(v) { return '<' + tag + '>' + esc(String(v != null ? v : '')) + '</' + tag + '>'; }).join('') + '</tr>';
+      }).join('');
+      const win = window.open('', '_blank');
+      if (!win) { alert('Allow pop-ups to export PDF'); return; }
+      win.document.write(
+        '<!DOCTYPE html><html><head><title>selfcure crawl</title>' +
+        '<style>body{font:12px/1.5 Arial,sans-serif;padding:16px;color:#111}' +
+        'h1{font-size:13px;font-family:monospace;margin:0 0 10px}' +
+        'table{width:100%;border-collapse:collapse;font-size:11px}' +
+        'th,td{border:1px solid #ccc;padding:4px 8px;text-align:left}' +
+        'th{background:#f3f4f6;font-weight:600}' +
+        'tr:nth-child(even) td{background:#fafafa}' +
+        '@media print{@page{size:landscape;margin:8mm}button{display:none}}' +
+        '</style></head>' +
+        '<body onload="window.print()">' +
+        '<h1>selfcure &middot; crawl export &middot; ' + new Date().toLocaleDateString() + ' &middot; ' + data.length + ' page(s)</h1>' +
+        '<table><tbody>' + htmlRows + '</tbody></table>' +
+        '</body></html>'
+      );
+      win.document.close();
+    }
+  }
+
+  exportBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    exportMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', function() { exportMenu.classList.remove('open'); });
+  exportMenu.addEventListener('click', function(e) {
+    const item = e.target.closest('.export-item');
+    if (!item) return;
+    const data   = item.dataset.scope === 'all' ? crawlData : getFiltered();
+    const suffix = item.dataset.scope === 'all' ? 'all' : 'view';
+    exportData(data, item.dataset.fmt, suffix);
+    exportMenu.classList.remove('open');
+  });
+
+  // ── Per-card column sorting ───────────────────────────────────────────────
+  componentList.addEventListener('click', function(e) {
+    const th = e.target.closest('th.sortable');
+    if (!th) return;
+    const table = th.closest('table.elem-table');
+    if (!table) return;
+    const path = table.dataset.path;
+    const col  = th.dataset.col;
+    const cur  = cardSortState[path];
+    const dir  = (cur && cur.col === col && cur.dir === 'asc') ? 'desc' : 'asc';
+    cardSortState[path] = { col: col, dir: dir };
+    const item = crawlData.find(function(d) { return d.filePath === path; });
+    if (!item) return;
+    table.outerHTML = renderElements(item.interactiveElements, path, col, dir);
   });
 </script>
 </body>
