@@ -29,6 +29,19 @@ export interface LintIssue {
   componentName:   string;
   element:         InteractiveElement;
   suggestedTestId: string;
+  /**
+   * Why this element was flagged:
+   *   • `'ambiguous'` — best selector matches more than one element in the
+   *     same component (Playwright would resolve to multiple nodes).
+   *   • `'low-score'` — testability score is below the configured threshold.
+   * An ambiguous element is always also low-score (it has been penalised),
+   * but `'ambiguous'` wins because the required fix is different: instead of
+   * adding a data-testid, the existing one (or sibling-shared anchor) must
+   * be rewritten to a unique value.
+   */
+  kind:            'ambiguous' | 'low-score';
+  /** Set when kind === 'ambiguous'; mirrored from element.ambiguityReason */
+  ambiguityReason?: string;
   /** Populated after --fix runs */
   fixApplied?:     boolean;
 }
@@ -78,41 +91,87 @@ function escRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+/** Pull the bare value out of a CSS-style selector fragment like `[aria-label="x"]`. */
+function unwrap(sel: string | undefined, attr: 'name' | 'aria-label'): string | undefined {
+  if (!sel) return undefined;
+  const m = sel.match(new RegExp(`\\[${attr}=["']?([^"'\\]]+)["']?\\]`));
+  return m?.[1];
+}
+
+function existingTestId(el: InteractiveElement): string | undefined {
+  const m = el.selectors.dataTestId?.match(/\[data-testid=["']?([^"'\]]+)["']?\]/);
+  return m?.[1];
+}
+
 /**
- * Try to inject `data-testid="<id>"` into the source text at the element's location.
- * Matches based on the best available identifying attribute (id, name, aria-label).
- * Returns the (possibly unchanged) source string.
+ * Make every issue's `suggestedTestId` unique within its file by appending a
+ * numeric suffix (`-2`, `-3`, …) when collisions occur. Without this, two
+ * ambiguous siblings with the same label would both be patched to the SAME
+ * data-testid — leaving the locator ambiguous after the "fix".
+ */
+function dedupeTestIdsPerFile(issuesByFile: Map<string, LintIssue[]>): void {
+  for (const fileIssues of issuesByFile.values()) {
+    const used = new Map<string, number>();
+    for (const issue of fileIssues) {
+      const base = issue.suggestedTestId;
+      const n = (used.get(base) ?? 0) + 1;
+      used.set(base, n);
+      if (n > 1) issue.suggestedTestId = `${base}-${n}`;
+    }
+  }
+}
+
+/**
+ * Patch the source for a single issue. Two modes:
+ *
+ *   • REPLACE — when an ambiguous element already has a `data-testid` (the
+ *     ambiguity *is* the shared testid), rewrite the value of that attribute
+ *     to the new unique id.
+ *   • ADD — locate the element via a reliable identifying attribute
+ *     (`id` / `name` / `aria-label`) and inject `data-testid="<id>"`.
+ *
+ * Both modes patch exactly ONE occurrence per call (via the `done` flag), so
+ * iterating over sibling issues that share the same identifying attribute
+ * naturally walks down the source one element at a time.
  */
 function patchSource(source: string, issue: LintIssue, testId: string): string {
-  const sels = issue.element.selectors;
+  // ── REPLACE: ambiguous data-testid → rewrite value ─────────────────────
+  const existing = existingTestId(issue.element);
+  if (issue.kind === 'ambiguous' && existing && existing !== testId) {
+    const pat = new RegExp(`(\\bdata-testid=["'])${escRe(existing)}(["'])`, 'g');
+    let done = false;
+    return source.replace(pat, (m, pre, post) => {
+      if (done) return m;
+      done = true;
+      return `${pre}${testId}${post}`;
+    });
+  }
 
-  // Resolve a reliable identifying attribute+value pair
-  let attr: string | undefined;
+  // ── ADD: inject a new data-testid via an identifying attr+val pair ─────
+  const sels = issue.element.selectors;
+  let attr: 'id' | 'name' | 'aria-label' | undefined;
   let val:  string | undefined;
 
   if (sels.id) {
     attr = 'id';
     val  = sels.id.replace(/^#/, '');
-  } else if (sels.name) {
-    const m = sels.name.match(/\[name=["']?([^"'\]]+)["']?\]/);
-    if (m) { attr = 'name'; val = m[1]; }
-  } else if (sels.ariaLabel) {
-    const m = sels.ariaLabel.match(/\[aria-label=["']?([^"'\]]+)["']?\]/);
-    if (m) { attr = 'aria-label'; val = m[1]; }
+  } else if ((val = unwrap(sels.name, 'name'))) {
+    attr = 'name';
+  } else if ((val = unwrap(sels.ariaLabel, 'aria-label'))) {
+    attr = 'aria-label';
   }
 
   if (!attr || !val) return source; // cannot safely locate element
 
-  // Match an opening HTML/JSX tag that contains this attr="val" without data-testid
   const pat = new RegExp(
     `(<[a-zA-Z][^>]*?\\b${escRe(attr)}=["']${escRe(val)}["'][^>]*?)(?=\\s*/?>)`,
     'g',
   );
 
-  let patched = false;
+  let done = false;
   return source.replace(pat, (match) => {
-    if (patched || match.includes('data-testid')) return match;
-    patched = true;
+    if (done || match.includes('data-testid')) return match;
+    done = true;
     return `${match} data-testid="${testId}"`;
   });
 }
@@ -140,28 +199,34 @@ export async function runLint(
 
   for (const r of results) {
     r.interactiveElements.forEach((el, i) => {
-      if (el.testabilityScore < opts.threshold) {
-        issues.push({
-          filePath:        r.component.filePath,
-          componentName:   r.component.componentName,
-          element:         el,
-          suggestedTestId: suggestTestId(el, i),
-        });
-      }
+      const isAmbiguous = el.ambiguous;
+      const isLowScore  = el.testabilityScore < opts.threshold;
+      if (!isAmbiguous && !isLowScore) return;
+      issues.push({
+        filePath:        r.component.filePath,
+        componentName:   r.component.componentName,
+        element:         el,
+        suggestedTestId: suggestTestId(el, i),
+        kind:            isAmbiguous ? 'ambiguous' : 'low-score',
+        ambiguityReason: el.ambiguityReason,
+      });
     });
   }
+
+  // Ensure no two issues in the same file end up with the same suggestedTestId —
+  // otherwise --fix would replace one ambiguity with a new one.
+  const byFile = new Map<string, LintIssue[]>();
+  for (const issue of issues) {
+    if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
+    byFile.get(issue.filePath)!.push(issue);
+  }
+  dedupeTestIdsPerFile(byFile);
 
   let fixedCount   = 0;
   let skippedCount = 0;
 
   // ── 3. Apply patches (Pro: --fix) ─────────────────────────────────────────
   if (opts.fix && issues.length) {
-    const byFile = new Map<string, LintIssue[]>();
-    for (const issue of issues) {
-      if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
-      byFile.get(issue.filePath)!.push(issue);
-    }
-
     for (const [filePath, fileIssues] of byFile) {
       let source  = await readFile(filePath, 'utf-8');
       let updated = source;
@@ -190,18 +255,36 @@ export async function runLint(
     const cwd    = path.resolve(config.rootDir);
     const branch = `selfcure/lint-fix-${Date.now()}`;
 
-    const applied = issues.filter(i => i.fixApplied);
+    const applied      = issues.filter(i => i.fixApplied);
+    const ambiguousCnt = applied.filter(i => i.kind === 'ambiguous').length;
+    const lowScoreCnt  = applied.length - ambiguousCnt;
+
+    const summary: string[] = [];
+    if (lowScoreCnt > 0) {
+      summary.push(
+        `- **${lowScoreCnt}** element(s) with unstable selectors ` +
+        `(testability score < ${opts.threshold}/100) — added \`data-testid\`.`,
+      );
+    }
+    if (ambiguousCnt > 0) {
+      summary.push(
+        `- **${ambiguousCnt}** ambiguous locator(s) — rewrote \`data-testid\` ` +
+        `(or added one) so each element resolves to exactly one node.`,
+      );
+    }
+
     const body = [
       '## selfcure lint — automated `data-testid` patches',
       '',
-      `Adds \`data-testid\` attributes to **${fixedCount}** interactive element(s) ` +
-      `detected by \`selfcure lint\` as having unstable selectors ` +
-      `(testability score < ${opts.threshold}/100).`,
+      `Total elements patched: **${fixedCount}**.`,
+      '',
+      ...summary,
       '',
       '### Changes',
       ...applied.map(
         i => `- \`${path.relative(cwd, i.filePath)}\` — \`${i.element.type}\` ` +
-             `→ \`data-testid="${i.suggestedTestId}"\``,
+             `→ \`data-testid="${i.suggestedTestId}"\`` +
+             (i.kind === 'ambiguous' ? ' _(ambiguous)_' : ''),
       ),
       '',
       '> _Generated automatically by [selfcure](https://github.com/ricardofrancocustodio/selfcure)_',

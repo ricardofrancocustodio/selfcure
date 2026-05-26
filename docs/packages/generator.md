@@ -88,16 +88,31 @@ Generate a complete, runnable Playwright TypeScript test file for the component 
 - Testability score: <score>/100
 
 ## Interactive elements
-- button [role=button, aria-label="Submit"] — actions: click
-- input  [placeholder="Email"]             — actions: fill, clear
+- button [#submit] — actions: click
+- input  [[name="email"]] ⚠ ambiguous — actions: fill, clear
+
+## Ambiguous locators                  ← only when ≥1 element is ambiguous
+The following elements have no unique locator in this component — multiple
+nodes share the best available selector. For each, narrow the locator
+(e.g. page.getByRole('button', { name: ... }), .filter({ hasText }), .nth(i),
+or scope under a parent) so each test targets exactly one node:
+- input [[name="email"]] — label: "Email" (Selector `[name="email"]` (name) matches 2 elements …)
 
 ## Rules
 - Use @playwright/test imports only.
 - Each test must be independent (no shared state).
 - Use accessible-name selectors (getByRole, getByLabel) over CSS selectors.
+- For elements flagged as ambiguous, never use the bare selector — always
+  combine with a name, text, or scoping locator so the query resolves to
+  exactly one node.
 - Include at least one positive and one negative test case per element.
 - Output ONLY the TypeScript code, no markdown fences.
 ```
+
+Elements flagged `ambiguous` by the analyzer are annotated inline with
+`⚠ ambiguous` and listed in the dedicated **Ambiguous locators** section so
+the model is explicitly steered toward unique locators. When no elements are
+ambiguous, that section is omitted.
 
 The prompt is plain text — provider-agnostic — and works the same against every
 supported model.

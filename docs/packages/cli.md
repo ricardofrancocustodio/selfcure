@@ -29,15 +29,16 @@ Options:
 
 ## `selfcure lint` (Pro)
 
-Scans source files for interactive elements (button, input, link, form) with a testability
-score below `--threshold` (default 65/100) — meaning they lack a stable selector such as
-`data-testid`, `id`, or `aria-label`.
+Scans source files for interactive elements (button, input, link, form) and flags two kinds of issues:
+
+- **`low-score`** — testability score below `--threshold` (default 65/100): the element lacks a stable selector such as `data-testid`, `id`, or `aria-label`.
+- **`ambiguous`** — the element's best selector matches more than one element in the same component, so Playwright would resolve to multiple nodes. The analyzer detects this during scoring (see [analyzer.md → Ambiguity detection](analyzer.md#ambiguity-detection)). Each flagged `LintIssue` carries a `kind` field and, when ambiguous, an `ambiguityReason` string.
 
 ```
 selfcure lint [options]
 
   --threshold <n>   Flag elements with testability score below n  [default: 65]
-  --fix             [Pro] Inject data-testid attributes into matching source files
+  --fix             [Pro] Inject or rewrite data-testid attributes in source files
   --pr              [Pro] Commit fixes to a new branch and open a GitHub PR
 ```
 
@@ -74,6 +75,17 @@ The suggestion is derived (in priority order) from:
 5. `<type>-<index>` fallback (e.g. `button-3`)
 
 All values are kebab-cased.
+
+**Per-file uniqueness.** After suggestions are generated, lint deduplicates them within each file by appending a numeric suffix (`-2`, `-3`, …) when two issues would otherwise produce the same `data-testid`. This guarantees that fixing ambiguous siblings produces *distinct* locators — otherwise two `<button aria-label="Submit">` siblings would both be patched to `data-testid="submit"` and remain ambiguous.
+
+### `--fix` modes
+
+For each flagged element, `--fix` chooses one of two patch modes:
+
+- **ADD** (default) — locate the element via its `id` / `name` / `aria-label` attribute and inject a new `data-testid="<suggested>"`.
+- **REPLACE** — used when an element flagged as `ambiguous` already has a `data-testid` (i.e. the testid itself is shared with a sibling). Lint rewrites the existing `data-testid` value to the new unique one instead of adding a duplicate attribute.
+
+When the same identifying attribute (e.g. `aria-label="Submit"`) repeats in the source, each iteration of the patcher targets the next unpatched occurrence — so a file with N ambiguous siblings is patched N times, each with the corresponding unique test-id.
 
 ## Pipeline (`selfcure run`)
 

@@ -20,18 +20,41 @@ const results = await analyze(components);
 type ElementType = 'button' | 'input' | 'link' | 'form' | 'custom';
 type Complexity  = 'low' | 'medium' | 'high';
 
+interface SelectorCandidate {
+  strategy: 'data-testid' | 'id' | 'aria-label' | 'name' | 'css' | 'xpath';
+  /** Ready-to-use selector string */
+  value: string;
+  /** Stability score 0–100 (after ambiguity penalty) */
+  score: number;
+  /** How many elements within the same component match this selector value */
+  matchCount?: number;
+  /** How many elements across all analysed components match this selector value */
+  crossMatchCount?: number;
+  /** True when the selector matches more than one element in the same component */
+  ambiguous?: boolean;
+}
+
 interface InteractiveElement {
   type: ElementType;
-  /** Best CSS / ARIA selector for Playwright */
+  /** Best selector — always equals selectorRanking[0].value */
   selector: string;
   label?: string;
   /** e.g. ['click', 'fill', 'check'] */
   actions: string[];
+  selectors: ElementSelectors;
+  /** Candidates sorted from most stable (index 0) to least stable */
+  selectorRanking: SelectorCandidate[];
+  /** Testability score 0–100 for this element (= selectorRanking[0].score) */
+  testabilityScore: number;
+  /** True when the best selector also matches another element in the same component */
+  ambiguous: boolean;
+  /** Human-readable explanation when `ambiguous` is true */
+  ambiguityReason?: string;
 }
 
 interface AnalysisResult {
   component: ComponentMeta;
-  /** Testability score 0–100 */
+  /** Average element testability score, 0–100 */
   score: number;
   interactiveElements: InteractiveElement[];
   complexity: Complexity;
@@ -40,11 +63,29 @@ interface AnalysisResult {
 
 ## Scoring heuristic
 
-```
-score = min(100, 40 + labelled_elements × 15)
-```
+Per-element score equals the top-ranked `SelectorCandidate.score`:
 
-A component with zero labelled elements scores **40** (baseline). Each additional labelled interactive element adds **15** points, capped at **100**.
+| Strategy available | Base score |
+|--------------------|-----------:|
+| `data-testid`      | 100 |
+| `id`               |  85 |
+| `aria-label`       |  75 |
+| `name`             |  65 |
+| `input[type=…]`    |  35 |
+| xpath              |  20 |
+| bare tag           |  10 |
+
+The component-level `score` is the average of per-element `testabilityScore` values, or **40** for components with no interactive elements.
+
+## Ambiguity detection
+
+After collecting every interactive element in a component, the analyzer counts how many elements share each candidate selector value. When **more than one** element in the same component matches a candidate:
+
+- The candidate is flagged `ambiguous: true`.
+- Its score is multiplied by `0.4` (so an ambiguous `data-testid` drops 100 → 40 — below the default lint threshold of 65).
+- After penalties are applied, the `selectorRanking` is re-sorted and the element's `selector` + `testabilityScore` are derived from the new top candidate. If the new top candidate is still ambiguous, the element is flagged `ambiguous: true` with an `ambiguityReason` explaining why.
+
+Cross-component matches (the same selector value appearing in two different components) are recorded on each candidate as `crossMatchCount` but do **not** apply a score penalty — Playwright tests on different pages legitimately reuse identifiers.
 
 ## Complexity thresholds
 

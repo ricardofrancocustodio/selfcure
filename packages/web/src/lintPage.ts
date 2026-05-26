@@ -151,7 +151,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .diff-area { flex: 1; min-width: 0; padding: 16px 16px 60px; }
 
     /* ── Diff card (per file) ────────────────────────────────────────────── */
-    .diff-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+    .diff-card { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 40px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     .diff-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--canvas); border-bottom: 1px solid var(--border); cursor: pointer; user-select: none; }
     .diff-head:hover { background: var(--canvas-sub); }
     .caret { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 10px; padding: 2px 4px; line-height: 1; flex-shrink: 0; }
