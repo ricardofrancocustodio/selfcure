@@ -1,6 +1,8 @@
 import http from 'node:http';
 import fs from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { analyze, type InteractiveElement } from '@selfcure/analyzer';
@@ -266,6 +268,95 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// PR creation (mirrors packages/cli/src/lint.ts — no circular dep allowed)
+// ---------------------------------------------------------------------------
+
+interface PrRequestBody {
+  patchedFiles: string[];   // absolute paths of already-patched files
+  fixedCount:   number;
+  branch:       string;
+  title:        string;
+  body:         string;    // markdown body, pre-formatted by the client
+}
+
+async function runCreatePr(cwd: string, reqBody: PrRequestBody): Promise<{ prUrl: string }> {
+  const { patchedFiles, branch, title, body } = reqBody;
+
+  if (!patchedFiles || patchedFiles.length === 0) {
+    throw new Error('No patched files provided. Run lint with Auto-fix first.');
+  }
+  if (!branch || !title) {
+    throw new Error('Branch name and title are required.');
+  }
+
+  // 1. Find git root (may differ from cwd if server was started in a subdir)
+  let gitRoot: string;
+  try {
+    gitRoot = execSync('git rev-parse --show-toplevel', { cwd, encoding: 'utf-8', stdio: 'pipe' }).trim();
+  } catch {
+    throw new Error('Not a git repository. Initialize git first: git init && git remote add origin <url>');
+  }
+
+  // 2. Verify gh CLI is authenticated
+  try {
+    execSync('gh auth status', { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' });
+  } catch {
+    throw new Error('GitHub CLI not authenticated. Run: gh auth login');
+  }
+
+  // 3. Validate that patched files still exist on disk
+  const missing = patchedFiles.filter((f) => !fs.existsSync(f));
+  if (missing.length > 0) {
+    throw new Error(`Patched file(s) not found on disk: ${missing.join(', ')}`);
+  }
+
+  // 4. Create the new branch
+  try {
+    execSync(`git checkout -b ${JSON.stringify(branch)}`, { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to create branch "${branch}": ${msg}`);
+  }
+
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'selfcure-pr-'));
+  let prUrl: string;
+  try {
+    const bodyFile = path.join(tmpDir, 'pr-body.md');
+    await writeFile(bodyFile, body, 'utf-8');
+
+    // Stage only the specific patched files (relative to git root)
+    const relFiles = patchedFiles.map((f) => path.relative(gitRoot, f));
+    execSync(
+      `git add -- ${relFiles.map((f) => JSON.stringify(f)).join(' ')}`,
+      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
+    );
+
+    // Commit using the PR title as the commit message
+    execSync(
+      `git commit -m ${JSON.stringify(title)}`,
+      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
+    );
+
+    // Push the new branch
+    execSync(
+      `git push -u origin ${JSON.stringify(branch)}`,
+      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
+    );
+
+    // Create the PR and capture the URL
+    const raw = execSync(
+      `gh pr create --title ${JSON.stringify(title)} --body-file ${JSON.stringify(bodyFile)} --head ${JSON.stringify(branch)}`,
+      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
+    ).trim();
+    prUrl = raw.split('\n').filter((l) => l.startsWith('https://')).pop() ?? raw;
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+
+  return { prUrl };
+}
+
 function listProviders(): {
   providers: ProviderListEntry[];
   suggested: ProviderId;
@@ -435,6 +526,20 @@ export function startWebServer(
         .catch((err) => {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: String(err) }));
+        });
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/pr') {
+      readJsonBody(req)
+        .then((rawBody) => runCreatePr(cwd, rawBody as PrRequestBody))
+        .then((result) => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        })
+        .catch((err) => {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
         });
       return;
     }

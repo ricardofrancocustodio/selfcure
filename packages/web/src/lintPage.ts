@@ -242,9 +242,31 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .state-title { font-size: 15px; font-weight: 600; }
     .state-body  { font-size: 13px; color: var(--muted); max-width: 380px; }
     .state-ok .state-title { color: var(--success); }
-    /* PR banner */
+    /* PR banner (inline in diff area, from CLI --pr) */
     .pr-banner { display: flex; align-items: center; gap: 10px; background: var(--success-bg); border: 1px solid var(--success); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; }
     .pr-banner a { color: var(--accent); font-weight: 600; }
+    /* PR compare & pull request section */
+    .pr-section { padding: 0 16px 14px; }
+    .pr-compare-banner { display: flex; align-items: center; gap: 14px; background: var(--success-bg); border: 1px solid rgba(26,127,55,0.4); border-radius: 6px; padding: 14px 18px; }
+    .pr-compare-info { flex: 1; }
+    .pr-compare-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .pr-compare-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+    .btn-compare { background: var(--success); color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-compare:hover { opacity: 0.88; }
+    .btn-compare:disabled { opacity: 0.55; cursor: not-allowed; }
+    .pr-form-wrap { background: var(--canvas); border: 1px solid var(--border); border-radius: 6px; padding: 20px 24px; }
+    .pr-form-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .pr-field { margin-bottom: 12px; }
+    .pr-field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .pr-field input[type="text"] { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--border-hi); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 13px; padding: 7px 12px; outline: none; }
+    .pr-field textarea { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--border-hi); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 11px; padding: 7px 12px; resize: vertical; outline: none; line-height: 1.5; }
+    .pr-field input[type="text"]:focus, .pr-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9,105,218,0.15); }
+    .pr-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .btn-create-pr { background: var(--success); color: #fff; border: none; border-radius: 6px; padding: 7px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-create-pr:hover { opacity: 0.88; }
+    .btn-create-pr:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-cancel-pr { background: none; border: 1px solid var(--border-hi); border-radius: 6px; color: var(--text); font-size: 13px; padding: 7px 14px; cursor: pointer; }
+    .btn-cancel-pr:hover { background: var(--canvas-sub); }
     /* spinner */
     .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border-hi); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -285,11 +307,47 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     <span>Auto-fix</span>
     <span class="pro-hint">— inject data-testid into source files</span>
   </label>
-  <label class="pro-opt">
-    <input type="checkbox" id="prCheck" disabled>
-    <span>Open GitHub PR</span>
-    <span class="pro-hint">— requires Auto-fix</span>
-  </label>
+</div>
+
+<div id="prSection" hidden>
+  <div id="prBanner" class="pr-section">
+    <div class="pr-compare-banner">
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="color:var(--success);flex-shrink:0" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
+      <div class="pr-compare-info">
+        <div class="pr-compare-title">selfcure applied <strong id="prFixedCount">0</strong> fix(es) &mdash; want to open a pull request?</div>
+        <div class="pr-compare-sub">Branch, title and description are pre-filled. Review and submit.</div>
+      </div>
+      <button id="openPrFormBtn" class="btn-compare">Compare &amp; pull request</button>
+    </div>
+  </div>
+  <div id="prForm" class="pr-section" hidden>
+    <div class="pr-form-wrap">
+      <div class="pr-form-head">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
+        Open a pull request
+      </div>
+      <div class="pr-field">
+        <label for="prBranch">Branch name</label>
+        <input id="prBranch" type="text" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="pr-field">
+        <label for="prTitle">Title</label>
+        <input id="prTitle" type="text" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="pr-field">
+        <label for="prBody">Description</label>
+        <textarea id="prBody" rows="12" spellcheck="false"></textarea>
+      </div>
+      <div class="pr-row-actions">
+        <button id="cancelPrBtn" class="btn-cancel-pr">Cancel</button>
+        <button id="submitPrBtn" class="btn-create-pr">Create pull request</button>
+      </div>
+      <div id="prError" class="run-error" style="margin-top:10px" hidden role="alert"></div>
+    </div>
+  </div>
+  <div id="prResult" class="pr-section" hidden>
+    <div class="pr-banner" id="prResultBanner"></div>
+  </div>
 </div>
 
 <div id="diffSum" class="diff-sum" hidden>
@@ -338,7 +396,6 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   const runStatus = $('runStatus');
   const errorMsg  = $('errorMsg');
   const fixCheck  = $('fixCheck');
-  const prCheck   = $('prCheck');
   const diffSum   = $('diffSum');
   const sumFiles  = $('sumFiles');
   const sumIssues = $('sumIssues');
@@ -352,14 +409,24 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   const diffArea  = $('diffArea');
 
   let allExpanded = true;
+  let lastResult  = null;
+
+  const prSection      = $('prSection');
+  const prFixedCount   = $('prFixedCount');
+  const prBannerEl     = $('prBanner');
+  const openPrFormBtn  = $('openPrFormBtn');
+  const prFormEl       = $('prForm');
+  const prBranchInput  = $('prBranch');
+  const prTitleInput   = $('prTitle');
+  const prBodyArea     = $('prBody');
+  const submitPrBtn    = $('submitPrBtn');
+  const cancelPrBtn    = $('cancelPrBtn');
+  const prErrorEl      = $('prError');
+  const prResultEl     = $('prResult');
+  const prResultBanner = $('prResultBanner');
 
   thrInput.addEventListener('input', () => {
     thrLabel.textContent = 'score < ' + (thrInput.value || '65');
-  });
-
-  fixCheck.addEventListener('change', () => {
-    prCheck.disabled = !fixCheck.checked;
-    if (!fixCheck.checked) prCheck.checked = false;
   });
 
   toggleAll.addEventListener('click', () => {
@@ -380,16 +447,16 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     e.preventDefault();
     runBtn.disabled = true;
     runStatus.innerHTML = '<span class="spinner"></span> Running\u2026';
-    errorMsg.hidden = true;
-    diffSum.hidden  = true;
-    sidebar.hidden  = true;
+    errorMsg.hidden  = true;
+    diffSum.hidden   = true;
+    sidebar.hidden   = true;
+    prSection.hidden = true;
     diffArea.innerHTML = '';
 
     const body = {
       configPath: cfgInput.value.trim() || 'selfcure.config.mjs',
       threshold:  Number(thrInput.value) || 65,
       fix:  fixCheck.checked,
-      pr:   prCheck.checked && fixCheck.checked,
     };
 
     try {
@@ -397,6 +464,8 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lint failed');
       render(data, body.threshold);
+      lastResult = data;
+      if (data.fixedCount > 0) showPrSection(data, body.threshold);
     } catch (err) {
       errorMsg.textContent = String(err.message || err);
       errorMsg.hidden = false;
@@ -644,6 +713,112 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 
     diffArea.innerHTML = html;
   }
+
+  /* ── PR helpers ──────────────────────────────────────────────────────── */
+  function buildPrBody(data, threshold) {
+    const applied = (data.issues || []).filter(function(i) { return i.fixApplied; });
+    const byFile  = {};
+    for (const i of applied) {
+      const key = i.filePath.split('\\\\').join('/');
+      if (!byFile[key]) byFile[key] = [];
+      byFile[key].push(i.suggestedTestId);
+    }
+    const total     = applied.length;
+    const ambiguous = applied.filter(function(i) { return i.kind === 'ambiguous'; }).length;
+    const lowScore  = total - ambiguous;
+    const fileRows  = Object.entries(byFile).map(function(e) {
+      const f = e[0]; const ids = e[1];
+      return '| \`' + f + '\` | ' + ids.length + ' | ' + ids.map(function(id) { return '\`data-testid="' + id + '"\`'; }).join(', ') + ' |';
+    });
+    const why = [];
+    if (lowScore > 0)  why.push('- **' + lowScore + '** element(s) had no stable selector (score < ' + threshold + '/100) \u2014 \`data-testid\` added.');
+    if (ambiguous > 0) why.push('- **' + ambiguous + '** locator(s) matched multiple elements \u2014 \`data-testid\` rewritten to a unique value.');
+    return [
+      '## selfcure lint \u2014 automated \`data-testid\` patches',
+      '',
+      '| Metric | Value |',
+      '|--------|-------|',
+      '| Files changed | ' + Object.keys(byFile).length + ' |',
+      '| Elements patched | ' + data.fixedCount + ' |',
+      '',
+      '### Changed files',
+      '',
+      '| File | Elements | Attributes added |',
+      '|------|----------|-----------------|',
+    ].concat(fileRows).concat([
+      '',
+      '### Why these changes?',
+      '',
+    ]).concat(why).concat([
+      '',
+      '> **Review before merging** \u2014 rename any \`data-testid\` value that does not match your naming convention.',
+      '> _Generated automatically by [selfcure](https://github.com/ricardofrancocustodio/selfcure)._',
+    ]).join('\n');
+  }
+
+  function showPrSection(data, threshold) {
+    prFixedCount.textContent = data.fixedCount;
+    prSection.hidden    = false;
+    prBannerEl.hidden   = false;
+    prFormEl.hidden     = true;
+    prResultEl.hidden   = true;
+    prErrorEl.hidden    = true;
+    const date  = new Date().toISOString().slice(0, 10);
+    const short = Date.now().toString(36).slice(-4);
+    prBranchInput.value = 'selfcure/lint-fix-' + date + '-' + short;
+    prTitleInput.value  = 'chore(testids): add data-testid to ' + data.fixedCount + ' element(s) \u2014 selfcure lint';
+    prBodyArea.value    = buildPrBody(data, threshold);
+  }
+
+  openPrFormBtn.addEventListener('click', function() {
+    prBannerEl.hidden = true;
+    prFormEl.hidden   = false;
+  });
+
+  cancelPrBtn.addEventListener('click', function() {
+    prFormEl.hidden   = true;
+    prBannerEl.hidden = false;
+    prErrorEl.hidden  = true;
+  });
+
+  submitPrBtn.addEventListener('click', async function() {
+    if (!lastResult) return;
+    const seen = {};
+    const patchedFiles = (lastResult.issues || [])
+      .filter(function(i) { return i.fixApplied; })
+      .map(function(i) { return i.filePath; })
+      .filter(function(f) { if (seen[f]) return false; seen[f] = true; return true; });
+    submitPrBtn.disabled    = true;
+    cancelPrBtn.disabled    = true;
+    submitPrBtn.textContent = 'Creating\u2026';
+    prErrorEl.hidden        = true;
+    try {
+      const resp  = await fetch('/api/pr', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          patchedFiles,
+          fixedCount: lastResult.fixedCount,
+          branch:     prBranchInput.value.trim(),
+          title:      prTitleInput.value.trim(),
+          body:       prBodyArea.value,
+        }),
+      });
+      const rdata = await resp.json();
+      if (!resp.ok) throw new Error(rdata.error || 'PR creation failed');
+      prFormEl.hidden   = true;
+      prBannerEl.hidden = true;
+      prResultEl.hidden = false;
+      prResultBanner.innerHTML = '&#128279; Pull request created: <a href="' + esc(rdata.prUrl) + '" target="_blank" rel="noreferrer">' + esc(rdata.prUrl) + '</a>';
+    } catch (err) {
+      prErrorEl.textContent = String(err.message || err);
+      prErrorEl.hidden      = false;
+    } finally {
+      submitPrBtn.disabled    = false;
+      cancelPrBtn.disabled    = false;
+      submitPrBtn.textContent = 'Create pull request';
+    }
+  });
 
   window.toggleCard = function (hd) {
     const body = hd.nextElementSibling;
