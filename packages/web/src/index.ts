@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { analyze, type InteractiveElement } from '@selfcure/analyzer';
 import { crawl } from '@selfcure/crawler';
 import { PROVIDERS, type ProviderId } from '@selfcure/generator';
-import { generateConfig, type InitOptions } from './generator.js';
+import { generateConfig, type InitOptions, loadSession, clearSession, envKeyIsSet } from './generator.js';
 import { crawlPageHtml } from './crawlPage.js';
 import { initPageHtml } from './initPage.js';
 import { lintPageHtml } from './lintPage.js';
@@ -48,6 +48,10 @@ interface WebCrawlConfig {
   include: string[];
   exclude: string[];
   framework?: 'react' | 'vue' | 'angular' | 'auto';
+  /** Enables Pro features (auto-fix, open PR) without the SELFCURE_PRO env var. */
+  pro?: boolean;
+  /** Optional linter settings (currently just PR base branch). */
+  lint?: { prBaseBranch?: string };
 }
 
 interface CrawlRequestBody {
@@ -133,7 +137,6 @@ interface LintRequestBody {
   configPath?: string;
   threshold?: number;
   fix?: boolean;
-  pr?: boolean;
 }
 
 interface LintIssue {
@@ -141,6 +144,9 @@ interface LintIssue {
   componentName:   string;
   element:         InteractiveElement;
   suggestedTestId: string;
+  /** See packages/cli/src/lint.ts → LintIssue.kind for semantics */
+  kind:            'ambiguous' | 'low-score';
+  ambiguityReason?: string;
   fixApplied?:     boolean;
 }
 
@@ -171,19 +177,55 @@ function escRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function unwrap(sel: string | undefined, attr: 'name' | 'aria-label'): string | undefined {
+  if (!sel) return undefined;
+  const m = sel.match(new RegExp(`\\[${attr}=["']?([^"'\\]]+)["']?\\]`));
+  return m?.[1];
+}
+
+function existingTestId(el: InteractiveElement): string | undefined {
+  const m = el.selectors.dataTestId?.match(/\[data-testid=["']?([^"'\]]+)["']?\]/);
+  return m?.[1];
+}
+
+/** Make every suggested testId unique within its file (see CLI counterpart). */
+function dedupeTestIdsPerFile(issuesByFile: Map<string, LintIssue[]>): void {
+  for (const fileIssues of issuesByFile.values()) {
+    const used = new Map<string, number>();
+    for (const issue of fileIssues) {
+      const base = issue.suggestedTestId;
+      const n = (used.get(base) ?? 0) + 1;
+      used.set(base, n);
+      if (n > 1) issue.suggestedTestId = `${base}-${n}`;
+    }
+  }
+}
+
 function patchSource(source: string, issue: LintIssue, testId: string): string {
+  // REPLACE: ambiguous element already has a (shared) data-testid → rewrite value.
+  const existing = existingTestId(issue.element);
+  if (issue.kind === 'ambiguous' && existing && existing !== testId) {
+    const pat = new RegExp(`(\\bdata-testid=["'])${escRe(existing)}(["'])`, 'g');
+    let done = false;
+    return source.replace(pat, (m, pre, post) => {
+      if (done) return m;
+      done = true;
+      return `${pre}${testId}${post}`;
+    });
+  }
+
+  // ADD: inject data-testid using an identifying attribute as anchor.
   const sels = issue.element.selectors;
-  let attr: string | undefined;
-  let val: string | undefined;
+  let attr: 'id' | 'name' | 'aria-label' | undefined;
+  let val:  string | undefined;
 
   if (sels.id) {
-    attr = 'id'; val = sels.id.replace(/^#/, '');
-  } else if (sels.name) {
-    const m = sels.name.match(/\[name=["']?([^"'\]]+)["']?\]/);
-    if (m) { attr = 'name'; val = m[1]; }
-  } else if (sels.ariaLabel) {
-    const m = sels.ariaLabel.match(/\[aria-label=["']?([^"'\]]+)["']?\]/);
-    if (m) { attr = 'aria-label'; val = m[1]; }
+    attr = 'id';
+    val  = sels.id.replace(/^#/, '');
+  } else if ((val = unwrap(sels.name, 'name'))) {
+    attr = 'name';
+  } else if ((val = unwrap(sels.ariaLabel, 'aria-label'))) {
+    attr = 'aria-label';
   }
 
   if (!attr || !val) return source;
@@ -192,10 +234,10 @@ function patchSource(source: string, issue: LintIssue, testId: string): string {
     `(<[a-zA-Z][^>]*?\\b${escRe(attr)}=["']${escRe(val)}["'][^>]*?)(?=\\s*/?>)`,
     'g',
   );
-  let patched = false;
+  let done = false;
   return source.replace(pat, (match) => {
-    if (patched || match.includes('data-testid')) return match;
-    patched = true;
+    if (done || match.includes('data-testid')) return match;
+    done = true;
     return `${match} data-testid="${testId}"`;
   });
 }
@@ -217,27 +259,33 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
   const issues: LintIssue[] = [];
   for (const r of results) {
     r.interactiveElements.forEach((el, i) => {
-      if (el.testabilityScore < threshold) {
-        issues.push({
-          filePath:        r.component.filePath,
-          componentName:   r.component.componentName,
-          element:         el,
-          suggestedTestId: suggestTestId(el, i),
-        });
-      }
+      const isAmbiguous = el.ambiguous;
+      const isLowScore  = el.testabilityScore < threshold;
+      if (!isAmbiguous && !isLowScore) return;
+      issues.push({
+        filePath:        r.component.filePath,
+        componentName:   r.component.componentName,
+        element:         el,
+        suggestedTestId: suggestTestId(el, i),
+        kind:            isAmbiguous ? 'ambiguous' : 'low-score',
+        ambiguityReason: el.ambiguityReason,
+      });
     });
   }
+
+  // Group + dedupe suggested test-ids per file so ambiguous siblings get
+  // distinct values (otherwise --fix would replace one ambiguity with another).
+  const byFile = new Map<string, LintIssue[]>();
+  for (const issue of issues) {
+    if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
+    byFile.get(issue.filePath)!.push(issue);
+  }
+  dedupeTestIdsPerFile(byFile);
 
   let fixedCount   = 0;
   let skippedCount = 0;
 
   if (body.fix && issues.length > 0) {
-    const byFile = new Map<string, LintIssue[]>();
-    for (const issue of issues) {
-      if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
-      byFile.get(issue.filePath)!.push(issue);
-    }
-
     for (const [filePath, fileIssues] of byFile) {
       let source  = await readFile(filePath, 'utf-8');
       let updated = source;
@@ -259,102 +307,291 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
     }
   }
 
+  // Pro is a UI hint — the actual gate lives on /api/pr where it matters.
+  const isPro = config.pro === true || process.env['SELFCURE_PRO'] === '1';
+
   return {
     issues,
     totalFiles:   results.length,
     fixedCount,
     skippedCount,
-    prUrl: undefined, // PR creation not supported from web UI (requires git + gh CLI auth)
+    pro: isPro,
   };
 }
 
 // ---------------------------------------------------------------------------
-// PR creation (mirrors packages/cli/src/lint.ts — no circular dep allowed)
+// One-shot PR flow — mirrors packages/cli/src/lint.ts (no circular dep allowed)
+//
+// Client sends the issue keys it wants to include. We rerun lint server-side,
+// apply patches only for the selected issues, then branch/commit/push/PR in
+// one atomic operation. The user never edits branch/title/body locally — they
+// edit on GitHub after the redirect.
 // ---------------------------------------------------------------------------
 
-interface PrRequestBody {
-  patchedFiles: string[];   // absolute paths of already-patched files
-  fixedCount:   number;
-  branch:       string;
-  title:        string;
-  body:         string;    // markdown body, pre-formatted by the client
+interface OpenPrRequestBody {
+  configPath?: string;
+  threshold?:  number;
+  /** Stable issue keys (`filePath|suggestedTestId`) the user selected. */
+  selectedKeys: string[];
 }
 
-async function runCreatePr(cwd: string, reqBody: PrRequestBody): Promise<{ prUrl: string }> {
-  const { patchedFiles, branch, title, body } = reqBody;
+function issueKey(filePath: string, suggestedTestId: string): string {
+  return `${filePath}|${suggestedTestId}`;
+}
 
-  if (!patchedFiles || patchedFiles.length === 0) {
-    throw new Error('No patched files provided. Run lint with Auto-fix first.');
+/** Resolve base branch: explicit config → repo default via `gh` → undefined. */
+function resolveBaseBranch(configured: string | undefined, gitRoot: string): string | undefined {
+  if (configured) return configured;
+  try {
+    const out = execSync(
+      'gh repo view --json defaultBranchRef --jq .defaultBranchRef.name',
+      { cwd: gitRoot, stdio: 'pipe', encoding: 'utf-8' },
+    ) as string;
+    const name = out.trim();
+    return name || undefined;
+  } catch {
+    return undefined;
   }
-  if (!branch || !title) {
-    throw new Error('Branch name and title are required.');
+}
+
+function buildPrBody(
+  applied: LintIssue[],
+  threshold: number,
+  patchedFiles: string[],
+  gitRoot: string,
+): string {
+  const ambiguousCnt = applied.filter((i) => i.kind === 'ambiguous').length;
+  const lowScoreCnt  = applied.length - ambiguousCnt;
+
+  const fileRows = patchedFiles.map((f) => {
+    const rel  = path.relative(gitRoot, f).replace(/\\/g, '/');
+    const fIss = applied.filter((i) => i.filePath === f);
+    const ids  = fIss.map((i) => `\`data-testid="${i.suggestedTestId}"\``).join(', ');
+    return `| \`${rel}\` | ${fIss.length} | ${ids} |`;
+  });
+
+  const why: string[] = [];
+  if (lowScoreCnt > 0) {
+    why.push(
+      `- **${lowScoreCnt}** element(s) had no stable selector ` +
+      `(score < ${threshold}/100) — \`data-testid\` added.`,
+    );
+  }
+  if (ambiguousCnt > 0) {
+    why.push(
+      `- **${ambiguousCnt}** locator(s) matched multiple elements in the same component ` +
+      `— \`data-testid\` rewritten to a unique value.`,
+    );
   }
 
-  // 1. Find git root (may differ from cwd if server was started in a subdir)
+  return [
+    '## selfcure lint — automated `data-testid` patches',
+    '',
+    '| Metric | Value |',
+    '|--------|-------|',
+    `| Files changed | ${patchedFiles.length} |`,
+    `| Elements patched | ${applied.length} |`,
+    `| Unstable selectors fixed | ${lowScoreCnt} |`,
+    `| Ambiguous locators fixed | ${ambiguousCnt} |`,
+    '',
+    '### Changed files',
+    '',
+    '| File | Elements | Attributes added |',
+    '|------|----------|-----------------|',
+    ...fileRows,
+    '',
+    '### Why these changes?',
+    '',
+    ...why,
+    '',
+    '> **Review before merging** — rename any `data-testid` value that does not match ' +
+    "your project's naming convention.",
+    '> _Generated automatically by [selfcure](https://github.com/ricardofrancocustodio/selfcure)._',
+  ].join('\n');
+}
+
+async function runOpenPr(cwd: string, reqBody: OpenPrRequestBody): Promise<{
+  prUrl: string;
+  fixedCount: number;
+  baseBranch?: string;
+  branch: string;
+}> {
+  const config    = await loadCrawlConfig(cwd, reqBody.configPath);
+  const threshold = reqBody.threshold ?? 65;
+  const selected  = new Set(reqBody.selectedKeys ?? []);
+
+  if (selected.size === 0) {
+    throw new Error('No issues selected. Tick at least one issue before opening a pull request.');
+  }
+
+  // ── 1. Pre-flight: git + gh ────────────────────────────────────────────
   let gitRoot: string;
   try {
-    gitRoot = execSync('git rev-parse --show-toplevel', { cwd, encoding: 'utf-8', stdio: 'pipe' }).trim();
+    gitRoot = execSync('git rev-parse --show-toplevel', {
+      cwd, encoding: 'utf-8', stdio: 'pipe',
+    }).trim();
   } catch {
-    throw new Error('Not a git repository. Initialize git first: git init && git remote add origin <url>');
+    throw new Error(
+      'Not a git repository. Open this folder inside a checked-out git repo ' +
+      'before creating a pull request.',
+    );
   }
 
-  // 2. Verify gh CLI is authenticated
   try {
-    execSync('gh auth status', { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' });
+    execSync('gh auth status', { cwd: gitRoot, stdio: 'pipe' });
   } catch {
-    throw new Error('GitHub CLI not authenticated. Run: gh auth login');
+    throw new Error(
+      'GitHub CLI (gh) is not installed or not authenticated. ' +
+      'Install from https://cli.github.com then run: gh auth login',
+    );
   }
 
-  // 3. Validate that patched files still exist on disk
-  const missing = patchedFiles.filter((f) => !fs.existsSync(f));
-  if (missing.length > 0) {
-    throw new Error(`Patched file(s) not found on disk: ${missing.join(', ')}`);
+  // ── 2. Re-run lint to get the authoritative issue list ─────────────────
+  const rootDir = path.resolve(cwd, config.rootDir);
+  const components = await crawl({
+    rootDir,
+    include: config.include,
+    exclude: config.exclude,
+    framework: config.framework,
+  });
+  const results = await analyze(components);
+
+  const allIssues: LintIssue[] = [];
+  for (const r of results) {
+    r.interactiveElements.forEach((el, i) => {
+      const isAmbiguous = el.ambiguous;
+      const isLowScore  = el.testabilityScore < threshold;
+      if (!isAmbiguous && !isLowScore) return;
+      allIssues.push({
+        filePath:        r.component.filePath,
+        componentName:   r.component.componentName,
+        element:         el,
+        suggestedTestId: suggestTestId(el, i),
+        kind:            isAmbiguous ? 'ambiguous' : 'low-score',
+        ambiguityReason: el.ambiguityReason,
+      });
+    });
   }
 
-  // 4. Create the new branch
+  const byFile = new Map<string, LintIssue[]>();
+  for (const issue of allIssues) {
+    if (!byFile.has(issue.filePath)) byFile.set(issue.filePath, []);
+    byFile.get(issue.filePath)!.push(issue);
+  }
+  dedupeTestIdsPerFile(byFile);
+
+  // ── 3. Apply patches ONLY for selected issues ──────────────────────────
+  const selectedIssues: LintIssue[] = [];
+  for (const fileIssues of byFile.values()) {
+    for (const issue of fileIssues) {
+      if (selected.has(issueKey(issue.filePath, issue.suggestedTestId))) {
+        selectedIssues.push(issue);
+      }
+    }
+  }
+
+  if (selectedIssues.length === 0) {
+    throw new Error(
+      'The selected issues no longer match the current source — re-run lint and try again.',
+    );
+  }
+
+  const selectedByFile = new Map<string, LintIssue[]>();
+  for (const issue of selectedIssues) {
+    if (!selectedByFile.has(issue.filePath)) selectedByFile.set(issue.filePath, []);
+    selectedByFile.get(issue.filePath)!.push(issue);
+  }
+
+  let fixedCount = 0;
+  const patchedFiles: string[] = [];
+  for (const [filePath, fileIssues] of selectedByFile) {
+    let source  = await readFile(filePath, 'utf-8');
+    let updated = source;
+    for (const issue of fileIssues) {
+      const patched = patchSource(updated, issue, issue.suggestedTestId);
+      if (patched !== updated) {
+        updated = patched;
+        issue.fixApplied = true;
+        fixedCount++;
+      }
+    }
+    if (updated !== source) {
+      await writeFile(filePath, updated, 'utf-8');
+      patchedFiles.push(filePath);
+    }
+  }
+
+  if (fixedCount === 0) {
+    throw new Error(
+      'Nothing to patch — selected elements already have a unique data-testid ' +
+      'or could not be located in the source.',
+    );
+  }
+
+  // ── 4. Resolve base branch + remember current branch ───────────────────
+  const baseBranch = resolveBaseBranch(config.lint?.prBaseBranch, gitRoot);
+
+  let originalBranch: string | undefined;
   try {
-    execSync(`git checkout -b ${JSON.stringify(branch)}`, { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`Failed to create branch "${branch}": ${msg}`);
-  }
+    const out = execSync('git rev-parse --abbrev-ref HEAD', {
+      cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe',
+    }).trim();
+    if (out && out !== 'HEAD') originalBranch = out;
+  } catch { /* keep undefined */ }
 
-  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'selfcure-pr-'));
+  // ── 5. Branch + commit + push + gh pr create ───────────────────────────
+  const date   = new Date().toISOString().slice(0, 10);
+  const short  = Date.now().toString(36).slice(-4);
+  const branch = `selfcure/lint-fix-${date}-${short}`;
+  const applied = selectedIssues.filter((i) => i.fixApplied);
+  const ambiguousCnt = applied.filter((i) => i.kind === 'ambiguous').length;
+  const title  =
+    `chore(testids): ${fixedCount} unique data-testid` +
+    (ambiguousCnt > 0 ? ` (incl. ${ambiguousCnt} ambiguous)` : '') +
+    ' — selfcure lint';
+
+  const body = buildPrBody(applied, threshold, patchedFiles, gitRoot);
+
+  const tmpDir   = await mkdtemp(path.join(os.tmpdir(), 'selfcure-pr-'));
+  const bodyFile = path.join(tmpDir, 'pr-body.md');
+
   let prUrl: string;
   try {
-    const bodyFile = path.join(tmpDir, 'pr-body.md');
     await writeFile(bodyFile, body, 'utf-8');
 
-    // Stage only the specific patched files (relative to git root)
-    const relFiles = patchedFiles.map((f) => path.relative(gitRoot, f));
-    execSync(
-      `git add -- ${relFiles.map((f) => JSON.stringify(f)).join(' ')}`,
-      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
-    );
+    execSync(`git checkout -b ${JSON.stringify(branch)}`, { cwd: gitRoot, stdio: 'pipe' });
 
-    // Commit using the PR title as the commit message
-    execSync(
-      `git commit -m ${JSON.stringify(title)}`,
-      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
-    );
+    const relPaths = patchedFiles
+      .map((f) => JSON.stringify(path.relative(gitRoot, f)))
+      .join(' ');
+    execSync(`git add -- ${relPaths}`, { cwd: gitRoot, stdio: 'pipe' });
 
-    // Push the new branch
-    execSync(
-      `git push -u origin ${JSON.stringify(branch)}`,
-      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
-    );
+    const commitMsg =
+      `chore(testids): add data-testid via selfcure lint\n\n` +
+      `Patched ${fixedCount} element(s) across ${patchedFiles.length} file(s).\n` +
+      `Threshold: ${threshold}/100`;
+    execSync(`git commit -m ${JSON.stringify(commitMsg)}`, { cwd: gitRoot, stdio: 'pipe' });
 
-    // Create the PR and capture the URL
+    execSync(`git push -u origin ${JSON.stringify(branch)}`, { cwd: gitRoot, stdio: 'pipe' });
+
+    const baseFlag = baseBranch ? ` --base ${JSON.stringify(baseBranch)}` : '';
     const raw = execSync(
-      `gh pr create --title ${JSON.stringify(title)} --body-file ${JSON.stringify(bodyFile)} --head ${JSON.stringify(branch)}`,
+      `gh pr create --title ${JSON.stringify(title)} ` +
+      `--body-file ${JSON.stringify(bodyFile)} --head ${JSON.stringify(branch)}${baseFlag}`,
       { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
     ).trim();
     prUrl = raw.split('\n').filter((l) => l.startsWith('https://')).pop() ?? raw;
   } finally {
     await rm(tmpDir, { recursive: true, force: true });
+    // Best-effort: return user to their original branch so they're not stranded.
+    if (originalBranch) {
+      try {
+        execSync(`git checkout ${JSON.stringify(originalBranch)}`, { cwd: gitRoot, stdio: 'pipe' });
+      } catch { /* non-fatal */ }
+    }
   }
 
-  return { prUrl };
+  return { prUrl, fixedCount, baseBranch, branch };
 }
 
 function listProviders(): {
@@ -439,6 +676,34 @@ export function startWebServer(
     if (req.method === 'GET' && pathname === '/api/providers') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(listProviders()));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/session') {
+      (async () => {
+        const session = await loadSession(cwd);
+        let keyIsSet = false;
+        if (session?.ai?.provider) {
+          const meta = PROVIDERS[session.ai.provider as ProviderId];
+          if (meta?.envVar) {
+            keyIsSet =
+              Boolean(process.env[meta.envVar]) ||
+              (await envKeyIsSet(cwd, meta.envVar));
+          }
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ session, keyIsSet }));
+      })().catch(() => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ session: null, keyIsSet: false }));
+      });
+      return;
+    }
+
+    if (req.method === 'DELETE' && pathname === '/api/session') {
+      clearSession(cwd)
+        .then(() => { res.writeHead(204); res.end(); })
+        .catch(() => { res.writeHead(500); res.end(); });
       return;
     }
 
@@ -532,7 +797,20 @@ export function startWebServer(
 
     if (req.method === 'POST' && pathname === '/api/pr') {
       readJsonBody(req)
-        .then((rawBody) => runCreatePr(cwd, rawBody as PrRequestBody))
+        .then(async (rawBody) => {
+          const body = rawBody as OpenPrRequestBody;
+          // Pro gate — same logic as /api/lint, enforced here because this
+          // endpoint actually mutates the repo (creates branch, opens PR).
+          const cfg   = await loadCrawlConfig(cwd, body.configPath);
+          const isPro = cfg.pro === true || process.env['SELFCURE_PRO'] === '1';
+          if (!isPro) {
+            throw new Error(
+              'Open pull request is a Pro feature. Enable it by setting ' +
+              "`pro: true` in selfcure.config.mjs or `SELFCURE_PRO=1` in the environment.",
+            );
+          }
+          return runOpenPr(cwd, body);
+        })
         .then((result) => {
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify(result));
@@ -546,6 +824,14 @@ export function startWebServer(
 
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Not found');
+  });
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\nError: port ${port} is already in use.\nRun this to free it:\n  npx kill-port ${port}\nor use a different port:\n  npx selfcure web --port ${port + 1}\n`);
+      process.exit(1);
+    }
+    throw err;
   });
 
   server.listen(port, '127.0.0.1', () => {
