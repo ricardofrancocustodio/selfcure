@@ -7,18 +7,43 @@ import type { ComponentMeta, HtmlElementMeta } from '@selfcure/crawler';
 export type ElementType = 'button' | 'input' | 'link' | 'form' | 'custom';
 export type Complexity = 'low' | 'medium' | 'high';
 
+export interface SelectorCandidate {
+  strategy: 'data-testid' | 'id' | 'aria-label' | 'name' | 'css' | 'xpath';
+  /** Ready-to-use selector string */
+  value: string;
+  /** Stability score 0–100: higher = less likely to break on UI changes */
+  score: number;
+}
+
+export interface ElementSelectors {
+  dataTestId?: string;
+  id?: string;
+  ariaLabel?: string;
+  name?: string;
+  /** Best CSS selector (may alias one of the above) */
+  cssSelector: string;
+  /** XPath expression */
+  xpath: string;
+}
+
 export interface InteractiveElement {
   type: ElementType;
-  /** Best CSS / ARIA selector for Playwright */
+  /** Best selector — always equals selectorRanking[0].value */
   selector: string;
   label?: string;
   /** e.g. ['click', 'fill', 'check'] */
   actions: string[];
+  /** All available selectors for this element */
+  selectors: ElementSelectors;
+  /** Candidates sorted from most stable (index 0) to least stable */
+  selectorRanking: SelectorCandidate[];
+  /** Testability score for this element 0–100 */
+  testabilityScore: number;
 }
 
 export interface AnalysisResult {
   component: ComponentMeta;
-  /** Testability score 0–100 (higher = easier to test reliably) */
+  /** Testability score 0–100 — average of per-element testabilityScore values */
   score: number;
   interactiveElements: InteractiveElement[];
   complexity: Complexity;
@@ -89,6 +114,68 @@ function buildSelector(tag: string, attrs: Record<string, string | undefined>): 
   return tag;
 }
 
+// ---------------------------------------------------------------------------
+// Selector builders
+// ---------------------------------------------------------------------------
+
+function buildXPath(tag: string, attrs: Record<string, string | undefined>): string {
+  if (attrs['id'])          return `//${tag}[@id='${attrs['id']}']`;
+  if (attrs['data-testid']) return `//${tag}[@data-testid='${attrs['data-testid']}']`;
+  if (attrs['aria-label'])  return `//${tag}[@aria-label='${attrs['aria-label']}']`;
+  if (attrs['name'])        return `//${tag}[@name='${attrs['name']}']`;
+  if (attrs['type'])        return `//${tag}[@type='${attrs['type']}']`;
+  return `//${tag}`;
+}
+
+function buildElementSelectors(tag: string, attrs: Record<string, string | undefined>): ElementSelectors {
+  return {
+    dataTestId: attrs['data-testid'] ? `[data-testid="${attrs['data-testid']}"]` : undefined,
+    id:         attrs['id']          ? `#${attrs['id']}`                          : undefined,
+    ariaLabel:  attrs['aria-label']  ? `${tag}[aria-label="${attrs['aria-label']}"]` : undefined,
+    name:       attrs['name']        ? `${tag}[name="${attrs['name']}"]`          : undefined,
+    cssSelector: buildSelector(tag, attrs),
+    xpath:       buildXPath(tag, attrs),
+  };
+}
+
+function buildSelectorRanking(tag: string, attrs: Record<string, string | undefined>): SelectorCandidate[] {
+  const candidates: SelectorCandidate[] = [];
+
+  if (attrs['data-testid']) {
+    candidates.push({ strategy: 'data-testid', value: `[data-testid="${attrs['data-testid']}"]`, score: 100 });
+  }
+  if (attrs['id']) {
+    candidates.push({ strategy: 'id', value: `#${attrs['id']}`, score: 85 });
+  }
+  if (attrs['aria-label']) {
+    candidates.push({ strategy: 'aria-label', value: `${tag}[aria-label="${attrs['aria-label']}"]`, score: 75 });
+  }
+  if (attrs['name']) {
+    candidates.push({ strategy: 'name', value: `${tag}[name="${attrs['name']}"]`, score: 65 });
+  }
+
+  // Add CSS only when it isn't already represented by a named candidate above
+  const cssVal = buildSelector(tag, attrs);
+  if (!candidates.some((c) => c.value === cssVal)) {
+    const cssScore = (attrs['type'] && tag === 'input') ? 35 : 10;
+    candidates.push({ strategy: 'css', value: cssVal, score: cssScore });
+  }
+
+  // XPath — always useful as a last resort
+  candidates.push({ strategy: 'xpath', value: buildXPath(tag, attrs), score: 20 });
+
+  return candidates.sort((a, b) => b.score - a.score);
+}
+
+function elementTestabilityScore(attrs: Record<string, string | undefined>): number {
+  if (attrs['data-testid']) return 100;
+  if (attrs['id'])          return 85;
+  if (attrs['aria-label'])  return 75;
+  if (attrs['name'])        return 65;
+  if (attrs['type'])        return 35;
+  return 10;
+}
+
 /** Derive a human-readable label from attributes. */
 function buildLabel(attrs: Record<string, string | undefined>): string | undefined {
   return attrs['aria-label'] ?? attrs['placeholder'] ?? attrs['name'] ?? attrs['id'];
@@ -120,11 +207,15 @@ function extractInteractiveElements(ast: unknown): InteractiveElement[] {
     seen.add(selector);
 
     const type = TAG_TYPE[tag]!;
+    const ranking = buildSelectorRanking(tag, attrs);
     elements.push({
       type,
       selector,
       label: buildLabel(attrs),
       actions: ACTIONS[type],
+      selectors: buildElementSelectors(tag, attrs),
+      selectorRanking: ranking,
+      testabilityScore: elementTestabilityScore(attrs),
     });
   });
 
@@ -145,11 +236,15 @@ function extractInteractiveElementsFromHtml(htmlElements: HtmlElementMeta[]): In
     if (seen.has(selector)) continue;
     seen.add(selector);
     const type = TAG_TYPE[tag]!;
+    const ranking = buildSelectorRanking(tag, attrs);
     elements.push({
       type,
       selector,
       label: buildLabel(attrs),
       actions: ACTIONS[type],
+      selectors: buildElementSelectors(tag, attrs),
+      selectorRanking: ranking,
+      testabilityScore: elementTestabilityScore(attrs),
     });
   }
 
@@ -161,8 +256,9 @@ function extractInteractiveElementsFromHtml(htmlElements: HtmlElementMeta[]): In
 // ---------------------------------------------------------------------------
 
 function computeScore(elements: InteractiveElement[]): number {
-  const labelled = elements.filter((e) => e.label).length;
-  return Math.min(100, 40 + labelled * 15);
+  if (elements.length === 0) return 40;
+  const avg = elements.reduce((s, e) => s + e.testabilityScore, 0) / elements.length;
+  return Math.round(avg);
 }
 
 function classifyComplexity(elements: InteractiveElement[]): Complexity {

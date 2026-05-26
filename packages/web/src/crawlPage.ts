@@ -371,6 +371,38 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
     th.sort-asc::after  { content: ' ↑'; font-weight: 400; }
     th.sort-desc::after { content: ' ↓'; font-weight: 400; }
 
+    /* ── Selector strategies ─────────────────────────────────────────────── */
+    .sel-list { display: flex; flex-direction: column; gap: 3px; }
+    .sel-row  { display: flex; align-items: baseline; gap: 5px; }
+    .sel-value {
+      font-family: var(--mono); font-size: 10px; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; max-width: 220px;
+      display: inline-block; background: none; padding: 0;
+    }
+    .sel-strategy {
+      display: inline-block; padding: 1px 5px; border-radius: 3px;
+      font-size: 9px; font-weight: 700; letter-spacing: .2px;
+      white-space: nowrap; flex-shrink: 0; font-family: var(--mono);
+    }
+    .s-datatestid { background: var(--success-bg); color: var(--success); }
+    .s-id         { background: #dbeafe; color: #1e40af; }
+    .s-arialabel  { background: #ede9fe; color: #5b21b6; }
+    .s-name       { background: var(--warning-bg); color: var(--warning); }
+    .s-css        { background: var(--error-bg); color: var(--error); }
+    .s-xpath      { background: var(--surface2); color: var(--muted); }
+    @media (prefers-color-scheme: dark) {
+      .s-id      { background: #1e3a5f; color: #93c5fd; }
+      .s-arialabel { background: #2e1065; color: #c4b5fd; }
+    }
+    .elem-score {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 26px; height: 26px; border-radius: 50%;
+      font-size: 9px; font-weight: 700; font-family: var(--mono); flex-shrink: 0;
+    }
+    .es-high { background: var(--success-bg); color: var(--score-high); }
+    .es-mid  { background: var(--warning-bg); color: var(--score-mid); }
+    .es-low  { background: var(--error-bg);   color: var(--score-low); }
+
     /* ── Initial state (no results) ──────────────────────────────────────── */
     .welcome {
       flex: 1; display: flex; flex-direction: column;
@@ -509,19 +541,27 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
         <p class="legend-section">Score (0–100)</p>
         <div class="legend-row">
           <span class="score-pill score-high">75+</span>
-          <span class="legend-desc">Good — most elements have labels or IDs</span>
+          <span class="legend-desc">Strong — data-testid / id / aria-label present</span>
         </div>
         <div class="legend-row">
           <span class="score-pill score-mid">55–74</span>
-          <span class="legend-desc">Fair — some elements lack labels</span>
+          <span class="legend-desc">Moderate — name attribute used as selector</span>
         </div>
         <div class="legend-row">
           <span class="score-pill score-low">&lt;55</span>
-          <span class="legend-desc">Fragile — selectors may break easily</span>
+          <span class="legend-desc">Fragile — only tag or type available</span>
         </div>
         <div class="legend-row" style="font-size:10px;color:var(--muted);margin-top:2px">
-          Base 40 pts + 15 per labeled element
+          Average of per-element selector testability scores
         </div>
+
+        <p class="legend-section">Selector strategies</p>
+        <div class="legend-row"><span class="sel-strategy s-datatestid">data-testid</span><span class="legend-desc">100 pts — explicit test contract, most stable</span></div>
+        <div class="legend-row"><span class="sel-strategy s-id">id</span><span class="legend-desc">85 pts — unique DOM identifier</span></div>
+        <div class="legend-row"><span class="sel-strategy s-arialabel">aria-label</span><span class="legend-desc">75 pts — accessible label, ARIA-aware</span></div>
+        <div class="legend-row"><span class="sel-strategy s-name">name</span><span class="legend-desc">65 pts — form field name</span></div>
+        <div class="legend-row"><span class="sel-strategy s-css">css</span><span class="legend-desc">10–35 pts — structural, may break on refactor</span></div>
+        <div class="legend-row"><span class="sel-strategy s-xpath">xpath</span><span class="legend-desc">20 pts — last resort, always generated</span></div>
 
         <p class="legend-section">Element types</p>
         <div class="legend-row"><code>button</code><span class="legend-desc">Clickable button</span></div>
@@ -699,17 +739,39 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
       const active = sortCol === col;
       return 'class="sortable' + (active ? ' sort-' + sortDir : '') + '" data-col="' + esc(col) + '"';
     };
+    const stratBadge = s => {
+      const cls = { 'data-testid': 's-datatestid', id: 's-id', 'aria-label': 's-arialabel', name: 's-name', css: 's-css', xpath: 's-xpath' }[s] || 's-css';
+      return '<span class="sel-strategy ' + cls + '">' + esc(s) + '</span>';
+    };
+    const elemScore = score => {
+      if (score == null) return '<span class="elem-score es-low" title="No selector data">?</span>';
+      const cls = score >= 75 ? 'es-high' : score >= 50 ? 'es-mid' : 'es-low';
+      const tip = score >= 75 ? 'Strong selector' : score >= 50 ? 'Moderate selector stability' : 'Fragile — add data-testid or id';
+      return '<span class="elem-score ' + cls + '" title="Selector score: ' + score + '/100 — ' + tip + '">' + score + '</span>';
+    };
+    const renderSelectors = ranking => {
+      if (!ranking || !ranking.length) return '<span class="sel-value">—</span>';
+      return '<div class="sel-list">' +
+        ranking.map(c =>
+          '<div class="sel-row">' + stratBadge(c.strategy) +
+          '<span class="sel-value" title="Score: ' + c.score + '/100">' + esc(c.value) + '</span>' +
+          '</div>'
+        ).join('') +
+      '</div>';
+    };
     return '<table class="elem-table" data-path="' + esc(filePath || '') + '">' +
       '<thead><tr>' +
       '<th ' + thCls('type') + '>Type</th>' +
-      '<th ' + thCls('selector') + '>Selector</th>' +
+      '<th ' + thCls('testabilityScore') + '>Score</th>' +
+      '<th>Selectors</th>' +
       '<th ' + thCls('label') + '>Label</th>' +
       '<th>Actions</th>' +
       '</tr></thead><tbody>' +
       sorted.map(el =>
         '<tr>' +
         '<td><span class="badge badge-framework">' + esc(el.type) + '</span></td>' +
-        '<td><code>' + esc(el.selector) + '</code></td>' +
+        '<td>' + elemScore(el.testabilityScore) + '</td>' +
+        '<td>' + renderSelectors(el.selectorRanking) + '</td>' +
         '<td>' + esc(el.label || '—') + '</td>' +
         '<td><div class="action-pills">' +
           (el.actions||[]).map(a => '<span class="action-pill">' + esc(a) + '</span>').join('') +
@@ -820,17 +882,24 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
   });
 
   // ── Export ────────────────────────────────────────────────────────────────
-  const EXPORT_HEADERS = ['Component','Framework','Complexity','Score','File Path','Type','Selector','Label','Actions'];
+  const EXPORT_HEADERS = ['Component','Framework','Complexity','Score','File Path','Type','Best Selector','Strategy','data-testid','id','aria-label','name','CSS','XPath','Elem. Score','Label','Actions'];
 
   function flattenRows(data) {
     const rows = [];
     for (const d of data) {
+      const empty = ['','','','','','','','','','',''];
       if (d.interactiveElements.length === 0) {
-        rows.push([d.componentName, d.framework, d.complexity, d.score, d.filePath, '', '', '', '']);
+        rows.push([d.componentName, d.framework, d.complexity, d.score, d.filePath, ...empty, '', '']);
       } else {
         for (const el of d.interactiveElements) {
+          const best = (el.selectorRanking && el.selectorRanking[0]) || null;
+          const sels = el.selectors || {};
           rows.push([d.componentName, d.framework, d.complexity, d.score, d.filePath,
-            el.type, el.selector, el.label || '', (el.actions||[]).join(', ')]);
+            el.type, el.selector, best ? best.strategy : '',
+            sels.dataTestId || '', sels.id || '', sels.ariaLabel || '', sels.name || '',
+            sels.cssSelector || '', sels.xpath || '',
+            el.testabilityScore != null ? el.testabilityScore : '',
+            el.label || '', (el.actions||[]).join(', ')]);
         }
       }
     }
