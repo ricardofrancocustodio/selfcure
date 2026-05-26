@@ -14,6 +14,15 @@
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
 
+  <link rel="alternate" hreflang="en" href="https://ricardofrancocustodio.github.io/selfcure/">
+  <link rel="alternate" hreflang="pt" href="https://ricardofrancocustodio.github.io/selfcure/?lang=pt">
+  <link rel="alternate" hreflang="es" href="https://ricardofrancocustodio.github.io/selfcure/?lang=es">
+  <link rel="alternate" hreflang="fr" href="https://ricardofrancocustodio.github.io/selfcure/?lang=fr">
+  <link rel="alternate" hreflang="de" href="https://ricardofrancocustodio.github.io/selfcure/?lang=de">
+  <link rel="alternate" hreflang="zh" href="https://ricardofrancocustodio.github.io/selfcure/?lang=zh">
+  <link rel="alternate" hreflang="ja" href="https://ricardofrancocustodio.github.io/selfcure/?lang=ja">
+  <link rel="alternate" hreflang="x-default" href="https://ricardofrancocustodio.github.io/selfcure/">
+
   <style>
     :root {
       --bg:        #ffffff;
@@ -67,8 +76,6 @@
 
     a { color: var(--accent); text-decoration: none; }
     a:hover { text-decoration: underline; }
-
-    /* ───────── Layout primitives ───────── */
 
     .container {
       max-width: 960px;
@@ -127,8 +134,6 @@
     .token-keyword { color: var(--accent); }
     .token-string  { color: var(--success); }
 
-    /* ───────── Header ───────── */
-
     header.top {
       border-bottom: 1px solid var(--border);
       background: var(--bg);
@@ -142,6 +147,7 @@
       justify-content: space-between;
       padding-top: 16px;
       padding-bottom: 16px;
+      gap: 16px;
     }
 
     .brand {
@@ -149,6 +155,7 @@
       font-weight: 600;
       font-size: 15px;
       color: var(--text);
+      flex-shrink: 0;
     }
     .brand::before {
       content: "›";
@@ -158,8 +165,9 @@
 
     nav.top-nav {
       display: flex;
-      gap: 24px;
+      gap: 20px;
       align-items: center;
+      flex-wrap: wrap;
     }
     nav.top-nav a {
       color: var(--muted);
@@ -167,7 +175,28 @@
     }
     nav.top-nav a:hover { color: var(--text); text-decoration: none; }
 
-    /* ───────── Hero ───────── */
+    .lang-select {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border-strong);
+      border-radius: 4px;
+      padding: 4px 8px;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+    }
+    .lang-select:hover { border-color: var(--accent); color: var(--text); }
+    .lang-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+    }
+
+    @media (max-width: 720px) {
+      header.top .container { flex-wrap: wrap; }
+      nav.top-nav { gap: 12px; font-size: 13px; }
+    }
 
     .hero { padding: 80px 0 56px; border-top: none; }
 
@@ -271,8 +300,6 @@
     .term-comment { color: var(--muted); }
     .term-ok { color: var(--success); }
 
-    /* ───────── Mantra band ───────── */
-
     .mantra {
       padding: 48px 0;
       background: var(--surface);
@@ -304,8 +331,6 @@
       color: var(--muted);
     }
 
-    /* ───────── How it works ───────── */
-
     .pipeline {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -329,8 +354,6 @@
       letter-spacing: 0.08em;
       margin-bottom: 8px;
     }
-
-    /* ───────── Features grid ───────── */
 
     .features {
       display: grid;
@@ -367,8 +390,6 @@
       margin: 0;
     }
 
-    /* ───────── Providers table ───────── */
-
     .provider-table {
       width: 100%;
       border-collapse: collapse;
@@ -403,8 +424,6 @@
     }
     .tag-free { background: color-mix(in srgb, var(--success) 15%, transparent); color: var(--success); }
 
-    /* ───────── Footer ───────── */
-
     footer {
       border-top: 1px solid var(--border);
       padding: 32px 0 48px;
@@ -421,7 +440,6 @@
     footer a { color: var(--muted); }
     footer a:hover { color: var(--text); text-decoration: none; }
 
-    /* ───────── Utilities ───────── */
     .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   </style>
 </head>
@@ -431,39 +449,50 @@
   <div class="container">
     <a href="#" class="brand">selfcure</a>
     <nav class="top-nav">
-      <a href="#how">How it works</a>
-      <a href="#providers">Providers</a>
-      <a href="#quickstart">Quick start</a>
+      <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#providers" data-i18n="nav.providers">Providers</a>
+      <a href="#quickstart" data-i18n="nav.quickstart">Quick start</a>
       <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
+      <select class="lang-select" aria-label="Language">
+        <option value="en">EN</option>
+        <option value="pt">PT</option>
+        <option value="es">ES</option>
+        <option value="fr">FR</option>
+        <option value="de">DE</option>
+        <option value="zh">中文</option>
+        <option value="ja">日本語</option>
+      </select>
     </nav>
   </div>
 </header>
 
 <main>
 
-  <!-- ── Hero ──────────────────────────────────────────────────────────── -->
   <section class="hero">
     <div class="container">
 
 <pre class="hero-bot" aria-hidden="true">        ┌─────────┐
-        │  <span class="bot-eyes">•_•</span>    │   <span class="bot-caption">cures tests,</span>
-        │         │   <span class="bot-caption">not components.</span>
+        │  <span class="bot-eyes">•_•</span>    │
+        │         │
         └────┬────┘
        ╰────┴────╯</pre>
 
-      <p class="eyebrow">Self-healing Playwright tests · BYOK · open source</p>
-      <h1>Selfcure cures tests,<br>not components.</h1>
-      <p class="lede">
+      <p class="eyebrow" data-i18n="hero.eyebrow">Self-healing Playwright tests · BYOK · open source</p>
+      <h1>
+        <span data-i18n="hero.headline_l1">Selfcure cures tests,</span><br>
+        <span data-i18n="hero.headline_l2">not components.</span>
+      </h1>
+      <p class="lede" data-i18n="hero.lede">
         Crawl your frontend, generate Playwright tests with the LLM of your choice,
         and let selfcure auto-patch flaky locators. When the test is fine but the component
         is broken, selfcure tells you.
       </p>
 
       <div class="ctas">
-        <a class="button button-primary" href="https://github.com/ricardofrancocustodio/selfcure">
+        <a class="button button-primary" href="https://github.com/ricardofrancocustodio/selfcure" data-i18n="hero.cta_primary">
           View on GitHub →
         </a>
-        <a class="button button-secondary" href="#quickstart">Quick start</a>
+        <a class="button button-secondary" href="#quickstart" data-i18n="hero.cta_secondary">Quick start</a>
       </div>
 
       <div class="hero-terminal" aria-hidden="true">
@@ -484,95 +513,91 @@
     </div>
   </section>
 
-  <!-- ── Mantra ───────────────────────────────────────────────────────── -->
   <div class="mantra">
     <div class="container">
       <blockquote>
-        Selfcure distinguishes a bad test from a bad component.
+        <span data-i18n="mantra.quote">Selfcure distinguishes a bad test from a bad component.
         It patches the test when the locator drifts. When the component has no stable
-        identifier, it tells you — and refuses to paper over a frontend bug.
-        <cite>— design principle, since v0.1</cite>
+        identifier, it tells you — and refuses to paper over a frontend bug.</span>
+        <cite data-i18n="mantra.cite">— design principle, since v0.1</cite>
       </blockquote>
     </div>
   </div>
 
-  <!-- ── How it works ─────────────────────────────────────────────────── -->
   <section id="how">
     <div class="container">
-      <p class="eyebrow">Pipeline</p>
-      <h2>How it works</h2>
-      <p class="small">A single command runs the whole pipeline. Each stage is its own npm workspace package — pick and choose.</p>
+      <p class="eyebrow" data-i18n="how.eyebrow">Pipeline</p>
+      <h2 data-i18n="how.h2">How it works</h2>
+      <p class="small" data-i18n="how.lede">A single command runs the whole pipeline. Each stage is its own npm workspace package — pick and choose.</p>
 
       <div class="pipeline">
         <div class="pipeline-step">
-          <div class="step-num">01 · CRAWL</div>
-          <h3>Read your source</h3>
-          <p class="small">Static AST via <code>@typescript-eslint/parser</code> + dynamic DOM capture via Playwright codegen. Outputs a structured component map.</p>
+          <div class="step-num" data-i18n="how.step1.label">01 · CRAWL</div>
+          <h3 data-i18n="how.step1.title">Read your source</h3>
+          <p class="small" data-i18n="how.step1.desc">Static AST via <code>@typescript-eslint/parser</code> + dynamic DOM capture via Playwright codegen. Outputs a structured component map.</p>
         </div>
         <div class="pipeline-step">
-          <div class="step-num">02 · GENERATE</div>
-          <h3>LLM writes the tests</h3>
-          <p class="small">Component analysis + interactive-element map go to the LLM. Returns one ready-to-run <code>.spec.ts</code> per component.</p>
+          <div class="step-num" data-i18n="how.step2.label">02 · GENERATE</div>
+          <h3 data-i18n="how.step2.title">LLM writes the tests</h3>
+          <p class="small" data-i18n="how.step2.desc">Component analysis + interactive-element map go to the LLM. Returns one ready-to-run <code>.spec.ts</code> per component.</p>
         </div>
         <div class="pipeline-step">
-          <div class="step-num">03 · HEAL</div>
-          <h3>Patch on failure</h3>
-          <p class="small">Failures get classified. Locator drift → ask LLM for a diff, sanity-check, apply, retry. Component-level bugs → flagged for human review.</p>
+          <div class="step-num" data-i18n="how.step3.label">03 · HEAL</div>
+          <h3 data-i18n="how.step3.title">Patch on failure</h3>
+          <p class="small" data-i18n="how.step3.desc">Failures get classified. Locator drift → ask LLM for a diff, sanity-check, apply, retry. Component-level bugs → flagged for human review.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── Features grid ────────────────────────────────────────────────── -->
   <section>
     <div class="container">
-      <p class="eyebrow">Capabilities</p>
-      <h2>What you get</h2>
+      <p class="eyebrow" data-i18n="features.eyebrow">Capabilities</p>
+      <h2 data-i18n="features.h2">What you get</h2>
 
       <div class="features">
         <div class="feature">
-          <h3>Multi-provider <span class="badge">BYOK</span></h3>
-          <p>Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama. Swap providers with one config line. No vendor lock-in.</p>
+          <h3><span data-i18n="features.1.title">Multi-provider</span> <span class="badge">BYOK</span></h3>
+          <p data-i18n="features.1.desc">Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama. Swap providers with one config line. No vendor lock-in.</p>
         </div>
         <div class="feature">
-          <h3>Self-healing loop</h3>
-          <p>Failed locator? selfcure asks the LLM for a unified diff, applies it under a parse sanity check, and rolls back on failure. Max attempts configurable.</p>
+          <h3 data-i18n="features.2.title">Self-healing loop</h3>
+          <p data-i18n="features.2.desc">Failed locator? selfcure asks the LLM for a unified diff, applies it under a parse sanity check, and rolls back on failure. Max attempts configurable.</p>
         </div>
         <div class="feature">
-          <h3>Testability score</h3>
-          <p>Every component gets a 0–100 score. Low score? You learn that the FE needs <code>data-testid</code> — not that "tests are flaky."</p>
+          <h3 data-i18n="features.3.title">Testability score</h3>
+          <p data-i18n="features.3.desc">Every component gets a 0–100 score. Low score? You learn that the FE needs <code>data-testid</code> — not that "tests are flaky."</p>
         </div>
         <div class="feature">
-          <h3>Browser-based init <span class="badge">selfcure web</span></h3>
-          <p>Open a wizard at <code>localhost:3333</code>. Auto-detects which provider keys you've already exported. Picks <code>./src</code>, <code>./app</code>, etc. from your project.</p>
+          <h3><span data-i18n="features.4.title">Browser-based init</span> <span class="badge">selfcure web</span></h3>
+          <p data-i18n="features.4.desc">Open a wizard at <code>localhost:3333</code>. Auto-detects which provider keys you've already exported. Picks <code>./src</code>, <code>./app</code>, etc. from your project.</p>
         </div>
         <div class="feature">
-          <h3>Playwright-native</h3>
-          <p>Generated tests are plain <code>@playwright/test</code> code. No proprietary runner, no lock-in. Trace + screenshot on every failure.</p>
+          <h3 data-i18n="features.5.title">Playwright-native</h3>
+          <p data-i18n="features.5.desc">Generated tests are plain <code>@playwright/test</code> code. No proprietary runner, no lock-in. Trace + screenshot on every failure.</p>
         </div>
         <div class="feature">
-          <h3>HTML report</h3>
-          <p>Per-test status, applied diffs (collapsible), and a "Components needing FE intervention" section that calls out unfixable items.</p>
+          <h3 data-i18n="features.6.title">HTML report</h3>
+          <p data-i18n="features.6.desc">Per-test status, applied diffs (collapsible), and a "Components needing FE intervention" section that calls out unfixable items.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ── Providers ────────────────────────────────────────────────────── -->
   <section id="providers">
     <div class="container">
-      <p class="eyebrow">Provider matrix</p>
-      <h2>Bring your own key</h2>
-      <p class="small">Pick the LLM that fits your wallet, compliance, or hardware. Switch any time — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.</p>
+      <p class="eyebrow" data-i18n="providers.eyebrow">Provider matrix</p>
+      <h2 data-i18n="providers.h2">Bring your own key</h2>
+      <p class="small" data-i18n="providers.lede">Pick the LLM that fits your wallet, compliance, or hardware. Switch any time — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.</p>
 
       <div style="overflow-x:auto">
       <table class="provider-table">
         <thead>
           <tr>
-            <th>Provider</th>
-            <th>Default generation</th>
-            <th>Default healing</th>
-            <th>Env var</th>
+            <th data-i18n="providers.col_provider">Provider</th>
+            <th data-i18n="providers.col_generation">Default generation</th>
+            <th data-i18n="providers.col_healing">Default healing</th>
+            <th data-i18n="providers.col_envvar">Env var</th>
           </tr>
         </thead>
         <tbody>
@@ -589,13 +614,13 @@
             <td><code>OPENAI_API_KEY</code></td>
           </tr>
           <tr>
-            <td><strong>Google Gemini</strong> <span class="tag tag-free">free tier</span></td>
+            <td><strong>Google Gemini</strong> <span class="tag tag-free" data-i18n="providers.tag_free">free tier</span></td>
             <td><code>gemini-2.0-flash-exp</code></td>
             <td><code>gemini-2.0-flash-exp</code></td>
             <td><code>GOOGLE_GENERATIVE_AI_API_KEY</code></td>
           </tr>
           <tr>
-            <td><strong>Groq</strong> <span class="tag tag-free">free tier</span></td>
+            <td><strong>Groq</strong> <span class="tag tag-free" data-i18n="providers.tag_free">free tier</span></td>
             <td><code>llama-3.3-70b-versatile</code></td>
             <td><code>llama-3.1-8b-instant</code></td>
             <td><code>GROQ_API_KEY</code></td>
@@ -607,7 +632,7 @@
             <td><code>DEEPSEEK_API_KEY</code></td>
           </tr>
           <tr>
-            <td><strong>Ollama</strong> <span class="tag tag-free">local · no key</span></td>
+            <td><strong>Ollama</strong> <span class="tag tag-free" data-i18n="providers.tag_local">local · no key</span></td>
             <td><code>qwen2.5-coder:14b</code></td>
             <td><code>qwen2.5-coder:7b</code></td>
             <td>—</td>
@@ -618,14 +643,13 @@
     </div>
   </section>
 
-  <!-- ── Quick start ──────────────────────────────────────────────────── -->
   <section id="quickstart">
     <div class="container">
-      <p class="eyebrow">Get going</p>
-      <h2>Quick start</h2>
-      <p class="small">selfcure is pre-publish — install from source while we stabilise the API.</p>
+      <p class="eyebrow" data-i18n="qs.eyebrow">Get going</p>
+      <h2 data-i18n="qs.h2">Quick start</h2>
+      <p class="small" data-i18n="qs.lede">selfcure is pre-publish — install from source while we stabilise the API.</p>
 
-      <h3 style="margin-top:24px">1 · Link the CLI from source</h3>
+      <h3 style="margin-top:24px" data-i18n="qs.step1">1 · Link the CLI from source</h3>
 <pre><code><span class="token-comment"># Clone and build</span>
 git clone https://github.com/ricardofrancocustodio/selfcure.git
 cd selfcure
@@ -637,7 +661,7 @@ cd packages/cli
 npm link
 </code></pre>
 
-      <h3>2 · Configure in your target project</h3>
+      <h3 data-i18n="qs.step2">2 · Configure in your target project</h3>
 <pre><code><span class="token-comment"># From your frontend project's root</span>
 cd ~/path/to/your-app
 selfcure web        <span class="token-comment"># browser wizard at http://localhost:3333</span>
@@ -645,9 +669,9 @@ selfcure web        <span class="token-comment"># browser wizard at http://local
 selfcure init       <span class="token-comment"># terminal wizard</span>
 </code></pre>
 
-      <p class="small">The wizard detects which provider keys you already have exported in your shell and pre-selects them. Picks Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama from a dropdown.</p>
+      <p class="small" data-i18n="qs.wizard_note">The wizard detects which provider keys you already have exported in your shell and pre-selects them. Picks Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama from a dropdown.</p>
 
-      <h3>3 · Run</h3>
+      <h3 data-i18n="qs.step3">3 · Run</h3>
 <pre><code><span class="token-comment"># Start your dev server in another terminal first</span>
 npm run dev
 
@@ -657,31 +681,30 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
 </code></pre>
 
       <p style="margin-top:24px">
-        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md" data-i18n="qs.docs_cta">
           Read the full getting-started guide →
         </a>
       </p>
     </div>
   </section>
 
-  <!-- ── Status / call to action ──────────────────────────────────────── -->
   <section>
     <div class="container">
-      <p class="eyebrow">Status</p>
-      <h2>Where it stands</h2>
-      <p>
+      <p class="eyebrow" data-i18n="status.eyebrow">Status</p>
+      <h2 data-i18n="status.h2">Where it stands</h2>
+      <p data-i18n="status.p1">
         selfcure is at <code>v0.1.0</code> — a working monorepo with the full pipeline scaffolded
         and the LLM provider layer in place. The crawl / analyze / generate / run / heal /
         report stages are wired end-to-end; some stages still have placeholder logic while
         the AI integration is hardened.
       </p>
-      <p>
+      <p data-i18n="status.p2">
         Best place to follow progress, file issues, or contribute is the GitHub repo. Stars
         help; PRs help more.
       </p>
       <div class="ctas" style="margin-top:16px">
-        <a class="button button-primary" href="https://github.com/ricardofrancocustodio/selfcure">Star on GitHub</a>
-        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/issues">Open an issue</a>
+        <a class="button button-primary" href="https://github.com/ricardofrancocustodio/selfcure" data-i18n="status.cta_primary">Star on GitHub</a>
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/issues" data-i18n="status.cta_secondary">Open an issue</a>
       </div>
     </div>
   </section>
@@ -692,19 +715,580 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   <div class="container">
     <div>
       <span class="brand">selfcure</span>
-      <span style="margin-left:16px;color:var(--muted)">MIT · © ricardofrancocustodio</span>
+      <span style="margin-left:16px;color:var(--muted)" data-i18n="footer.license">MIT · © ricardofrancocustodio</span>
     </div>
     <div class="row">
       <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
       <span>·</span>
-      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">Docs</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md" data-i18n="nav.quickstart">Docs</a>
       <span>·</span>
-      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/configuration.md">Configuration</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/configuration.md" data-i18n="footer.config">Configuration</a>
       <span>·</span>
-      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/architecture.md">Architecture</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/architecture.md" data-i18n="footer.arch">Architecture</a>
     </div>
   </div>
 </footer>
+
+<!-- ─────────────────────────────────────────────────────────────────────
+     i18n dictionaries (embedded — works offline, no fetch required)
+     ───────────────────────────────────────────────────────────────────── -->
+
+<script type="application/json" id="i18n-en">
+{
+  "meta.title": "selfcure — self-healing Playwright tests, any LLM",
+  "meta.desc": "Selfcure cures tests, not components. Generate, run, and auto-patch Playwright tests with the LLM of your choice — Anthropic, OpenAI, Gemini, Groq, DeepSeek, or local Ollama.",
+  "nav.how": "How it works",
+  "nav.providers": "Providers",
+  "nav.quickstart": "Quick start",
+  "hero.eyebrow": "Self-healing Playwright tests · BYOK · open source",
+  "hero.headline_l1": "Selfcure cures tests,",
+  "hero.headline_l2": "not components.",
+  "hero.lede": "Crawl your frontend, generate Playwright tests with the LLM of your choice, and let selfcure auto-patch flaky locators. When the test is fine but the component is broken, selfcure tells you.",
+  "hero.cta_primary": "View on GitHub →",
+  "hero.cta_secondary": "Quick start",
+  "mantra.quote": "Selfcure distinguishes a bad test from a bad component. It patches the test when the locator drifts. When the component has no stable identifier, it tells you — and refuses to paper over a frontend bug.",
+  "mantra.cite": "— design principle, since v0.1",
+  "how.eyebrow": "Pipeline",
+  "how.h2": "How it works",
+  "how.lede": "A single command runs the whole pipeline. Each stage is its own npm workspace package — pick and choose.",
+  "how.step1.label": "01 · CRAWL",
+  "how.step1.title": "Read your source",
+  "how.step1.desc": "Static AST via <code>@typescript-eslint/parser</code> + dynamic DOM capture via Playwright codegen. Outputs a structured component map.",
+  "how.step2.label": "02 · GENERATE",
+  "how.step2.title": "LLM writes the tests",
+  "how.step2.desc": "Component analysis + interactive-element map go to the LLM. Returns one ready-to-run <code>.spec.ts</code> per component.",
+  "how.step3.label": "03 · HEAL",
+  "how.step3.title": "Patch on failure",
+  "how.step3.desc": "Failures get classified. Locator drift → ask LLM for a diff, sanity-check, apply, retry. Component-level bugs → flagged for human review.",
+  "features.eyebrow": "Capabilities",
+  "features.h2": "What you get",
+  "features.1.title": "Multi-provider",
+  "features.1.desc": "Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama. Swap providers with one config line. No vendor lock-in.",
+  "features.2.title": "Self-healing loop",
+  "features.2.desc": "Failed locator? selfcure asks the LLM for a unified diff, applies it under a parse sanity check, and rolls back on failure. Max attempts configurable.",
+  "features.3.title": "Testability score",
+  "features.3.desc": "Every component gets a 0–100 score. Low score? You learn that the FE needs <code>data-testid</code> — not that 'tests are flaky.'",
+  "features.4.title": "Browser-based init",
+  "features.4.desc": "Open a wizard at <code>localhost:3333</code>. Auto-detects which provider keys you've already exported. Picks <code>./src</code>, <code>./app</code>, etc. from your project.",
+  "features.5.title": "Playwright-native",
+  "features.5.desc": "Generated tests are plain <code>@playwright/test</code> code. No proprietary runner, no lock-in. Trace + screenshot on every failure.",
+  "features.6.title": "HTML report",
+  "features.6.desc": "Per-test status, applied diffs (collapsible), and a 'Components needing FE intervention' section that calls out unfixable items.",
+  "providers.eyebrow": "Provider matrix",
+  "providers.h2": "Bring your own key",
+  "providers.lede": "Pick the LLM that fits your wallet, compliance, or hardware. Switch any time — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.",
+  "providers.col_provider": "Provider",
+  "providers.col_generation": "Default generation",
+  "providers.col_healing": "Default healing",
+  "providers.col_envvar": "Env var",
+  "providers.tag_free": "free tier",
+  "providers.tag_local": "local · no key",
+  "qs.eyebrow": "Get going",
+  "qs.h2": "Quick start",
+  "qs.lede": "selfcure is pre-publish — install from source while we stabilise the API.",
+  "qs.step1": "1 · Link the CLI from source",
+  "qs.step2": "2 · Configure in your target project",
+  "qs.step3": "3 · Run",
+  "qs.wizard_note": "The wizard detects which provider keys you already have exported in your shell and pre-selects them. Picks Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama from a dropdown.",
+  "qs.docs_cta": "Read the full getting-started guide →",
+  "status.eyebrow": "Status",
+  "status.h2": "Where it stands",
+  "status.p1": "selfcure is at <code>v0.1.0</code> — a working monorepo with the full pipeline scaffolded and the LLM provider layer in place. The crawl / analyze / generate / run / heal / report stages are wired end-to-end; some stages still have placeholder logic while the AI integration is hardened.",
+  "status.p2": "Best place to follow progress, file issues, or contribute is the GitHub repo. Stars help; PRs help more.",
+  "status.cta_primary": "Star on GitHub",
+  "status.cta_secondary": "Open an issue",
+  "footer.license": "MIT · © ricardofrancocustodio",
+  "footer.config": "Configuration",
+  "footer.arch": "Architecture"
+}
+</script>
+
+<script type="application/json" id="i18n-pt">
+{
+  "meta.title": "selfcure — testes Playwright auto-curáveis, qualquer LLM",
+  "meta.desc": "selfcure cura testes, não componentes. Gere, execute e corrija automaticamente testes Playwright com o LLM da sua escolha — Anthropic, OpenAI, Gemini, Groq, DeepSeek ou Ollama local.",
+  "nav.how": "Como funciona",
+  "nav.providers": "Provedores",
+  "nav.quickstart": "Início rápido",
+  "hero.eyebrow": "Testes Playwright auto-curáveis · BYOK · código aberto",
+  "hero.headline_l1": "selfcure cura testes,",
+  "hero.headline_l2": "não componentes.",
+  "hero.lede": "Faça crawl do seu frontend, gere testes Playwright com o LLM da sua escolha, e deixe o selfcure corrigir locators instáveis automaticamente. Quando o teste está OK mas o componente é que está quebrado, o selfcure te avisa.",
+  "hero.cta_primary": "Ver no GitHub →",
+  "hero.cta_secondary": "Início rápido",
+  "mantra.quote": "selfcure distingue um teste ruim de um componente ruim. Ele corrige o teste quando o locator muda. Quando o componente não tem identificador estável, ele te avisa — e se recusa a maquiar um bug de frontend.",
+  "mantra.cite": "— princípio de design, desde v0.1",
+  "how.eyebrow": "Pipeline",
+  "how.h2": "Como funciona",
+  "how.lede": "Um único comando roda o pipeline inteiro. Cada estágio é um pacote npm independente — escolha o que usar.",
+  "how.step1.label": "01 · CRAWL",
+  "how.step1.title": "Lê o seu source",
+  "how.step1.desc": "AST estática via <code>@typescript-eslint/parser</code> + captura dinâmica de DOM via Playwright codegen. Gera um mapa de componentes estruturado.",
+  "how.step2.label": "02 · GERAR",
+  "how.step2.title": "LLM escreve os testes",
+  "how.step2.desc": "Análise do componente + mapa de elementos interativos vão pro LLM. Retorna um <code>.spec.ts</code> pronto pra rodar por componente.",
+  "how.step3.label": "03 · CURAR",
+  "how.step3.title": "Corrige no erro",
+  "how.step3.desc": "Falhas são classificadas. Locator mudou → pede diff pro LLM, valida, aplica, tenta de novo. Bug no componente → marcado pra revisão humana.",
+  "features.eyebrow": "Capacidades",
+  "features.h2": "O que você ganha",
+  "features.1.title": "Multi-provedor",
+  "features.1.desc": "Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, ou Ollama local. Troca de provedor numa linha de config. Sem vendor lock-in.",
+  "features.2.title": "Loop de auto-cura",
+  "features.2.desc": "Locator falhou? selfcure pede um diff unificado pro LLM, aplica sob sanity check de parse, e faz rollback se falhar. Tentativas configuráveis.",
+  "features.3.title": "Score de testabilidade",
+  "features.3.desc": "Cada componente recebe um score 0–100. Score baixo? Você descobre que o FE precisa de <code>data-testid</code> — não que 'os testes estão flaky.'",
+  "features.4.title": "Init no browser",
+  "features.4.desc": "Abre um wizard em <code>localhost:3333</code>. Auto-detecta quais chaves de provedor você já tem exportadas. Pega <code>./src</code>, <code>./app</code>, etc. do seu projeto.",
+  "features.5.title": "Nativo de Playwright",
+  "features.5.desc": "Testes gerados são código <code>@playwright/test</code> puro. Sem runner proprietário, sem lock-in. Trace + screenshot em toda falha.",
+  "features.6.title": "Relatório HTML",
+  "features.6.desc": "Status por teste, diffs aplicados (colapsável), e uma seção 'Componentes que precisam de intervenção FE' que destaca itens não-curáveis.",
+  "providers.eyebrow": "Matriz de provedores",
+  "providers.h2": "Use sua própria chave",
+  "providers.lede": "Escolha o LLM que cabe no seu bolso, compliance, ou hardware. Troque quando quiser — defaults abaixo vêm de <code>PROVIDERS</code> em <code>packages/generator/src/ai.ts</code>.",
+  "providers.col_provider": "Provedor",
+  "providers.col_generation": "Geração padrão",
+  "providers.col_healing": "Cura padrão",
+  "providers.col_envvar": "Variável de ambiente",
+  "providers.tag_free": "free tier",
+  "providers.tag_local": "local · sem chave",
+  "qs.eyebrow": "Bora começar",
+  "qs.h2": "Início rápido",
+  "qs.lede": "selfcure ainda não foi publicado — instala do source enquanto estabilizamos a API.",
+  "qs.step1": "1 · Linka o CLI a partir do source",
+  "qs.step2": "2 · Configura no seu projeto alvo",
+  "qs.step3": "3 · Roda",
+  "qs.wizard_note": "O wizard detecta quais chaves de provedor você já tem exportadas no seu shell e pré-seleciona. Permite escolher Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama num dropdown.",
+  "qs.docs_cta": "Lê o guia completo de início rápido →",
+  "status.eyebrow": "Status",
+  "status.h2": "Onde a gente está",
+  "status.p1": "selfcure está em <code>v0.1.0</code> — um monorepo funcional com o pipeline completo montado e a camada de provedor LLM no lugar. Os estágios crawl / analyze / generate / run / heal / report estão conectados ponta-a-ponta; alguns ainda têm lógica placeholder enquanto a integração AI é endurecida.",
+  "status.p2": "O melhor lugar pra acompanhar progresso, abrir issues, ou contribuir é o repo no GitHub. Estrelas ajudam; PRs ajudam mais.",
+  "status.cta_primary": "Dar estrela no GitHub",
+  "status.cta_secondary": "Abrir uma issue",
+  "footer.license": "MIT · © ricardofrancocustodio",
+  "footer.config": "Configuração",
+  "footer.arch": "Arquitetura"
+}
+</script>
+
+<script type="application/json" id="i18n-es">
+{
+  "meta.title": "selfcure — tests Playwright auto-reparables, cualquier LLM",
+  "meta.desc": "selfcure cura los tests, no los componentes. Genera, ejecuta y auto-repara tests Playwright con el LLM de tu elección — Anthropic, OpenAI, Gemini, Groq, DeepSeek u Ollama local.",
+  "nav.how": "Cómo funciona",
+  "nav.providers": "Proveedores",
+  "nav.quickstart": "Inicio rápido",
+  "hero.eyebrow": "Tests Playwright auto-reparables · BYOK · código abierto",
+  "hero.headline_l1": "selfcure cura los tests,",
+  "hero.headline_l2": "no los componentes.",
+  "hero.lede": "Rastrea tu frontend, genera tests Playwright con el LLM de tu elección, y deja que selfcure repare locators inestables automáticamente. Cuando el test está bien pero el componente está roto, selfcure te lo dice.",
+  "hero.cta_primary": "Ver en GitHub →",
+  "hero.cta_secondary": "Inicio rápido",
+  "mantra.quote": "selfcure distingue un test malo de un componente malo. Repara el test cuando el locator cambia. Cuando el componente no tiene un identificador estable, te avisa — y se niega a maquillar un bug de frontend.",
+  "mantra.cite": "— principio de diseño, desde v0.1",
+  "how.eyebrow": "Pipeline",
+  "how.h2": "Cómo funciona",
+  "how.lede": "Un solo comando ejecuta todo el pipeline. Cada etapa es un paquete npm independiente — usa el que necesites.",
+  "how.step1.label": "01 · CRAWL",
+  "how.step1.title": "Lee tu source",
+  "how.step1.desc": "AST estático vía <code>@typescript-eslint/parser</code> + captura dinámica del DOM vía Playwright codegen. Genera un mapa de componentes estructurado.",
+  "how.step2.label": "02 · GENERAR",
+  "how.step2.title": "LLM escribe los tests",
+  "how.step2.desc": "Análisis del componente + mapa de elementos interactivos van al LLM. Devuelve un <code>.spec.ts</code> listo para ejecutar por componente.",
+  "how.step3.label": "03 · CURAR",
+  "how.step3.title": "Repara al fallar",
+  "how.step3.desc": "Las fallas se clasifican. Locator cambió → pide diff al LLM, valida, aplica, reintenta. Bug a nivel de componente → marcado para revisión humana.",
+  "features.eyebrow": "Capacidades",
+  "features.h2": "Lo que obtienes",
+  "features.1.title": "Multi-proveedor",
+  "features.1.desc": "Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, u Ollama local. Cambia de proveedor en una línea de config. Sin vendor lock-in.",
+  "features.2.title": "Loop de auto-reparación",
+  "features.2.desc": "¿Locator falló? selfcure le pide un diff unificado al LLM, lo aplica bajo un sanity check de parse, y hace rollback si falla. Intentos configurables.",
+  "features.3.title": "Score de testabilidad",
+  "features.3.desc": "Cada componente recibe un score 0–100. ¿Score bajo? Descubres que el FE necesita <code>data-testid</code> — no que 'los tests están flaky.'",
+  "features.4.title": "Init en el navegador",
+  "features.4.desc": "Abre un wizard en <code>localhost:3333</code>. Auto-detecta qué claves de proveedor ya tienes exportadas. Elige <code>./src</code>, <code>./app</code>, etc. de tu proyecto.",
+  "features.5.title": "Nativo de Playwright",
+  "features.5.desc": "Los tests generados son código <code>@playwright/test</code> puro. Sin runner propietario, sin lock-in. Trace + screenshot en cada falla.",
+  "features.6.title": "Reporte HTML",
+  "features.6.desc": "Estado por test, diffs aplicados (colapsable), y una sección 'Componentes que necesitan intervención FE' que destaca lo no-reparable.",
+  "providers.eyebrow": "Matriz de proveedores",
+  "providers.h2": "Trae tu propia clave",
+  "providers.lede": "Elige el LLM que se ajuste a tu bolsillo, compliance o hardware. Cámbialo cuando quieras — los defaults vienen de <code>PROVIDERS</code> en <code>packages/generator/src/ai.ts</code>.",
+  "providers.col_provider": "Proveedor",
+  "providers.col_generation": "Generación por defecto",
+  "providers.col_healing": "Curación por defecto",
+  "providers.col_envvar": "Variable de entorno",
+  "providers.tag_free": "free tier",
+  "providers.tag_local": "local · sin clave",
+  "qs.eyebrow": "Empecemos",
+  "qs.h2": "Inicio rápido",
+  "qs.lede": "selfcure aún no está publicado — instala desde el source mientras estabilizamos la API.",
+  "qs.step1": "1 · Enlaza el CLI desde el source",
+  "qs.step2": "2 · Configura en tu proyecto destino",
+  "qs.step3": "3 · Ejecuta",
+  "qs.wizard_note": "El wizard detecta qué claves de proveedor ya tienes exportadas en tu shell y las pre-selecciona. Permite elegir Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama en un dropdown.",
+  "qs.docs_cta": "Lee la guía completa de inicio rápido →",
+  "status.eyebrow": "Estado",
+  "status.h2": "Dónde estamos",
+  "status.p1": "selfcure está en <code>v0.1.0</code> — un monorepo funcional con el pipeline completo montado y la capa de proveedor LLM en su lugar. Las etapas crawl / analyze / generate / run / heal / report están conectadas de punta a punta; algunas aún tienen lógica placeholder mientras endurecemos la integración con AI.",
+  "status.p2": "El mejor lugar para seguir el progreso, abrir issues o contribuir es el repo de GitHub. Las estrellas ayudan; los PRs ayudan más.",
+  "status.cta_primary": "Dar estrella en GitHub",
+  "status.cta_secondary": "Abrir un issue",
+  "footer.license": "MIT · © ricardofrancocustodio",
+  "footer.config": "Configuración",
+  "footer.arch": "Arquitectura"
+}
+</script>
+
+<script type="application/json" id="i18n-fr">
+{
+  "meta.title": "selfcure — tests Playwright auto-réparables, n'importe quel LLM",
+  "meta.desc": "selfcure soigne les tests, pas les composants. Générez, exécutez et auto-corrigez des tests Playwright avec le LLM de votre choix — Anthropic, OpenAI, Gemini, Groq, DeepSeek ou Ollama local.",
+  "nav.how": "Comment ça marche",
+  "nav.providers": "Fournisseurs",
+  "nav.quickstart": "Démarrage rapide",
+  "hero.eyebrow": "Tests Playwright auto-réparables · BYOK · open source",
+  "hero.headline_l1": "selfcure soigne les tests,",
+  "hero.headline_l2": "pas les composants.",
+  "hero.lede": "Parcourez votre frontend, générez des tests Playwright avec le LLM de votre choix, et laissez selfcure réparer automatiquement les locators instables. Quand le test va bien mais que le composant est cassé, selfcure vous le dit.",
+  "hero.cta_primary": "Voir sur GitHub →",
+  "hero.cta_secondary": "Démarrage rapide",
+  "mantra.quote": "selfcure distingue un mauvais test d'un mauvais composant. Il corrige le test quand le locator change. Quand le composant n'a pas d'identifiant stable, il vous le dit — et refuse de masquer un bug frontend.",
+  "mantra.cite": "— principe de conception, depuis v0.1",
+  "how.eyebrow": "Pipeline",
+  "how.h2": "Comment ça marche",
+  "how.lede": "Une seule commande exécute tout le pipeline. Chaque étape est un paquet npm indépendant — choisissez ce dont vous avez besoin.",
+  "how.step1.label": "01 · CRAWL",
+  "how.step1.title": "Lit votre source",
+  "how.step1.desc": "AST statique via <code>@typescript-eslint/parser</code> + capture dynamique du DOM via Playwright codegen. Produit une carte de composants structurée.",
+  "how.step2.label": "02 · GÉNÈRE",
+  "how.step2.title": "Le LLM écrit les tests",
+  "how.step2.desc": "Analyse du composant + carte des éléments interactifs envoyées au LLM. Retourne un <code>.spec.ts</code> prêt à l'emploi par composant.",
+  "how.step3.label": "03 · SOIGNE",
+  "how.step3.title": "Corrige sur échec",
+  "how.step3.desc": "Les échecs sont classés. Locator a changé → demande un diff au LLM, valide, applique, réessaie. Bug au niveau du composant → signalé pour revue humaine.",
+  "features.eyebrow": "Capacités",
+  "features.h2": "Ce que vous obtenez",
+  "features.1.title": "Multi-fournisseur",
+  "features.1.desc": "Anthropic, OpenAI, Google Gemini, Groq, DeepSeek ou Ollama local. Changez de fournisseur en une ligne de config. Pas de vendor lock-in.",
+  "features.2.title": "Boucle d'auto-réparation",
+  "features.2.desc": "Locator en échec ? selfcure demande un diff unifié au LLM, l'applique sous un sanity check de parsing, et fait un rollback si ça échoue. Tentatives configurables.",
+  "features.3.title": "Score de testabilité",
+  "features.3.desc": "Chaque composant reçoit un score 0–100. Score bas ? Vous apprenez que le FE a besoin de <code>data-testid</code> — pas que 'les tests sont flaky.'",
+  "features.4.title": "Init dans le navigateur",
+  "features.4.desc": "Ouvre un wizard à <code>localhost:3333</code>. Auto-détecte quelles clés de fournisseur sont déjà exportées. Choisit <code>./src</code>, <code>./app</code>, etc. de votre projet.",
+  "features.5.title": "Natif Playwright",
+  "features.5.desc": "Les tests générés sont du code <code>@playwright/test</code> pur. Pas de runner propriétaire, pas de lock-in. Trace + screenshot à chaque échec.",
+  "features.6.title": "Rapport HTML",
+  "features.6.desc": "Statut par test, diffs appliqués (repliables), et une section 'Composants nécessitant une intervention FE' qui met en avant les éléments non-réparables.",
+  "providers.eyebrow": "Matrice des fournisseurs",
+  "providers.h2": "Apportez votre propre clé",
+  "providers.lede": "Choisissez le LLM qui correspond à votre budget, conformité ou hardware. Changez quand vous voulez — les defaults viennent de <code>PROVIDERS</code> dans <code>packages/generator/src/ai.ts</code>.",
+  "providers.col_provider": "Fournisseur",
+  "providers.col_generation": "Génération par défaut",
+  "providers.col_healing": "Réparation par défaut",
+  "providers.col_envvar": "Variable d'env",
+  "providers.tag_free": "free tier",
+  "providers.tag_local": "local · sans clé",
+  "qs.eyebrow": "C'est parti",
+  "qs.h2": "Démarrage rapide",
+  "qs.lede": "selfcure n'est pas encore publié — installez depuis le source pendant qu'on stabilise l'API.",
+  "qs.step1": "1 · Liez le CLI depuis le source",
+  "qs.step2": "2 · Configurez dans votre projet cible",
+  "qs.step3": "3 · Exécutez",
+  "qs.wizard_note": "Le wizard détecte quelles clés de fournisseur sont déjà exportées dans votre shell et les pré-sélectionne. Permet de choisir Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama dans un dropdown.",
+  "qs.docs_cta": "Lire le guide de démarrage complet →",
+  "status.eyebrow": "État",
+  "status.h2": "Où ça en est",
+  "status.p1": "selfcure est en <code>v0.1.0</code> — un monorepo fonctionnel avec le pipeline complet en place et la couche de fournisseur LLM intégrée. Les étapes crawl / analyze / generate / run / heal / report sont connectées de bout en bout ; certaines ont encore une logique placeholder pendant qu'on solidifie l'intégration AI.",
+  "status.p2": "Le meilleur endroit pour suivre les progrès, ouvrir des issues ou contribuer est le repo GitHub. Les stars aident ; les PRs aident plus.",
+  "status.cta_primary": "Mettre une étoile sur GitHub",
+  "status.cta_secondary": "Ouvrir une issue",
+  "footer.license": "MIT · © ricardofrancocustodio",
+  "footer.config": "Configuration",
+  "footer.arch": "Architecture"
+}
+</script>
+
+<script type="application/json" id="i18n-de">
+{
+  "meta.title": "selfcure — selbstheilende Playwright-Tests, beliebiges LLM",
+  "meta.desc": "selfcure heilt Tests, nicht Komponenten. Generiere, führe aus und auto-patche Playwright-Tests mit dem LLM deiner Wahl — Anthropic, OpenAI, Gemini, Groq, DeepSeek oder lokales Ollama.",
+  "nav.how": "Wie es funktioniert",
+  "nav.providers": "Provider",
+  "nav.quickstart": "Schnellstart",
+  "hero.eyebrow": "Selbstheilende Playwright-Tests · BYOK · Open Source",
+  "hero.headline_l1": "selfcure heilt Tests,",
+  "hero.headline_l2": "nicht Komponenten.",
+  "hero.lede": "Crawle dein Frontend, generiere Playwright-Tests mit dem LLM deiner Wahl, und lass selfcure instabile Locators automatisch reparieren. Wenn der Test in Ordnung ist, aber die Komponente kaputt ist, sagt selfcure es dir.",
+  "hero.cta_primary": "Auf GitHub ansehen →",
+  "hero.cta_secondary": "Schnellstart",
+  "mantra.quote": "selfcure unterscheidet einen schlechten Test von einer schlechten Komponente. Es patcht den Test, wenn sich der Locator ändert. Wenn die Komponente keinen stabilen Identifier hat, sagt es dir Bescheid — und weigert sich, einen Frontend-Bug zu kaschieren.",
+  "mantra.cite": "— Designprinzip, seit v0.1",
+  "how.eyebrow": "Pipeline",
+  "how.h2": "Wie es funktioniert",
+  "how.lede": "Ein einzelner Befehl führt die gesamte Pipeline aus. Jede Stufe ist ein eigenes npm-Workspace-Paket — nimm was du brauchst.",
+  "how.step1.label": "01 · CRAWL",
+  "how.step1.title": "Liest deinen Source",
+  "how.step1.desc": "Statisches AST via <code>@typescript-eslint/parser</code> + dynamische DOM-Erfassung via Playwright codegen. Liefert eine strukturierte Komponentenkarte.",
+  "how.step2.label": "02 · GENERIEREN",
+  "how.step2.title": "LLM schreibt die Tests",
+  "how.step2.desc": "Komponentenanalyse + Map interaktiver Elemente gehen ans LLM. Liefert eine lauffähige <code>.spec.ts</code> pro Komponente zurück.",
+  "how.step3.label": "03 · HEILEN",
+  "how.step3.title": "Patcht bei Fehler",
+  "how.step3.desc": "Fehler werden klassifiziert. Locator hat sich geändert → bitte LLM um Diff, validieren, anwenden, erneut versuchen. Komponenten-Bug → für menschliche Review markiert.",
+  "features.eyebrow": "Funktionen",
+  "features.h2": "Was du bekommst",
+  "features.1.title": "Multi-Provider",
+  "features.1.desc": "Anthropic, OpenAI, Google Gemini, Groq, DeepSeek oder lokales Ollama. Provider-Wechsel in einer Config-Zeile. Kein Vendor Lock-in.",
+  "features.2.title": "Selbstheilungs-Loop",
+  "features.2.desc": "Locator fehlgeschlagen? selfcure bittet das LLM um einen Unified Diff, wendet ihn unter einem Parse-Sanity-Check an und rollt bei Fehler zurück. Versuche konfigurierbar.",
+  "features.3.title": "Testbarkeits-Score",
+  "features.3.desc": "Jede Komponente bekommt einen Score von 0–100. Niedriger Score? Du erfährst, dass das FE <code>data-testid</code> braucht — nicht, dass 'die Tests flaky sind.'",
+  "features.4.title": "Browser-basierter Init",
+  "features.4.desc": "Öffnet einen Wizard auf <code>localhost:3333</code>. Erkennt automatisch, welche Provider-Keys du bereits exportiert hast. Wählt <code>./src</code>, <code>./app</code> etc. aus deinem Projekt.",
+  "features.5.title": "Playwright-nativ",
+  "features.5.desc": "Generierte Tests sind reiner <code>@playwright/test</code>-Code. Kein proprietärer Runner, kein Lock-in. Trace + Screenshot bei jedem Fehler.",
+  "features.6.title": "HTML-Report",
+  "features.6.desc": "Status pro Test, angewendete Diffs (einklappbar), und ein Abschnitt 'Komponenten, die FE-Eingriff brauchen', der nicht-reparierbare Items hervorhebt.",
+  "providers.eyebrow": "Provider-Matrix",
+  "providers.h2": "Bring deinen eigenen Key",
+  "providers.lede": "Wähle das LLM, das zu deinem Budget, Compliance oder Hardware passt. Jederzeit wechseln — Defaults kommen aus <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.",
+  "providers.col_provider": "Provider",
+  "providers.col_generation": "Generierungs-Default",
+  "providers.col_healing": "Healing-Default",
+  "providers.col_envvar": "Umgebungsvariable",
+  "providers.tag_free": "Free Tier",
+  "providers.tag_local": "lokal · ohne Key",
+  "qs.eyebrow": "Los geht's",
+  "qs.h2": "Schnellstart",
+  "qs.lede": "selfcure ist noch nicht veröffentlicht — installier vom Source, während wir die API stabilisieren.",
+  "qs.step1": "1 · Verlinke die CLI vom Source",
+  "qs.step2": "2 · Konfigurier in deinem Zielprojekt",
+  "qs.step3": "3 · Ausführen",
+  "qs.wizard_note": "Der Wizard erkennt, welche Provider-Keys du in deiner Shell bereits exportiert hast, und wählt sie vor. Lässt dich Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama aus einem Dropdown wählen.",
+  "qs.docs_cta": "Komplette Schnellstart-Anleitung lesen →",
+  "status.eyebrow": "Status",
+  "status.h2": "Wo es steht",
+  "status.p1": "selfcure ist bei <code>v0.1.0</code> — ein funktionierender Monorepo mit der kompletten Pipeline und der LLM-Provider-Schicht. Die Stufen crawl / analyze / generate / run / heal / report sind durchgehend verbunden; einige haben noch Placeholder-Logik, während wir die AI-Integration härten.",
+  "status.p2": "Der beste Ort, um den Fortschritt zu verfolgen, Issues zu öffnen oder beizutragen, ist das GitHub-Repo. Stars helfen; PRs helfen mehr.",
+  "status.cta_primary": "Star auf GitHub geben",
+  "status.cta_secondary": "Issue öffnen",
+  "footer.license": "MIT · © ricardofrancocustodio",
+  "footer.config": "Konfiguration",
+  "footer.arch": "Architektur"
+}
+</script>
+
+<script type="application/json" id="i18n-zh">
+{
+  "meta.title": "selfcure — 自愈 Playwright 测试，任意 LLM",
+  "meta.desc": "selfcure 治愈测试，而非组件。使用您选择的 LLM 生成、运行并自动修复 Playwright 测试 — Anthropic、OpenAI、Gemini、Groq、DeepSeek 或本地 Ollama。",
+  "nav.how": "工作原理",
+  "nav.providers": "提供商",
+  "nav.quickstart": "快速开始",
+  "hero.eyebrow": "自愈 Playwright 测试 · BYOK · 开源",
+  "hero.headline_l1": "selfcure 治愈测试，",
+  "hero.headline_l2": "而非组件。",
+  "hero.lede": "扫描您的前端代码，使用您选择的 LLM 生成 Playwright 测试，让 selfcure 自动修复不稳定的 locator。当测试没问题但组件坏了，selfcure 会告诉您。",
+  "hero.cta_primary": "在 GitHub 上查看 →",
+  "hero.cta_secondary": "快速开始",
+  "mantra.quote": "selfcure 区分坏测试和坏组件。当 locator 漂移时它修复测试；当组件没有稳定标识符时它告诉您 — 并拒绝掩盖前端 bug。",
+  "mantra.cite": "— 设计原则，自 v0.1 起",
+  "how.eyebrow": "流程",
+  "how.h2": "工作原理",
+  "how.lede": "一个命令运行整个流程。每个阶段都是独立的 npm workspace 包 — 按需选用。",
+  "how.step1.label": "01 · CRAWL",
+  "how.step1.title": "读取源代码",
+  "how.step1.desc": "通过 <code>@typescript-eslint/parser</code> 解析静态 AST + 通过 Playwright codegen 动态捕获 DOM。输出结构化的组件映射。",
+  "how.step2.label": "02 · 生成",
+  "how.step2.title": "LLM 编写测试",
+  "how.step2.desc": "组件分析 + 交互元素映射发送给 LLM。每个组件返回一个可运行的 <code>.spec.ts</code>。",
+  "how.step3.label": "03 · 治愈",
+  "how.step3.title": "失败时修补",
+  "how.step3.desc": "失败被分类。Locator 漂移 → 向 LLM 请求 diff、校验、应用、重试。组件级 bug → 标记为人工审查。",
+  "features.eyebrow": "能力",
+  "features.h2": "您能获得什么",
+  "features.1.title": "多提供商",
+  "features.1.desc": "Anthropic、OpenAI、Google Gemini、Groq、DeepSeek 或本地 Ollama。一行配置切换提供商。无供应商锁定。",
+  "features.2.title": "自愈循环",
+  "features.2.desc": "Locator 失败？selfcure 向 LLM 请求统一 diff，在解析健全性检查下应用，失败时回滚。重试次数可配置。",
+  "features.3.title": "可测试性评分",
+  "features.3.desc": "每个组件获得 0–100 的评分。评分低？您会知道前端需要 <code>data-testid</code> — 而不是 '测试不稳定'。",
+  "features.4.title": "浏览器内初始化",
+  "features.4.desc": "在 <code>localhost:3333</code> 打开向导。自动检测您已经导出的提供商密钥。从您的项目中选取 <code>./src</code>、<code>./app</code> 等。",
+  "features.5.title": "Playwright 原生",
+  "features.5.desc": "生成的测试就是纯 <code>@playwright/test</code> 代码。无专有运行器，无锁定。每次失败附带 trace 和截图。",
+  "features.6.title": "HTML 报告",
+  "features.6.desc": "每个测试的状态、应用的 diff（可折叠），以及一个 '需要前端介入的组件' 部分，突出显示无法修复的项目。",
+  "providers.eyebrow": "提供商矩阵",
+  "providers.h2": "自带密钥",
+  "providers.lede": "选择适合您预算、合规或硬件的 LLM。随时切换 — 下方默认值来自 <code>packages/generator/src/ai.ts</code> 中的 <code>PROVIDERS</code>。",
+  "providers.col_provider": "提供商",
+  "providers.col_generation": "默认生成模型",
+  "providers.col_healing": "默认治愈模型",
+  "providers.col_envvar": "环境变量",
+  "providers.tag_free": "免费层",
+  "providers.tag_local": "本地 · 无需密钥",
+  "qs.eyebrow": "开始",
+  "qs.h2": "快速开始",
+  "qs.lede": "selfcure 尚未发布 — 在 API 稳定前从源代码安装。",
+  "qs.step1": "1 · 从源代码链接 CLI",
+  "qs.step2": "2 · 在目标项目中配置",
+  "qs.step3": "3 · 运行",
+  "qs.wizard_note": "向导检测您 shell 中已导出的提供商密钥并自动预选。允许从下拉框选择 Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama。",
+  "qs.docs_cta": "阅读完整的快速开始指南 →",
+  "status.eyebrow": "状态",
+  "status.h2": "当前进展",
+  "status.p1": "selfcure 处于 <code>v0.1.0</code> — 一个完整搭建好的 monorepo，LLM 提供商层已就位。crawl / analyze / generate / run / heal / report 阶段端到端连通；在 AI 集成强化期间，部分阶段仍有占位逻辑。",
+  "status.p2": "跟踪进展、提交 issue 或贡献代码的最佳位置是 GitHub 仓库。Star 有帮助；PR 帮助更大。",
+  "status.cta_primary": "在 GitHub 上加星",
+  "status.cta_secondary": "提交 issue",
+  "footer.license": "MIT · © ricardofrancocustodio",
+  "footer.config": "配置",
+  "footer.arch": "架构"
+}
+</script>
+
+<script type="application/json" id="i18n-ja">
+{
+  "meta.title": "selfcure — 自己修復する Playwright テスト、任意の LLM",
+  "meta.desc": "selfcure はテストを治す。コンポーネントではない。お好みの LLM で Playwright テストを生成、実行、自動修復 — Anthropic、OpenAI、Gemini、Groq、DeepSeek、またはローカル Ollama。",
+  "nav.how": "仕組み",
+  "nav.providers": "プロバイダー",
+  "nav.quickstart": "クイックスタート",
+  "hero.eyebrow": "自己修復する Playwright テスト · BYOK · オープンソース",
+  "hero.headline_l1": "selfcure はテストを治す。",
+  "hero.headline_l2": "コンポーネントではない。",
+  "hero.lede": "フロントエンドをクロールし、お好みの LLM で Playwright テストを生成、selfcure が不安定な locator を自動修復します。テストは正しくてもコンポーネントが壊れているとき、selfcure が教えてくれます。",
+  "hero.cta_primary": "GitHub で見る →",
+  "hero.cta_secondary": "クイックスタート",
+  "mantra.quote": "selfcure は悪いテストと悪いコンポーネントを区別します。locator が変わったらテストにパッチを当て、コンポーネントに安定した識別子がないときは知らせます — フロントエンドのバグを覆い隠すことを拒みます。",
+  "mantra.cite": "— 設計原則、v0.1 から",
+  "how.eyebrow": "パイプライン",
+  "how.h2": "仕組み",
+  "how.lede": "1 つのコマンドでパイプライン全体を実行。各ステージは独立した npm ワークスペースパッケージ — 必要なものを選んで使用。",
+  "how.step1.label": "01 · CRAWL",
+  "how.step1.title": "ソースを読む",
+  "how.step1.desc": "<code>@typescript-eslint/parser</code> による静的 AST + Playwright codegen による動的 DOM キャプチャ。構造化されたコンポーネントマップを出力。",
+  "how.step2.label": "02 · 生成",
+  "how.step2.title": "LLM がテストを書く",
+  "how.step2.desc": "コンポーネント解析 + インタラクティブ要素マップを LLM に送信。コンポーネントごとに実行可能な <code>.spec.ts</code> を返します。",
+  "how.step3.label": "03 · 治癒",
+  "how.step3.title": "失敗時にパッチ",
+  "how.step3.desc": "失敗は分類されます。locator のずれ → LLM に diff を要求、検証、適用、再試行。コンポーネントレベルのバグ → 人間のレビュー対象としてマーク。",
+  "features.eyebrow": "機能",
+  "features.h2": "得られるもの",
+  "features.1.title": "マルチプロバイダー",
+  "features.1.desc": "Anthropic、OpenAI、Google Gemini、Groq、DeepSeek、またはローカル Ollama。1 行の設定でプロバイダーを切り替え。ベンダーロックインなし。",
+  "features.2.title": "自己修復ループ",
+  "features.2.desc": "locator が失敗？selfcure は LLM に統一 diff を要求し、パース正常性チェックの下で適用、失敗時はロールバック。試行回数は設定可能。",
+  "features.3.title": "テスタビリティスコア",
+  "features.3.desc": "各コンポーネントに 0–100 のスコア。低スコア？フロントエンドに <code>data-testid</code> が必要なことが分かります — 「テストが flaky」ではありません。",
+  "features.4.title": "ブラウザベースの初期設定",
+  "features.4.desc": "<code>localhost:3333</code> でウィザードを開きます。すでにエクスポートされているプロバイダーキーを自動検出。プロジェクトから <code>./src</code>、<code>./app</code> などを選択。",
+  "features.5.title": "Playwright ネイティブ",
+  "features.5.desc": "生成されたテストはピュアな <code>@playwright/test</code> コード。プロプライエタリなランナーなし、ロックインなし。失敗ごとにトレース + スクリーンショット。",
+  "features.6.title": "HTML レポート",
+  "features.6.desc": "テストごとのステータス、適用された diff（折りたたみ可能）、そして修復不能な項目を強調する「フロントエンド介入が必要なコンポーネント」セクション。",
+  "providers.eyebrow": "プロバイダーマトリックス",
+  "providers.h2": "自分のキーを使う",
+  "providers.lede": "予算、コンプライアンス、ハードウェアに合う LLM を選択。いつでも切り替え可能 — 以下のデフォルトは <code>packages/generator/src/ai.ts</code> の <code>PROVIDERS</code> から。",
+  "providers.col_provider": "プロバイダー",
+  "providers.col_generation": "デフォルト生成モデル",
+  "providers.col_healing": "デフォルト修復モデル",
+  "providers.col_envvar": "環境変数",
+  "providers.tag_free": "無料枠",
+  "providers.tag_local": "ローカル · キー不要",
+  "qs.eyebrow": "始めましょう",
+  "qs.h2": "クイックスタート",
+  "qs.lede": "selfcure は未公開 — API 安定化中はソースからインストール。",
+  "qs.step1": "1 · ソースから CLI をリンク",
+  "qs.step2": "2 · ターゲットプロジェクトで設定",
+  "qs.step3": "3 · 実行",
+  "qs.wizard_note": "ウィザードはシェルですでにエクスポートされているプロバイダーキーを検出し、事前選択します。ドロップダウンから Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama を選択できます。",
+  "qs.docs_cta": "完全なクイックスタートガイドを読む →",
+  "status.eyebrow": "ステータス",
+  "status.h2": "現在の状況",
+  "status.p1": "selfcure は <code>v0.1.0</code> — 完全なパイプラインと LLM プロバイダーレイヤーが配置された動作するモノレポ。crawl / analyze / generate / run / heal / report ステージはエンドツーエンドで接続；AI 統合の強化中、いくつかのステージはまだプレースホルダーロジックがあります。",
+  "status.p2": "進捗の追跡、issue の作成、貢献には GitHub リポジトリが最適。スターは助かります；PR はもっと助かります。",
+  "status.cta_primary": "GitHub でスターを付ける",
+  "status.cta_secondary": "Issue を開く",
+  "footer.license": "MIT · © ricardofrancocustodio",
+  "footer.config": "設定",
+  "footer.arch": "アーキテクチャ"
+}
+</script>
+
+<script>
+  // ─────────────────────────────────────────────────────────────────────
+  // i18n loader — reads ?lang= from URL, localStorage, or navigator.language
+  // and swaps every [data-i18n] element's innerHTML against the matching JSON
+  // dictionary embedded above. Single source of truth: this HTML file.
+  // ─────────────────────────────────────────────────────────────────────
+  (function() {
+    const LANGS = ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ja'];
+
+    function pickLang() {
+      const params = new URLSearchParams(location.search);
+      const fromUrl = params.get('lang');
+      if (fromUrl && LANGS.includes(fromUrl)) return fromUrl;
+
+      const fromStorage = localStorage.getItem('selfcure-lang');
+      if (fromStorage && LANGS.includes(fromStorage)) return fromStorage;
+
+      const fromBrowser = (navigator.language || 'en').slice(0, 2).toLowerCase();
+      if (LANGS.includes(fromBrowser)) return fromBrowser;
+
+      return 'en';
+    }
+
+    function applyLang(lang) {
+      const el = document.getElementById('i18n-' + lang);
+      if (!el) return;
+
+      let dict;
+      try { dict = JSON.parse(el.textContent); }
+      catch (err) { console.warn('i18n: bad JSON for', lang, err); return; }
+
+      document.documentElement.lang = lang;
+
+      document.querySelectorAll('[data-i18n]').forEach((node) => {
+        const key = node.dataset.i18n;
+        if (dict[key] != null) node.innerHTML = dict[key];
+      });
+
+      if (dict['meta.title']) document.title = dict['meta.title'];
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc && dict['meta.desc']) metaDesc.setAttribute('content', dict['meta.desc']);
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      if (ogTitle && dict['meta.title']) ogTitle.setAttribute('content', dict['meta.title']);
+      const ogDesc = document.querySelector('meta[property="og:description"]');
+      if (ogDesc && dict['meta.desc']) ogDesc.setAttribute('content', dict['meta.desc']);
+
+      const select = document.querySelector('.lang-select');
+      if (select) select.value = lang;
+
+      localStorage.setItem('selfcure-lang', lang);
+    }
+
+    applyLang(pickLang());
+
+    const select = document.querySelector('.lang-select');
+    if (select) {
+      select.addEventListener('change', (e) => {
+        applyLang(e.target.value);
+        // Update URL without reloading, so the link is shareable
+        const url = new URL(location.href);
+        url.searchParams.set('lang', e.target.value);
+        history.replaceState(null, '', url);
+      });
+    }
+  })();
+</script>
 
 </body>
 </html>
