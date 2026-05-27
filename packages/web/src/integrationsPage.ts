@@ -156,6 +156,7 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
   <section id="cards" class="grid"></section>
 
   <p class="foot">
+    Managed mode (recommended): <code>SELFCURE_CONNECTOR_BASE_URL</code>.<br>
     Required env vars: <code>SELFCURE_GITHUB_CLIENT_ID</code>, <code>SELFCURE_GITHUB_CLIENT_SECRET</code>,
     <code>SELFCURE_GITLAB_CLIENT_ID</code>, <code>SELFCURE_GITLAB_CLIENT_SECRET</code>,
     <code>SELFCURE_BITBUCKET_CLIENT_ID</code>, <code>SELFCURE_BITBUCKET_CLIENT_SECRET</code>.

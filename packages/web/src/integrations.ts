@@ -35,6 +35,7 @@ interface SavedConnection {
   connectedAt: string;
   account: ConnectionAccount;
   token: ConnectionToken;
+  managed?: boolean;
 }
 
 interface IntegrationsFile {
@@ -112,6 +113,14 @@ function resolveEnvValue(cwd: string, key: string): string {
   return process.env[key] ?? readEnvVarFromDotEnv(cwd, key);
 }
 
+function connectorBaseUrl(cwd: string): string {
+  return resolveEnvValue(cwd, 'SELFCURE_CONNECTOR_BASE_URL').replace(/\/$/, '');
+}
+
+function hasManagedConnector(cwd: string): boolean {
+  return Boolean(connectorBaseUrl(cwd));
+}
+
 function cleanupPending(): void {
   const now = Date.now();
   for (const [state, pending] of pendingByState) {
@@ -177,9 +186,12 @@ export function isScmProviderId(value: string): value is ScmProviderId {
 
 export async function getProviderStatus(cwd: string): Promise<ProviderStatusResponse> {
   const file = await readIntegrations(cwd);
+  const managed = hasManagedConnector(cwd);
   const providers: ProviderStatus[] = (Object.values(PROVIDERS) as ScmProviderMeta[])
     .map((meta) => {
-      const cfg = getConfig(cwd, meta);
+      const cfg = managed
+        ? { clientId: 'managed', clientSecret: 'managed', missingEnv: [] }
+        : getConfig(cwd, meta);
       const conn = file.connections[meta.id];
       return {
         id: meta.id,
@@ -198,6 +210,19 @@ export async function getProviderStatus(cwd: string): Promise<ProviderStatusResp
 
 export function getOAuthStartUrl(cwd: string, provider: ScmProviderId, port: number): { redirectTo?: string; error?: string } {
   cleanupPending();
+
+  if (hasManagedConnector(cwd)) {
+    const state = crypto.randomBytes(20).toString('hex');
+    pendingByState.set(state, { provider, createdAtMs: Date.now() });
+
+    const base = connectorBaseUrl(cwd);
+    const returnTo = `http://localhost:${port}/oauth/managed/callback/${provider}`;
+    const url = new URL(`${base}/oauth/connect/${provider}`);
+    url.searchParams.set('state', state);
+    url.searchParams.set('return_to', returnTo);
+
+    return { redirectTo: url.toString() };
+  }
 
   const meta = PROVIDERS[provider];
   const cfg = getConfig(cwd, meta);
@@ -457,6 +482,52 @@ export async function handleOAuthCallback(
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+}
+
+export async function handleManagedOAuthCallback(
+  cwd: string,
+  provider: ScmProviderId,
+  query: URLSearchParams,
+): Promise<{ ok: boolean; error?: string }> {
+  cleanupPending();
+
+  const state = query.get('state') ?? '';
+  const status = query.get('status') ?? '';
+  const error = query.get('error') ?? '';
+
+  if (!state) {
+    return { ok: false, error: 'Missing OAuth state in callback' };
+  }
+
+  const pending = pendingByState.get(state);
+  pendingByState.delete(state);
+  if (!pending || pending.provider !== provider) {
+    return { ok: false, error: 'Invalid or expired OAuth state. Retry connect.' };
+  }
+
+  if (error) return { ok: false, error };
+  if (status && status !== 'ok') {
+    return { ok: false, error: `Connector returned status=${status}` };
+  }
+
+  const account: ConnectionAccount = {
+    id: query.get('accountId') || `${provider}-managed`,
+    username: query.get('username') || `${provider}-user`,
+    displayName: query.get('displayName') || query.get('username') || `${provider} user`,
+    ...(query.get('url') ? { url: query.get('url') ?? undefined } : {}),
+  };
+
+  const file = await readIntegrations(cwd);
+  file.connections[provider] = {
+    provider,
+    connectedAt: new Date().toISOString(),
+    account,
+    token: { accessToken: 'managed-by-connector', tokenType: 'Bearer' },
+    managed: true,
+  };
+  await writeIntegrations(cwd, file);
+
+  return { ok: true };
 }
 
 export async function disconnectProvider(cwd: string, provider: ScmProviderId): Promise<void> {

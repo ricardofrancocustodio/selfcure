@@ -14,6 +14,7 @@ import {
   disconnectProvider,
   getOAuthStartUrl,
   getProviderStatus,
+  handleManagedOAuthCallback,
   handleOAuthCallback,
   isScmProviderId,
 } from './integrations.js';
@@ -643,6 +644,7 @@ export { buildConfigContent, generateConfig, FRAMEWORK_EXTENSIONS } from './gene
  *   GET  /crawl         → crawler/analyzer results page
  *   GET  /integrations  → SCM OAuth connection page (GitHub/GitLab/Bitbucket)
  *   GET  /oauth/connect/:provider  → start OAuth flow and redirect
+ *   GET  /oauth/managed/callback/:provider → cloud connector callback
  *   GET  /oauth/callback/:provider → handle OAuth callback and persist token
  *   GET  /api/dirs      → cwd + immediate subdirs (for the source-folder picker)
  *   GET  /api/providers → supported LLM providers + which env vars are already set
@@ -716,6 +718,34 @@ export function startWebServer(
       }
 
       handleOAuthCallback(cwd, port, providerRaw, parsed.searchParams)
+        .then((result) => {
+          if (result.ok) {
+            const ok = encodeURIComponent(providerRaw);
+            res.writeHead(302, { Location: `/integrations?connected=${ok}` });
+            res.end();
+            return;
+          }
+          const err = encodeURIComponent(result.error ?? 'OAuth callback failed');
+          res.writeHead(302, { Location: `/integrations?error=${err}` });
+          res.end();
+        })
+        .catch((err) => {
+          const msg = encodeURIComponent(err instanceof Error ? err.message : String(err));
+          res.writeHead(302, { Location: `/integrations?error=${msg}` });
+          res.end();
+        });
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/oauth/managed/callback/')) {
+      const providerRaw = pathname.slice('/oauth/managed/callback/'.length);
+      if (!isScmProviderId(providerRaw)) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Unknown provider');
+        return;
+      }
+
+      handleManagedOAuthCallback(cwd, providerRaw, parsed.searchParams)
         .then((result) => {
           if (result.ok) {
             const ok = encodeURIComponent(providerRaw);

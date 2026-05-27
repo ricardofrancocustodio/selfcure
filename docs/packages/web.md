@@ -27,6 +27,7 @@ Returns a `http.Server` instance.
 | `GET` | `/lint` | Serves the testability linter page (PR-focused, see below) |
 | `GET` | `/integrations` | Serves the SCM integrations page (GitHub/GitLab/Bitbucket) |
 | `GET` | `/oauth/connect/:provider` | Starts OAuth login and redirects to the selected provider |
+| `GET` | `/oauth/managed/callback/:provider` | Handles callback when using a managed cloud connector |
 | `GET` | `/oauth/callback/:provider` | Handles OAuth callback and persists the connection |
 | `GET` | `/api/dirs` | Returns the wizard `cwd` and its immediate subdirectories (used to populate the source-folder picker) |
 | `GET` | `/api/providers` | Returns the supported LLM providers + which env vars are already set in the server's environment |
@@ -103,6 +104,11 @@ fallback to the target project's `.env` file when not present in the shell:
 - `SELFCURE_GITLAB_CLIENT_SECRET`
 - `SELFCURE_BITBUCKET_CLIENT_ID`
 - `SELFCURE_BITBUCKET_CLIENT_SECRET`
+
+Managed connector mode (commercial-friendly, no per-provider client secrets on customer machines):
+
+- `SELFCURE_CONNECTOR_BASE_URL` — when set, `/oauth/connect/:provider` redirects to your cloud connector,
+  and the local callback route `/oauth/managed/callback/:provider` persists the connected account.
 
 Tokens are stored locally in `.selfcure/integrations.json` and `.selfcure/`
 is auto-added to `.gitignore` when the first provider is connected.

@@ -49,6 +49,7 @@ create / update / delete each one.
 | `docs/implementations/2026-05-27-no-port-3000-defaults.md` | Replaced 3000 defaults/examples with 5000 and removed test session artifact that restored 3000 |
 | `docs/implementations/2026-05-27-scm-oauth-integrations.md` | Added one-click OAuth connections for GitHub, GitLab, and Bitbucket in `/integrations` |
 | `docs/implementations/2026-05-27-scm-oauth-dotenv-fallback.md` | Enabled OAuth credential detection from target `.env` so Connect buttons are not wrongly disabled |
+| `docs/implementations/2026-05-27-managed-oauth-connector-mode.md` | Added managed cloud connector mode via `SELFCURE_CONNECTOR_BASE_URL` for no-secrets-on-client OAuth |
 
 ### `site/` — public landing page (GitHub Pages)
 
