@@ -48,6 +48,25 @@ export interface GenerateResult {
   envNote: string;
 }
 
+/**
+ * Shape of the persisted session stored in `.selfcure/session.json`.
+ * Never contains secrets — API key stays in `.env`.
+ */
+export interface SessionData {
+  rootDir: string;
+  framework: string;
+  include: string[];
+  testsDir: string;
+  baseURL: string;
+  ai: {
+    provider: string;
+    generationModel: string;
+    healingModel: string;
+    baseURL?: string;
+  };
+  savedAt: string;
+}
+
 export function buildConfigContent(options: InitOptions): string {
   const { rootDir, framework, include, testsDir, baseURL, ai } = options;
   const safeInclude =
@@ -148,11 +167,100 @@ export async function generateConfig(
     }
   }
 
+  await saveSession(cwd, options);
+  await ensureGitignore(cwd, ['.selfcure/', '.env']);
+
   return {
     configContent,
     configPath,
     envNote,
   };
+}
+
+/**
+ * Persist wizard state to `.selfcure/session.json` so the form can be
+ * pre-filled on subsequent visits. The API key is never stored here.
+ */
+async function saveSession(cwd: string, options: InitOptions): Promise<void> {
+  const sessionPath = path.join(cwd, '.selfcure', 'session.json');
+  const data: SessionData = {
+    rootDir: options.rootDir,
+    framework: options.framework,
+    include: options.include,
+    testsDir: options.testsDir,
+    baseURL: options.baseURL,
+    ai: {
+      provider: options.ai.provider,
+      generationModel: options.ai.generationModel,
+      healingModel: options.ai.healingModel,
+      ...(options.ai.baseURL ? { baseURL: options.ai.baseURL } : {}),
+    },
+    savedAt: new Date().toISOString(),
+  };
+  await fs.outputJson(sessionPath, data, { spaces: 2 });
+}
+
+/**
+ * Read the persisted session. Returns null when no session exists yet.
+ */
+export async function loadSession(cwd: string): Promise<SessionData | null> {
+  try {
+    const sessionPath = path.join(cwd, '.selfcure', 'session.json');
+    return (await fs.readJson(sessionPath)) as SessionData;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Delete the persisted session file (called when the user clicks "clear").
+ */
+export async function clearSession(cwd: string): Promise<void> {
+  const sessionPath = path.join(cwd, '.selfcure', 'session.json');
+  try {
+    await fs.remove(sessionPath);
+  } catch { /* non-fatal */ }
+}
+
+/**
+ * Check whether a given env var is present (non-empty) in the `.env` file on
+ * disk — without relying on `process.env` which may not have loaded the file.
+ */
+export async function envKeyIsSet(cwd: string, key: string): Promise<boolean> {
+  try {
+    const content = await fs.readFile(path.join(cwd, '.env'), 'utf-8');
+    return new RegExp(`^${key}=.+`, 'm').test(content);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Ensure `.gitignore` in `cwd` contains every entry in `entries`.
+ * Entries already present (exact match, ignoring trailing slash variants) are
+ * skipped so the file is not modified unnecessarily.
+ */
+async function ensureGitignore(cwd: string, entries: string[]): Promise<void> {
+  const gitignorePath = path.join(cwd, '.gitignore');
+  let content = '';
+  try {
+    content = await fs.readFile(gitignorePath, 'utf-8');
+  } catch { /* file doesn't exist yet — fine */ }
+
+  const lines = content.split('\n').map((l) => l.trim());
+  const toAdd = entries.filter((entry) => {
+    const bare = entry.replace(/\/$/, '');
+    return !lines.includes(entry) && !lines.includes(bare) && !lines.includes(bare + '/');
+  });
+
+  if (toAdd.length === 0) return;
+
+  const sep = content.length > 0 && !content.endsWith('\n') ? '\n' : '';
+  await fs.outputFile(
+    gitignorePath,
+    content + sep + '\n# selfcure\n' + toAdd.join('\n') + '\n',
+    'utf-8',
+  );
 }
 
 /**

@@ -110,13 +110,6 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .run-status { font-size: 12px; color: var(--muted); }
     .run-error { font-size: 12px; color: var(--error); background: var(--error-bg); border: 1px solid var(--error); border-radius: 6px; padding: 4px 10px; }
 
-    /* ── Pro bar ─────────────────────────────────────────────────────────── */
-    .pro-bar { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 8px 16px; background: var(--pro-bg); border-bottom: 1px solid var(--pro-bdr); }
-    .pro-label { font-size: 11px; font-weight: 700; color: var(--pro); text-transform: uppercase; letter-spacing: 0.08em; }
-    .pro-opt { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
-    .pro-opt input { cursor: pointer; accent-color: var(--pro); }
-    .pro-hint { font-size: 12px; color: var(--muted); }
-
     /* ── Diff summary bar ───────────────────────────────────────────────── */
     .diff-sum { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 16px; border-bottom: 1px solid var(--border); font-size: 13px; background: var(--bg); }
     .ds-stat { font-weight: 600; }
@@ -242,31 +235,25 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .state-title { font-size: 15px; font-weight: 600; }
     .state-body  { font-size: 13px; color: var(--muted); max-width: 380px; }
     .state-ok .state-title { color: var(--success); }
-    /* PR banner (inline in diff area, from CLI --pr) */
-    .pr-banner { display: flex; align-items: center; gap: 10px; background: var(--success-bg); border: 1px solid var(--success); border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; }
-    .pr-banner a { color: var(--accent); font-weight: 600; }
-    /* PR compare & pull request section */
-    .pr-section { padding: 0 16px 14px; }
-    .pr-compare-banner { display: flex; align-items: center; gap: 14px; background: var(--success-bg); border: 1px solid rgba(26,127,55,0.4); border-radius: 6px; padding: 14px 18px; }
-    .pr-compare-info { flex: 1; }
-    .pr-compare-title { font-size: 13px; font-weight: 600; color: var(--text); }
-    .pr-compare-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
-    .btn-compare { background: var(--success); color: #fff; border: none; border-radius: 6px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
-    .btn-compare:hover { opacity: 0.88; }
-    .btn-compare:disabled { opacity: 0.55; cursor: not-allowed; }
-    .pr-form-wrap { background: var(--canvas); border: 1px solid var(--border); border-radius: 6px; padding: 20px 24px; }
-    .pr-form-head { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-    .pr-field { margin-bottom: 12px; }
-    .pr-field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
-    .pr-field input[type="text"] { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--border-hi); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 13px; padding: 7px 12px; outline: none; }
-    .pr-field textarea { width: 100%; box-sizing: border-box; background: var(--bg); border: 1px solid var(--border-hi); border-radius: 6px; color: var(--text); font-family: var(--mono); font-size: 11px; padding: 7px 12px; resize: vertical; outline: none; line-height: 1.5; }
-    .pr-field input[type="text"]:focus, .pr-field textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9,105,218,0.15); }
-    .pr-row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
-    .btn-create-pr { background: var(--success); color: #fff; border: none; border-radius: 6px; padding: 7px 18px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-create-pr:hover { opacity: 0.88; }
-    .btn-create-pr:disabled { opacity: 0.55; cursor: not-allowed; }
-    .btn-cancel-pr { background: none; border: 1px solid var(--border-hi); border-radius: 6px; color: var(--text); font-size: 13px; padding: 7px 14px; cursor: pointer; }
-    .btn-cancel-pr:hover { background: var(--canvas-sub); }
+    /* PR action bar — primary CTA after lint runs */
+    .pr-action { position: sticky; top: var(--nav-h); z-index: 150; display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--success-bg); border-bottom: 1px solid rgba(26,127,55,0.35); }
+    .pr-action-info { flex: 1; min-width: 0; }
+    .pr-action-title { font-size: 13px; font-weight: 600; color: var(--text); }
+    .pr-action-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .pr-action-sub code { background: var(--canvas-sub); padding: 1px 5px; border-radius: 3px; font-size: 11px; }
+    .btn-open-pr { background: var(--success); color: #fff; border: none; border-radius: 6px; padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .btn-open-pr:hover { opacity: 0.9; }
+    .btn-open-pr:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pr-success { display: flex; align-items: center; gap: 10px; background: var(--success-bg); border: 1px solid var(--success); border-radius: 6px; padding: 12px 16px; margin: 16px 16px 0; font-size: 13px; }
+    .pr-success a { color: var(--accent); font-weight: 600; }
+    .pr-error { font-size: 12px; color: var(--error); background: var(--error-bg); border: 1px solid var(--error); border-radius: 6px; padding: 6px 12px; }
+    /* per-issue checkbox */
+    .issue-pick { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 8px; }
+    .issue-pick input { cursor: pointer; accent-color: var(--success); width: 14px; height: 14px; }
+    .file-pick { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 10px; }
+    .file-pick input { cursor: pointer; accent-color: var(--success); width: 14px; height: 14px; }
+    tbody.r-unselected .cd { opacity: 0.4; }
+    tbody.r-unselected .tag-disp { text-decoration: line-through; }
     /* spinner */
     .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border-hi); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -300,55 +287,20 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   <span id="errorMsg" class="run-error" role="alert" hidden></span>
 </div></form>
 
-<div class="pro-bar">
-  <span class="pro-label">&#9670; Pro</span>
-  <label class="pro-opt">
-    <input type="checkbox" id="fixCheck">
-    <span>Auto-fix</span>
-    <span class="pro-hint">— inject data-testid into source files</span>
-  </label>
-</div>
-
-<div id="prSection" hidden>
-  <div id="prBanner" class="pr-section">
-    <div class="pr-compare-banner">
-      <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor" style="color:var(--success);flex-shrink:0" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
-      <div class="pr-compare-info">
-        <div class="pr-compare-title">selfcure applied <strong id="prFixedCount">0</strong> fix(es) &mdash; want to open a pull request?</div>
-        <div class="pr-compare-sub">Branch, title and description are pre-filled. Review and submit.</div>
-      </div>
-      <button id="openPrFormBtn" class="btn-compare">Compare &amp; pull request</button>
+<div id="prAction" class="pr-action" hidden>
+  <div class="pr-action-info">
+    <div class="pr-action-title">
+      <span id="prSelInfo">0 of 0 issues selected</span>
     </div>
+    <div class="pr-action-sub" id="prSubInfo">Pick which fixes go into the PR. We branch, commit, push and open it on GitHub in one shot.</div>
   </div>
-  <div id="prForm" class="pr-section" hidden>
-    <div class="pr-form-wrap">
-      <div class="pr-form-head">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
-        Open a pull request
-      </div>
-      <div class="pr-field">
-        <label for="prBranch">Branch name</label>
-        <input id="prBranch" type="text" spellcheck="false" autocomplete="off">
-      </div>
-      <div class="pr-field">
-        <label for="prTitle">Title</label>
-        <input id="prTitle" type="text" spellcheck="false" autocomplete="off">
-      </div>
-      <div class="pr-field">
-        <label for="prBody">Description</label>
-        <textarea id="prBody" rows="12" spellcheck="false"></textarea>
-      </div>
-      <div class="pr-row-actions">
-        <button id="cancelPrBtn" class="btn-cancel-pr">Cancel</button>
-        <button id="submitPrBtn" class="btn-create-pr">Create pull request</button>
-      </div>
-      <div id="prError" class="run-error" style="margin-top:10px" hidden role="alert"></div>
-    </div>
-  </div>
-  <div id="prResult" class="pr-section" hidden>
-    <div class="pr-banner" id="prResultBanner"></div>
-  </div>
+  <span id="prInlineError" class="pr-error" role="alert" hidden></span>
+  <button id="openPrBtn" class="btn-open-pr">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
+    Open pull request
+  </button>
 </div>
+<div id="prSuccess" hidden></div>
 
 <div id="diffSum" class="diff-sum" hidden>
   <span id="sumFiles" class="ds-stat">—</span>
@@ -395,7 +347,6 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   const thrLabel  = $('thrLabel');
   const runStatus = $('runStatus');
   const errorMsg  = $('errorMsg');
-  const fixCheck  = $('fixCheck');
   const diffSum   = $('diffSum');
   const sumFiles  = $('sumFiles');
   const sumIssues = $('sumIssues');
@@ -408,22 +359,22 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   const fileFilter= $('fileFilter');
   const diffArea  = $('diffArea');
 
+  const prAction       = $('prAction');
+  const prSelInfo      = $('prSelInfo');
+  const prSubInfo      = $('prSubInfo');
+  const openPrBtn      = $('openPrBtn');
+  const prInlineError  = $('prInlineError');
+  const prSuccess      = $('prSuccess');
+
   let allExpanded = true;
   let lastResult  = null;
+  let lastIsPro   = false;
+  const selected  = new Set();
+  const allKeys   = new Set();
+  let prInFlight  = null;
 
-  const prSection      = $('prSection');
-  const prFixedCount   = $('prFixedCount');
-  const prBannerEl     = $('prBanner');
-  const openPrFormBtn  = $('openPrFormBtn');
-  const prFormEl       = $('prForm');
-  const prBranchInput  = $('prBranch');
-  const prTitleInput   = $('prTitle');
-  const prBodyArea     = $('prBody');
-  const submitPrBtn    = $('submitPrBtn');
-  const cancelPrBtn    = $('cancelPrBtn');
-  const prErrorEl      = $('prError');
-  const prResultEl     = $('prResult');
-  const prResultBanner = $('prResultBanner');
+  function issueKey(fp, tid) { return fp + '|' + tid; }
+  function cssEsc(s) { return String(s).replace(/(["\\\\])/g, '\\\\$1'); }
 
   thrInput.addEventListener('input', () => {
     thrLabel.textContent = 'score < ' + (thrInput.value || '65');
@@ -432,7 +383,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   toggleAll.addEventListener('click', () => {
     allExpanded = !allExpanded;
     document.querySelectorAll('.diff-body').forEach(b => b.classList.toggle('collapsed', !allExpanded));
-    document.querySelectorAll('.caret').forEach(c => { c.textContent = allExpanded ? '\u25bc' : '\u25b6'; });
+    document.querySelectorAll('.caret').forEach(c => { c.textContent = allExpanded ? '▼' : '▶'; });
     toggleAll.textContent = allExpanded ? 'Collapse all' : 'Expand all';
   });
 
@@ -446,26 +397,30 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   form.addEventListener('submit', async e => {
     e.preventDefault();
     runBtn.disabled = true;
-    runStatus.innerHTML = '<span class="spinner"></span> Running\u2026';
-    errorMsg.hidden  = true;
-    diffSum.hidden   = true;
-    sidebar.hidden   = true;
-    prSection.hidden = true;
-    diffArea.innerHTML = '';
+    runStatus.innerHTML = '<span class="spinner"></span> Running…';
+    errorMsg.hidden     = true;
+    diffSum.hidden      = true;
+    sidebar.hidden      = true;
+    prAction.hidden     = true;
+    prSuccess.hidden    = true;
+    prSuccess.innerHTML = '';
+    diffArea.innerHTML  = '';
+    selected.clear();
+    allKeys.clear();
 
     const body = {
       configPath: cfgInput.value.trim() || 'selfcure.config.mjs',
       threshold:  Number(thrInput.value) || 65,
-      fix:  fixCheck.checked,
     };
 
     try {
       const res  = await fetch('/api/lint', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lint failed');
-      render(data, body.threshold);
       lastResult = data;
-      if (data.fixedCount > 0) showPrSection(data, body.threshold);
+      lastIsPro  = data.pro === true;
+      render(data, body.threshold);
+      maybeShowPrAction(data);
     } catch (err) {
       errorMsg.textContent = String(err.message || err);
       errorMsg.hidden = false;
@@ -486,9 +441,6 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     for (let i = 0; i < 10; i++) s += '<span class="pip ' + (i < f ? c + '-f' : 'empty') + '"></span>';
     return s + '</span>';
   }
-  function stratCls(st) {
-    return ['data-testid','aria-label','id','name'].includes(st) ? 'stag-ok' : 'stag-bad';
-  }
   function splitFp(fp) {
     const parts = fp.replace(/\\\\/g, '/').split('/');
     const name  = parts.pop();
@@ -501,7 +453,6 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     const tag = el.type === 'link' ? 'a' : el.type === 'input' ? 'input' : el.type === 'form' ? 'form' : 'button';
     const isVoid = tag === 'input';
 
-    // Extract attribute values from selectorRanking (string-based to avoid template-literal regex escaping)
     const a = {};
     function attrVal(v, attr) {
       const needle = '[' + attr + '="';
@@ -518,7 +469,6 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
       else if (c.strategy === 'css')        { const x = attrVal(v, 'type');       if (x !== null) a.type = x; }
     }
 
-    // Build attribute HTML
     let attrsHtml = '';
     if (isFix) {
       attrsHtml += ' <span class="tok-new">data-testid=&quot;' + esc(suggestedTestId) + '&quot;</span>';
@@ -538,11 +488,11 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 
   /* ── render ──────────────────────────────────────────────────────────── */
   function render(data, threshold) {
-    const { issues, totalFiles, fixedCount, prUrl } = data;
+    const { issues, totalFiles } = data;
 
     sumFiles.textContent  = totalFiles;
     sumIssues.textContent = issues.length;
-    sumFixed.textContent  = fixedCount > 0 ? '(' + fixedCount + ' patched)' : '';
+    sumFixed.textContent  = '';
 
     /* score squares — proportion of flagged files */
     const rc = Math.max(0, Math.min(10, Math.round(10 * issues.length / Math.max(totalFiles, 1))));
@@ -558,7 +508,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
         '<div class="state state-ok">' +
           '<div class="state-icon">&#10003;</div>' +
           '<div class="state-title">No issues found</div>' +
-          '<div class="state-body">' + totalFiles + ' file(s) scanned \u2014 all elements score \u2265 ' + threshold + '/100.</div>' +
+          '<div class="state-body">' + totalFiles + ' file(s) scanned — all elements score ≥ ' + threshold + '/100.</div>' +
         '</div>';
       sidebar.hidden = true;
       return;
@@ -575,11 +525,10 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     let nav = '', idx = 0;
     for (const [fp, fi] of byFile) {
       const { name } = splitFp(fp);
-      const allOk    = fi.every(i => i.fixApplied);
       nav +=
         '<a class="fn-item" href="#f' + idx + '" data-fp="' + esc(fp) + '">' +
           '<span class="fn-name" title="' + esc(fp) + '">' + esc(name) + '</span>' +
-          '<span class="fn-badge ' + (allOk ? 'ok' : 'err') + '">' + fi.length + '</span>' +
+          '<span class="fn-badge err">' + fi.length + '</span>' +
         '</a>';
       idx++;
     }
@@ -589,25 +538,24 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 
     /* diff cards */
     let html = '';
-    if (prUrl) html += '<div class="pr-banner">&#128279; PR: <a href="' + esc(prUrl) + '" target="_blank" rel="noreferrer">' + esc(prUrl) + '</a></div>';
 
     idx = 0;
     for (const [fp, fi] of byFile) {
       const { dir, name } = splitFp(fp);
-      const allOk = fi.every(i => i.fixApplied);
       const cnt   = fi.length;
 
       html +=
-        '<div class="diff-card" id="f' + idx + '">' +
-        '<div class="diff-head" onclick="toggleCard(this)">' +
+        '<div class="diff-card" id="f' + idx + '" data-file-card="' + esc(fp) + '">' +
+        '<div class="diff-head" onclick="toggleCard(event, this)">' +
+          '<label class="file-pick" onclick="event.stopPropagation()" title="Select all in this file">' +
+            '<input type="checkbox" class="js-file-pick" data-fp="' + esc(fp) + '" checked>' +
+          '</label>' +
           '<button class="caret" aria-label="collapse">&#9660;</button>' +
           '<span class="diff-fp">' +
             '<span class="diff-fp-dir">'  + esc(dir)  + '</span>' +
             '<span class="diff-fp-name">' + esc(name) + '</span>' +
           '</span>' +
-          '<span class="issue-pill ' + (allOk ? 'patched' : 'open') + '">' +
-            (allOk ? '&#10003; ' : '') + cnt + ' issue' + (cnt !== 1 ? 's' : '') +
-          '</span>' +
+          '<span class="issue-pill open">' + cnt + ' issue' + (cnt !== 1 ? 's' : '') + '</span>' +
           '<button class="card-btn" onclick="copyFp(event,' + JSON.stringify(fp).replace(/"/g, '&quot;') + ')">&#8984; Copy path</button>' +
         '</div>' +
         '<div class="diff-body">' +
@@ -615,27 +563,30 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 
       let ln = 1;
       for (const issue of fi) {
+        const key = issueKey(issue.filePath, issue.suggestedTestId);
+        allKeys.add(key);
+        selected.add(key);
         const el      = issue.element;
         const score   = el.testabilityScore;
         const cls     = scCls(score);
-        const sel     = el.selector || el.selectors?.cssSelector || '';
         const acts    = (el.actions || []).join(', ') || 'click';
         const ranking = el.selectorRanking || [];
-        const patched = issue.fixApplied === true;
-        const bestSt  = ranking[0] ? ranking[0].strategy : 'css';
-        const sTagCls = stratCls(bestSt);
         const hasTestid = ranking.some(r => r.strategy === 'data-testid');
 
         /* hunk */
         html +=
-          '<tbody>' +
+          '<tbody data-issue-key="' + esc(key) + '">' +
           '<tr class="r-hunk">' +
             '<td class="ln" colspan="2" style="font-size:10px;text-align:center;color:var(--hunk-text);opacity:0.6">@@</td>' +
             '<td class="cd">' +
               '<div class="h-top">' +
+                '<label class="issue-pick" title="Include in pull request">' +
+                  '<input type="checkbox" class="js-issue-pick" data-key="' + esc(key) + '" checked>' +
+                '</label>' +
                 '<span class="h-type">' + esc(el.type) + '</span>' +
                 pips(score) +
                 '<span class="h-score ' + cls + '">' + score + '/100</span>' +
+                (issue.kind === 'ambiguous' ? '<span class="stag stag-bad" title="' + esc(issue.ambiguityReason || '') + '">ambiguous</span>' : '') +
                 (el.label ? '<span style="color:var(--hunk-text);opacity:0.9">&middot; <em>' + esc(el.label) + '</em></span>' : '') +
               '</div>' +
               '<div class="h-bot">' +
@@ -678,30 +629,17 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
             '<td class="cd">' + candsHtml + '</td>' +
           '</tr>';
 
-        /* add — fixed tag */
-        if (patched) {
-          html +=
-            '<tr class="r-add">' +
-              '<td class="ln">' + (ln + 1) + '</td>' +
-              '<td class="mk">+</td>' +
-              '<td class="cd">' +
-                '<span class="row-lbl">Fix</span>' +
-                buildTagHtml(el, issue.suggestedTestId, true) +
-                '<span class="stag stag-ok">&#10003; applied</span>' +
-              '</td>' +
-            '</tr>';
-        } else {
-          html +=
-            '<tr class="r-add">' +
-              '<td class="ln">' + (ln + 1) + '</td>' +
-              '<td class="mk">+</td>' +
-              '<td class="cd">' +
-                '<span class="row-lbl">Fix</span>' +
-                buildTagHtml(el, issue.suggestedTestId, true) +
-                '<span class="stag stag-ok">suggested</span>' +
-              '</td>' +
-            '</tr>';
-        }
+        /* add — proposed fix */
+        html +=
+          '<tr class="r-add">' +
+            '<td class="ln">' + (ln + 1) + '</td>' +
+            '<td class="mk">+</td>' +
+            '<td class="cd">' +
+              '<span class="row-lbl">Fix</span>' +
+              buildTagHtml(el, issue.suggestedTestId, true) +
+              '<span class="stag stag-ok">proposed</span>' +
+            '</td>' +
+          '</tr>';
 
         html += '</tbody>';
         ln += 2;
@@ -714,117 +652,154 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     diffArea.innerHTML = html;
   }
 
-  /* ── PR helpers ──────────────────────────────────────────────────────── */
-  function buildPrBody(data, threshold) {
-    const applied = (data.issues || []).filter(function(i) { return i.fixApplied; });
-    const byFile  = {};
-    for (const i of applied) {
-      const key = i.filePath.split('\\\\').join('/');
-      if (!byFile[key]) byFile[key] = [];
-      byFile[key].push(i.suggestedTestId);
+  /* ── PR action bar ──────────────────────────────────────────────────── */
+  function maybeShowPrAction(data) {
+    if (!data || (data.issues || []).length === 0) {
+      prAction.hidden = true;
+      return;
     }
-    const total     = applied.length;
-    const ambiguous = applied.filter(function(i) { return i.kind === 'ambiguous'; }).length;
-    const lowScore  = total - ambiguous;
-    const fileRows  = Object.entries(byFile).map(function(e) {
-      const f = e[0]; const ids = e[1];
-      return '| \`' + f + '\` | ' + ids.length + ' | ' + ids.map(function(id) { return '\`data-testid="' + id + '"\`'; }).join(', ') + ' |';
+    prAction.hidden = false;
+    prSuccess.hidden = true;
+    prInlineError.hidden = true;
+    if (!lastIsPro) {
+      openPrBtn.disabled  = true;
+      openPrBtn.title     = 'Open pull request requires Pro. Set pro: true in selfcure.config.mjs or SELFCURE_PRO=1.';
+      prSubInfo.innerHTML = '<strong>Pro feature.</strong> Enable with <code>pro: true</code> in selfcure.config.mjs or <code>SELFCURE_PRO=1</code>.';
+    } else {
+      openPrBtn.disabled  = false;
+      openPrBtn.title     = '';
+      prSubInfo.innerHTML = 'Pick which fixes go into the PR. We branch, commit, push and open it on GitHub in one shot.';
+    }
+    updateSelInfo();
+  }
+
+  function updateSelInfo() {
+    prSelInfo.textContent = selected.size + ' of ' + allKeys.size + ' issues selected';
+    const noneSelected = selected.size === 0;
+    if (lastIsPro) openPrBtn.disabled = noneSelected || prInFlight !== null;
+  }
+
+  function syncFilePicks() {
+    diffArea.querySelectorAll('[data-file-card]').forEach(function (card) {
+      const boxes   = card.querySelectorAll('.js-issue-pick');
+      const checked = card.querySelectorAll('.js-issue-pick:checked').length;
+      const master  = card.querySelector('.js-file-pick');
+      if (!master) return;
+      master.checked       = checked === boxes.length && boxes.length > 0;
+      master.indeterminate = checked > 0 && checked < boxes.length;
     });
-    const why = [];
-    if (lowScore > 0)  why.push('- **' + lowScore + '** element(s) had no stable selector (score < ' + threshold + '/100) \u2014 \`data-testid\` added.');
-    if (ambiguous > 0) why.push('- **' + ambiguous + '** locator(s) matched multiple elements \u2014 \`data-testid\` rewritten to a unique value.');
-    return [
-      '## selfcure lint \u2014 automated \`data-testid\` patches',
-      '',
-      '| Metric | Value |',
-      '|--------|-------|',
-      '| Files changed | ' + Object.keys(byFile).length + ' |',
-      '| Elements patched | ' + data.fixedCount + ' |',
-      '',
-      '### Changed files',
-      '',
-      '| File | Elements | Attributes added |',
-      '|------|----------|-----------------|',
-    ].concat(fileRows).concat([
-      '',
-      '### Why these changes?',
-      '',
-    ]).concat(why).concat([
-      '',
-      '> **Review before merging** \u2014 rename any \`data-testid\` value that does not match your naming convention.',
-      '> _Generated automatically by [selfcure](https://github.com/ricardofrancocustodio/selfcure)._',
-    ]).join('\n');
   }
 
-  function showPrSection(data, threshold) {
-    prFixedCount.textContent = data.fixedCount;
-    prSection.hidden    = false;
-    prBannerEl.hidden   = false;
-    prFormEl.hidden     = true;
-    prResultEl.hidden   = true;
-    prErrorEl.hidden    = true;
-    const date  = new Date().toISOString().slice(0, 10);
-    const short = Date.now().toString(36).slice(-4);
-    prBranchInput.value = 'selfcure/lint-fix-' + date + '-' + short;
-    prTitleInput.value  = 'chore(testids): add data-testid to ' + data.fixedCount + ' element(s) \u2014 selfcure lint';
-    prBodyArea.value    = buildPrBody(data, threshold);
-  }
-
-  openPrFormBtn.addEventListener('click', function() {
-    prBannerEl.hidden = true;
-    prFormEl.hidden   = false;
+  /* Delegated checkbox handling — per-issue + per-file master. */
+  diffArea.addEventListener('change', function (e) {
+    const t = e.target;
+    if (!t) return;
+    if (t.classList && t.classList.contains('js-issue-pick')) {
+      const key  = t.getAttribute('data-key');
+      const body = t.closest('tbody');
+      if (t.checked) selected.add(key);
+      else           selected.delete(key);
+      if (body) body.classList.toggle('r-unselected', !t.checked);
+      syncFilePicks();
+      updateSelInfo();
+    } else if (t.classList && t.classList.contains('js-file-pick')) {
+      const fp   = t.getAttribute('data-fp');
+      const card = diffArea.querySelector('[data-file-card="' + cssEsc(fp) + '"]');
+      if (!card) return;
+      card.querySelectorAll('.js-issue-pick').forEach(function (cb) {
+        if (cb.checked === t.checked) return;
+        cb.checked = t.checked;
+        const k = cb.getAttribute('data-key');
+        if (t.checked) selected.add(k);
+        else           selected.delete(k);
+        const body = cb.closest('tbody');
+        if (body) body.classList.toggle('r-unselected', !t.checked);
+      });
+      updateSelInfo();
+    }
   });
 
-  cancelPrBtn.addEventListener('click', function() {
-    prFormEl.hidden   = true;
-    prBannerEl.hidden = false;
-    prErrorEl.hidden  = true;
-  });
+  /** Single-click PR flow with pre-opened tab to dodge popup blockers. */
+  openPrBtn.addEventListener('click', async function () {
+    if (!lastResult || selected.size === 0 || prInFlight) return;
 
-  submitPrBtn.addEventListener('click', async function() {
-    if (!lastResult) return;
-    const seen = {};
-    const patchedFiles = (lastResult.issues || [])
-      .filter(function(i) { return i.fixApplied; })
-      .map(function(i) { return i.filePath; })
-      .filter(function(f) { if (seen[f]) return false; seen[f] = true; return true; });
-    submitPrBtn.disabled    = true;
-    cancelPrBtn.disabled    = true;
-    submitPrBtn.textContent = 'Creating\u2026';
-    prErrorEl.hidden        = true;
+    // Open the new tab IMMEDIATELY inside the click handler so popup blockers allow it.
+    const tab = window.open('about:blank', '_blank');
+    if (tab) {
+      try {
+        tab.document.write(
+          '<!doctype html><html><head><title>Opening pull request…</title>' +
+          '<style>body{font:14px/1.5 -apple-system,Segoe UI,sans-serif;background:#0d1117;color:#e6edf3;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}' +
+          'div{display:flex;align-items:center;gap:12px}' +
+          '.s{width:18px;height:18px;border:3px solid #30363d;border-top-color:#3fb950;border-radius:50%;animation:r .8s linear infinite}' +
+          '@keyframes r{to{transform:rotate(360deg)}}</style></head>' +
+          '<body><div><span class="s"></span><span>selfcure is opening your pull request…</span></div></body></html>'
+        );
+      } catch (_) { /* ignore */ }
+    }
+
+    prInFlight            = true;
+    openPrBtn.disabled    = true;
+    openPrBtn.textContent = ' Creating…';
+    prInlineError.hidden  = true;
+    prSuccess.hidden      = true;
+
+    const payload = {
+      configPath:   cfgInput.value.trim() || 'selfcure.config.mjs',
+      threshold:    Number(thrInput.value) || 65,
+      selectedKeys: Array.from(selected),
+    };
+
     try {
-      const resp  = await fetch('/api/pr', {
+      const resp = await fetch('/api/pr', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          patchedFiles,
-          fixedCount: lastResult.fixedCount,
-          branch:     prBranchInput.value.trim(),
-          title:      prTitleInput.value.trim(),
-          body:       prBodyArea.value,
-        }),
+        body:    JSON.stringify(payload),
       });
-      const rdata = await resp.json();
-      if (!resp.ok) throw new Error(rdata.error || 'PR creation failed');
-      prFormEl.hidden   = true;
-      prBannerEl.hidden = true;
-      prResultEl.hidden = false;
-      prResultBanner.innerHTML = '&#128279; Pull request created: <a href="' + esc(rdata.prUrl) + '" target="_blank" rel="noreferrer">' + esc(rdata.prUrl) + '</a>';
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'PR creation failed');
+
+      // Redirect the pre-opened tab to the PR.
+      if (tab && !tab.closed) {
+        try { tab.location.href = data.prUrl; } catch (_) { /* cross-origin */ }
+      }
+
+      // Inline confirmation with the link (works even if popup was blocked).
+      prSuccess.hidden    = false;
+      prSuccess.innerHTML =
+        '<div class="pr-success">' +
+          '<svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="color:var(--success);flex-shrink:0" aria-hidden="true"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>' +
+          '<div>' +
+            '<div style="font-weight:600">Pull request created' + (data.baseBranch ? ' against <code>' + esc(data.baseBranch) + '</code>' : '') + '</div>' +
+            '<div style="margin-top:2px"><a href="' + esc(data.prUrl) + '" target="_blank" rel="noreferrer">' + esc(data.prUrl) + '</a> &middot; <span style="color:var(--muted)">' + data.fixedCount + ' element(s) patched on branch <code>' + esc(data.branch) + '</code></span></div>' +
+          '</div>' +
+        '</div>';
+
+      // Stamp selected issues as "in PR" in the UI.
+      selected.forEach(function (k) {
+        const body = diffArea.querySelector('tbody[data-issue-key="' + cssEsc(k) + '"]');
+        if (body) {
+          const pill = body.querySelector('.stag.stag-ok');
+          if (pill) pill.textContent = '✓ in PR';
+        }
+      });
     } catch (err) {
-      prErrorEl.textContent = String(err.message || err);
-      prErrorEl.hidden      = false;
+      if (tab && !tab.closed) { try { tab.close(); } catch (_) { /* ignore */ } }
+      prInlineError.textContent = String(err.message || err);
+      prInlineError.hidden      = false;
     } finally {
-      submitPrBtn.disabled    = false;
-      cancelPrBtn.disabled    = false;
-      submitPrBtn.textContent = 'Create pull request';
+      prInFlight            = null;
+      openPrBtn.textContent = ' Open pull request';
+      updateSelInfo();
     }
   });
 
-  window.toggleCard = function (hd) {
+  window.toggleCard = function (e, hd) {
+    if (e && e.target && (e.target.tagName === 'INPUT' || (e.target.closest && e.target.closest('.file-pick')))) return;
     const body = hd.nextElementSibling;
     const btn  = hd.querySelector('.caret');
     const c    = body.classList.toggle('collapsed');
-    btn.textContent = c ? '\u25b6' : '\u25bc';
+    btn.textContent = c ? '▶' : '▼';
   };
 
   window.copyFp = function (e, fp) {
@@ -832,7 +807,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     navigator.clipboard.writeText(fp).catch(() => {});
     const btn  = e.currentTarget;
     const orig = btn.innerHTML;
-    btn.textContent = '\u2713 Copied!';
+    btn.textContent = '✓ Copied!';
     setTimeout(() => { btn.innerHTML = orig; }, 1500);
   };
 
@@ -841,4 +816,3 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 </body>
 </html>
 `;
-

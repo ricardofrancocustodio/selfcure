@@ -303,6 +303,29 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
       flex-wrap: wrap;
       margin-top: 4px;
     }
+
+    /* ── Session banner ───────────────────────────────────────────────────── */
+    #sessionBanner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+      border-radius: 5px;
+      padding: 7px 12px;
+      margin-bottom: 20px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    #sessionBanner strong { color: var(--text); font-size: 12px; }
+    #clearSession {
+      background: none; border: none; padding: 0;
+      font-size: 12px; font-family: var(--sans);
+      color: var(--accent); cursor: pointer; text-decoration: underline;
+    }
+    .key-saved-note {
+      font-size: 12px; color: var(--success); margin: -4px 0 14px;
+    }
   </style>
 </head>
 <body>
@@ -321,6 +344,11 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
 <p class="lede">Fill in the details below to generate <code>selfcure.config.mjs</code> and <code>.env</code> in your project root.</p>
 
 <form id="initForm" novalidate>
+
+  <div id="sessionBanner" hidden>
+    <span>↩ <strong>Last session restored.</strong> Key already saved in <code>.env</code> — no need to re-enter.</span>
+    <button id="clearSession" type="button">clear</button>
+  </div>
 
   <fieldset>
     <legend>Source</legend>
@@ -476,7 +504,7 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
     toggleRootDirCustom(rootDirSel.value === '__custom__');
   });
 
-  (async function loadDirs() {
+  const dirsReady = (async function loadDirs() {
     try {
       const res  = await fetch('/api/dirs');
       const data = await res.json();
@@ -580,7 +608,7 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
     aiBaseURLInput.dataset.touched = '1';
   });
 
-  (async function loadProviders() {
+  const providersReady = (async function loadProviders() {
     try {
       const res  = await fetch('/api/providers');
       const data = await res.json();
@@ -603,6 +631,81 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
       providerHint.textContent = 'Failed to load providers — check the server logs.';
     }
   })();
+
+  // ── Session restore ─────────────────────────────────────────────────────
+  (async function applySession() {
+    try {
+      const [, , { session, keyIsSet }] = await Promise.all([
+        dirsReady,
+        providersReady,
+        fetch('/api/session').then(r => r.json()),
+      ]);
+
+      if (!session) return;
+
+      // Root dir
+      const availableOpts = [...rootDirSel.options].map(o => o.value);
+      if (availableOpts.includes(session.rootDir)) {
+        rootDirSel.value = session.rootDir;
+        toggleRootDirCustom(false);
+      } else {
+        rootDirSel.value = '__custom__';
+        rootDirCustom.value = session.rootDir;
+        toggleRootDirCustom(true);
+      }
+
+      // Framework + extensions
+      if (session.framework) {
+        frameworkSel.value = session.framework;
+        renderExtensions(session.framework);
+        if (Array.isArray(session.include) && session.include.length > 0) {
+          document.querySelectorAll('#extensionChecks input[type="checkbox"]').forEach(cb => {
+            cb.checked = session.include.includes(cb.value);
+          });
+        }
+      }
+
+      // Tests
+      if (session.testsDir) document.getElementById('testsDir').value = session.testsDir;
+      if (session.baseURL)  document.getElementById('baseURL').value  = session.baseURL;
+
+      // Provider + models
+      if (session.ai?.provider && providerMap[session.ai.provider]) {
+        providerSel.value = session.ai.provider;
+        applyProvider(session.ai.provider);
+        if (session.ai.generationModel) generationModel.value = session.ai.generationModel;
+        if (session.ai.healingModel)    healingModel.value    = session.ai.healingModel;
+        if (session.ai.baseURL) {
+          aiBaseURLInput.value = session.ai.baseURL;
+          aiBaseURLInput.dataset.touched = '1';
+        }
+      }
+
+      // Key status from .env — override the "use existing" UI
+      if (keyIsSet && !apiKeyWrap.hidden) {
+        useExistingWrap.hidden = false;
+        useExistingChk.checked = true;
+        apiKeyInput.disabled   = true;
+        apiKeyInput.required   = false;
+        apiKeyInput.value      = '';
+        const envVar = providerMap[session.ai?.provider]?.envVar || '';
+        envVarName.textContent = '$' + envVar;
+      }
+
+      // Show the banner (tweak text when key is NOT saved yet)
+      const banner = document.getElementById('sessionBanner');
+      if (!keyIsSet) {
+        banner.querySelector('span').textContent =
+          '↩ Last session restored — enter your API key to continue.';
+      }
+      banner.hidden = false;
+    } catch { /* session loading is non-critical */ }
+  })();
+
+  document.getElementById('clearSession').addEventListener('click', async () => {
+    await fetch('/api/session', { method: 'DELETE' });
+    location.reload();
+  });
 
   // ── Submit ──────────────────────────────────────────────────────────────
   document.getElementById('initForm').addEventListener('submit', async (e) => {
