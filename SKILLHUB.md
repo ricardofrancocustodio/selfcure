@@ -50,6 +50,7 @@ create / update / delete each one.
 | `docs/implementations/2026-05-27-scm-oauth-integrations.md` | Added one-click OAuth connections for GitHub, GitLab, and Bitbucket in `/integrations` |
 | `docs/implementations/2026-05-27-scm-oauth-dotenv-fallback.md` | Enabled OAuth credential detection from target `.env` so Connect buttons are not wrongly disabled |
 | `docs/implementations/2026-05-27-managed-oauth-connector-mode.md` | Added managed cloud connector mode via `SELFCURE_CONNECTOR_BASE_URL` for no-secrets-on-client OAuth |
+| `docs/implementations/2026-05-27-vercel-managed-connector-deploy.md` | Added and deployed a Vercel OAuth connector service for GitHub/GitLab/Bitbucket |
 
 ### `site/` — public landing page (GitHub Pages)
 

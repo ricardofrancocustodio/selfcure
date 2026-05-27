@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/oauth/connect/:provider", "destination": "/api/oauth/connect/:provider" },
+    { "source": "/oauth/callback/:provider", "destination": "/api/oauth/callback/:provider" }
+  ]
+}
