@@ -10,6 +10,14 @@ import { crawl } from '@selfcure/crawler';
 import { PROVIDERS, type ProviderId } from '@selfcure/generator';
 import { generateConfig, type InitOptions, loadSession, clearSession, envKeyIsSet } from './generator.js';
 import { crawlPageHtml } from './crawlPage.js';
+import {
+  disconnectProvider,
+  getOAuthStartUrl,
+  getProviderStatus,
+  handleOAuthCallback,
+  isScmProviderId,
+} from './integrations.js';
+import { integrationsPageHtml } from './integrationsPage.js';
 import { initPageHtml } from './initPage.js';
 import { lintPageHtml } from './lintPage.js';
 
@@ -633,8 +641,13 @@ export { buildConfigContent, generateConfig, FRAMEWORK_EXTENSIONS } from './gene
  * Routes:
  *   GET  /              → init wizard HTML page
  *   GET  /crawl         → crawler/analyzer results page
+ *   GET  /integrations  → SCM OAuth connection page (GitHub/GitLab/Bitbucket)
+ *   GET  /oauth/connect/:provider  → start OAuth flow and redirect
+ *   GET  /oauth/callback/:provider → handle OAuth callback and persist token
  *   GET  /api/dirs      → cwd + immediate subdirs (for the source-folder picker)
  *   GET  /api/providers → supported LLM providers + which env vars are already set
+ *   GET  /api/integrations         → connection status for SCM providers
+ *   DELETE /api/integrations/:provider → disconnect provider and delete saved token
  *   POST /api/init      → generate selfcure.config.mjs + .env, return JSON
  *   POST /api/crawl     → run crawler + analyzer and return serializable JSON
  *
@@ -667,6 +680,61 @@ export function startWebServer(
       return;
     }
 
+    if (req.method === 'GET' && pathname === '/integrations') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(integrationsPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/oauth/connect/')) {
+      const providerRaw = pathname.slice('/oauth/connect/'.length);
+      if (!isScmProviderId(providerRaw)) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Unknown provider');
+        return;
+      }
+
+      const start = getOAuthStartUrl(providerRaw, port);
+      if (start.error || !start.redirectTo) {
+        const err = encodeURIComponent(start.error ?? 'Unable to start OAuth flow');
+        res.writeHead(302, { Location: `/integrations?error=${err}` });
+        res.end();
+        return;
+      }
+
+      res.writeHead(302, { Location: start.redirectTo });
+      res.end();
+      return;
+    }
+
+    if (req.method === 'GET' && pathname.startsWith('/oauth/callback/')) {
+      const providerRaw = pathname.slice('/oauth/callback/'.length);
+      if (!isScmProviderId(providerRaw)) {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Unknown provider');
+        return;
+      }
+
+      handleOAuthCallback(cwd, port, providerRaw, parsed.searchParams)
+        .then((result) => {
+          if (result.ok) {
+            const ok = encodeURIComponent(providerRaw);
+            res.writeHead(302, { Location: `/integrations?connected=${ok}` });
+            res.end();
+            return;
+          }
+          const err = encodeURIComponent(result.error ?? 'OAuth callback failed');
+          res.writeHead(302, { Location: `/integrations?error=${err}` });
+          res.end();
+        })
+        .catch((err) => {
+          const msg = encodeURIComponent(err instanceof Error ? err.message : String(err));
+          res.writeHead(302, { Location: `/integrations?error=${msg}` });
+          res.end();
+        });
+      return;
+    }
+
     if (req.method === 'GET' && pathname === '/api/dirs') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ cwd, dirs: listSourceDirs(cwd) }));
@@ -676,6 +744,39 @@ export function startWebServer(
     if (req.method === 'GET' && pathname === '/api/providers') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(listProviders()));
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/integrations') {
+      getProviderStatus(cwd)
+        .then((result) => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        })
+        .catch((err) => {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+        });
+      return;
+    }
+
+    if (req.method === 'DELETE' && pathname.startsWith('/api/integrations/')) {
+      const providerRaw = pathname.slice('/api/integrations/'.length);
+      if (!isScmProviderId(providerRaw)) {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Unknown provider' }));
+        return;
+      }
+
+      disconnectProvider(cwd, providerRaw)
+        .then(() => {
+          res.writeHead(204);
+          res.end();
+        })
+        .catch((err) => {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+        });
       return;
     }
 

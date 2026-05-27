@@ -495,6 +495,7 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
   <a class="nav-link" href="/">init</a>
   <a class="nav-link active" href="/crawl">crawl</a>
   <a class="nav-link" href="/lint">lint</a>
+  <a class="nav-link" href="/integrations">integrations</a>
 </nav>
 
 <form id="crawlForm">

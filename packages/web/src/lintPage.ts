@@ -267,6 +267,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   <a class="nav-link" href="/">init</a>
   <a class="nav-link" href="/crawl">crawl</a>
   <a class="nav-link active" href="/lint">lint</a>
+  <a class="nav-link" href="/integrations">integrations</a>
 </nav>
 
 <form id="lintForm"><div class="run-bar">

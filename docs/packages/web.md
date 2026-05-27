@@ -24,10 +24,18 @@ Returns a `http.Server` instance.
 |--------|------|-------------|
 | `GET` | `/` | Serves the init wizard HTML page |
 | `GET` | `/crawl` | Serves the crawler/analyzer results page with client-side filters |
+| `GET` | `/lint` | Serves the testability linter page (PR-focused, see below) |
+| `GET` | `/integrations` | Serves the SCM integrations page (GitHub/GitLab/Bitbucket) |
+| `GET` | `/oauth/connect/:provider` | Starts OAuth login and redirects to the selected provider |
+| `GET` | `/oauth/callback/:provider` | Handles OAuth callback and persists the connection |
 | `GET` | `/api/dirs` | Returns the wizard `cwd` and its immediate subdirectories (used to populate the source-folder picker) |
 | `GET` | `/api/providers` | Returns the supported LLM providers + which env vars are already set in the server's environment |
+| `GET` | `/api/integrations` | Returns `{ providers }` with configured/connected status for each SCM provider |
+| `DELETE` | `/api/integrations/:provider` | Disconnects a provider and removes saved tokens from `.selfcure/integrations.json` |
 | `POST` | `/api/init` | Writes `selfcure.config.mjs` + `.env`, returns `GenerateResult` JSON |
 | `POST` | `/api/crawl` | Loads `selfcure.config.mjs`, runs `crawl()` + `analyze()`, and returns serializable component metadata |
+| `POST` | `/api/lint` | Scans the source, returns `{ issues, totalFiles, fixedCount, skippedCount, pro }` (no file mutations) |
+| `POST` | `/api/pr`  | **One-shot PR flow** — applies the user-selected patches, opens a PR with auto-generated title/body, redirects to GitHub. Pro-gated. |
 
 ### GET `/api/dirs` response
 
@@ -63,6 +71,40 @@ interface ProviderListEntry {
 
 The wizard pre-selects `suggested` and pre-checks "Use existing $VAR" when
 `envSet` is true. The env var **value** is never sent in the response.
+
+### GET `/api/integrations` response
+
+```typescript
+interface IntegrationsResponse {
+  providers: Array<{
+    id: 'github' | 'gitlab' | 'bitbucket';
+    label: string;
+    configured: boolean;
+    connected: boolean;
+    missingEnv: string[];
+    account?: {
+      id: string;
+      username: string;
+      displayName: string;
+      url?: string;
+    };
+    connectedAt?: string;
+    connectUrl: string; // e.g. /oauth/connect/github
+  }>;
+}
+```
+
+OAuth app credentials are read from environment variables:
+
+- `SELFCURE_GITHUB_CLIENT_ID`
+- `SELFCURE_GITHUB_CLIENT_SECRET`
+- `SELFCURE_GITLAB_CLIENT_ID`
+- `SELFCURE_GITLAB_CLIENT_SECRET`
+- `SELFCURE_BITBUCKET_CLIENT_ID`
+- `SELFCURE_BITBUCKET_CLIENT_SECRET`
+
+Tokens are stored locally in `.selfcure/integrations.json` and `.selfcure/`
+is auto-added to `.gitignore` when the first provider is connected.
 
 ### POST `/api/init` request body (`InitOptions`)
 
@@ -167,6 +209,65 @@ with **Copy to clipboard** and **Download** buttons.
 
 The page filters results locally by search text, framework, complexity, tag/element type, minimum score, and whether a component has interactive tags. Results can also be sorted by file path, component name, score, or number of tags.
 
+## Lint page
+
+`GET /lint` serves the testability linter page, designed around a **single-click PR flow**:
+
+1. User clicks **Run lint** → `POST /api/lint` returns issues plus `pro: boolean` (UI hint).
+2. Every issue is rendered with a checkbox (pre-checked) and a per-file "select all" master checkbox.
+3. A sticky bar at the top reads `N of M issues selected` and shows a primary **Open pull request** button (disabled when `pro: false`).
+4. Clicking the button:
+   - Immediately opens a new browser tab (`window.open` inside the click handler avoids popup blockers).
+   - POSTs `{ configPath, threshold, selectedKeys }` to `/api/pr`.
+   - Server re-runs lint, patches **only** the selected issues, branches off `lint.prBaseBranch` (or the repo default via `gh repo view`), commits, pushes, runs `gh pr create --base …`, restores the original branch.
+   - Redirects the pre-opened tab to the returned `prUrl` and shows an inline success banner.
+
+The user never edits branch/title/body locally — those are auto-generated and refined on GitHub after the redirect.
+
+### `POST /api/lint` request / response
+
+```typescript
+interface LintRequest {
+  configPath?: string;
+  threshold?:  number;  // default 65
+}
+
+interface LintResponse {
+  issues: Array<{
+    filePath:        string;
+    componentName:   string;
+    element:         InteractiveElement;
+    suggestedTestId: string;
+    kind:            'ambiguous' | 'low-score';
+    ambiguityReason?: string;
+  }>;
+  totalFiles:   number;
+  fixedCount:   number;   // always 0 (this endpoint never mutates)
+  skippedCount: number;   // always 0
+  pro:          boolean;  // UI hint — does NOT gate /api/pr
+}
+```
+
+### `POST /api/pr` request / response
+
+```typescript
+interface OpenPrRequest {
+  configPath?:   string;
+  threshold?:    number;
+  /** `filePath|suggestedTestId` keys the user kept checked. */
+  selectedKeys:  string[];
+}
+
+interface OpenPrResponse {
+  prUrl:       string;
+  fixedCount:  number;
+  baseBranch?: string;   // 'main' / 'develop' / etc. — undefined when gh chose default
+  branch:      string;   // `selfcure/lint-fix-<date>-<short>`
+}
+```
+
+The Pro gate is enforced server-side (`pro: true` in config or `SELFCURE_PRO=1`). If unauthorized, the endpoint returns HTTP 400 with `{ error: '…Pro feature…' }`.
+
 ## Config generator
 
 ```typescript
@@ -184,8 +285,11 @@ import { buildConfigContent, generateConfig, FRAMEWORK_EXTENSIONS } from '@selfc
 ```
 packages/web/
   src/
-    index.ts       — startWebServer() + re-exports
+    index.ts       — startWebServer() + /api/* handlers (includes runOpenPr for /api/pr)
+    integrations.ts — OAuth flow + status persistence for GitHub/GitLab/Bitbucket
+    integrationsPage.ts — integrations UI with one-click Connect/Disconnect buttons
     crawlPage.ts   — crawler/analyzer results page HTML
     generator.ts   — InitOptions, GenerateResult, buildConfigContent, generateConfig
     initPage.ts    — initPageHtml string (the init wizard HTML)
+    lintPage.ts    — lintPageHtml string (testability linter, PR-focused UI)
 ```
