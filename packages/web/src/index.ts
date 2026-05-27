@@ -694,7 +694,7 @@ export function startWebServer(
         return;
       }
 
-      const start = getOAuthStartUrl(providerRaw, port);
+      const start = getOAuthStartUrl(cwd, providerRaw, port);
       if (start.error || !start.redirectTo) {
         const err = encodeURIComponent(start.error ?? 'Unable to start OAuth flow');
         res.writeHead(302, { Location: `/integrations?error=${err}` });

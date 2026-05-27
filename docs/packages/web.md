@@ -94,7 +94,8 @@ interface IntegrationsResponse {
 }
 ```
 
-OAuth app credentials are read from environment variables:
+OAuth app credentials are read from environment variables (`process.env`) and
+fallback to the target project's `.env` file when not present in the shell:
 
 - `SELFCURE_GITHUB_CLIENT_ID`
 - `SELFCURE_GITHUB_CLIENT_SECRET`

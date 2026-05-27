@@ -48,6 +48,7 @@ create / update / delete each one.
 | `docs/implementations/2026-05-25-web-crawl-page.md` | Web crawler/analyzer page, `/crawl`, `/api/crawl`, filters, and validation notes |
 | `docs/implementations/2026-05-27-no-port-3000-defaults.md` | Replaced 3000 defaults/examples with 5000 and removed test session artifact that restored 3000 |
 | `docs/implementations/2026-05-27-scm-oauth-integrations.md` | Added one-click OAuth connections for GitHub, GitLab, and Bitbucket in `/integrations` |
+| `docs/implementations/2026-05-27-scm-oauth-dotenv-fallback.md` | Enabled OAuth credential detection from target `.env` so Connect buttons are not wrongly disabled |
 
 ### `site/` — public landing page (GitHub Pages)
 

@@ -97,6 +97,21 @@ const PROVIDERS: Record<ScmProviderId, ScmProviderMeta> = {
 const STATE_TTL_MS = 10 * 60 * 1000;
 const pendingByState = new Map<string, PendingOAuth>();
 
+function readEnvVarFromDotEnv(cwd: string, key: string): string {
+  try {
+    const content = fs.readFileSync(path.join(cwd, '.env'), 'utf-8');
+    const match = content.match(new RegExp(`^${key}=(.*)$`, 'm'));
+    if (!match) return '';
+    return match[1].trim().replace(/^['"]|['"]$/g, '');
+  } catch {
+    return '';
+  }
+}
+
+function resolveEnvValue(cwd: string, key: string): string {
+  return process.env[key] ?? readEnvVarFromDotEnv(cwd, key);
+}
+
 function cleanupPending(): void {
   const now = Date.now();
   for (const [state, pending] of pendingByState) {
@@ -104,13 +119,13 @@ function cleanupPending(): void {
   }
 }
 
-function getConfig(meta: ScmProviderMeta): {
+function getConfig(cwd: string, meta: ScmProviderMeta): {
   clientId: string;
   clientSecret: string;
   missingEnv: string[];
 } {
-  const clientId = process.env[meta.clientIdEnv] ?? '';
-  const clientSecret = process.env[meta.clientSecretEnv] ?? '';
+  const clientId = resolveEnvValue(cwd, meta.clientIdEnv);
+  const clientSecret = resolveEnvValue(cwd, meta.clientSecretEnv);
   const missingEnv: string[] = [];
   if (!clientId) missingEnv.push(meta.clientIdEnv);
   if (!clientSecret) missingEnv.push(meta.clientSecretEnv);
@@ -164,7 +179,7 @@ export async function getProviderStatus(cwd: string): Promise<ProviderStatusResp
   const file = await readIntegrations(cwd);
   const providers: ProviderStatus[] = (Object.values(PROVIDERS) as ScmProviderMeta[])
     .map((meta) => {
-      const cfg = getConfig(meta);
+      const cfg = getConfig(cwd, meta);
       const conn = file.connections[meta.id];
       return {
         id: meta.id,
@@ -181,11 +196,11 @@ export async function getProviderStatus(cwd: string): Promise<ProviderStatusResp
   return { providers };
 }
 
-export function getOAuthStartUrl(provider: ScmProviderId, port: number): { redirectTo?: string; error?: string } {
+export function getOAuthStartUrl(cwd: string, provider: ScmProviderId, port: number): { redirectTo?: string; error?: string } {
   cleanupPending();
 
   const meta = PROVIDERS[provider];
-  const cfg = getConfig(meta);
+  const cfg = getConfig(cwd, meta);
   if (cfg.missingEnv.length > 0) {
     return {
       error: `Missing OAuth env vars for ${meta.label}: ${cfg.missingEnv.join(', ')}`,
@@ -206,12 +221,13 @@ export function getOAuthStartUrl(provider: ScmProviderId, port: number): { redir
 }
 
 async function exchangeCode(
+  cwd: string,
   provider: ScmProviderId,
   code: string,
   port: number,
 ): Promise<ConnectionToken> {
   const meta = PROVIDERS[provider];
-  const cfg = getConfig(meta);
+  const cfg = getConfig(cwd, meta);
   if (cfg.missingEnv.length > 0) {
     throw new Error(`Missing OAuth env vars for ${meta.label}: ${cfg.missingEnv.join(', ')}`);
   }
@@ -426,7 +442,7 @@ export async function handleOAuthCallback(
   }
 
   try {
-    const token = await exchangeCode(provider, code, port);
+    const token = await exchangeCode(cwd, provider, code, port);
     const account = await fetchAccount(provider, token);
 
     const file = await readIntegrations(cwd);
