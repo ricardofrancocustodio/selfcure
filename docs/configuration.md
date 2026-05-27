@@ -29,10 +29,12 @@ The full TypeScript type is `SelfcureConfig` exported from `@selfcure/cli`.
 | `testsDir` | `string` | `'./selfcure-tests'` | Generated spec output directory |
 | `maxInputTokens` | `number` | `4096` | Token cap per generation request |
 | `playwrightConfig` | `string` | `'./playwright.config.ts'` | Playwright config path |
-| `baseURL` | `string` | `'http://localhost:3000'` | App base URL for tests |
+| `baseURL` | `string` | `'http://localhost:5000'` | App base URL for tests |
 | `maxHealAttempts` | `number` | `3` | Max patch attempts per test |
 | `reportDir` | `string` | `'./selfcure-report'` | Report output directory |
 | `reportTitle` | `string` | `'Selfcure Report'` | HTML report title |
+| `pro` | `boolean` | `false` | Enable Pro features (`lint --fix`, PR opening) without `SELFCURE_PRO=1` |
+| `lint.prBaseBranch` | `string` | *(auto-detected)* | Target branch for PRs opened by `selfcure lint --pr` / the `/lint` page; omit to use the repo default via `gh repo view` |
 
 ---
 
@@ -235,7 +237,7 @@ maxInputTokens: 4096,
 
 ```js
 playwrightConfig: './playwright.config.ts',
-baseURL: 'http://localhost:3000',
+baseURL: 'http://localhost:5000',
 ```
 
 selfcure always appends `--trace=on-first-retry` so traces are available for healing.
@@ -261,6 +263,45 @@ reportTitle: 'Selfcure Report',
 ```
 
 Both `index.html` and `summary.json` are written to `reportDir`.
+
+---
+
+## §9 Linter (Pro)
+
+```js
+pro: true,
+lint: {
+  prBaseBranch: 'main',
+},
+```
+
+Both options are optional.
+
+- `pro: true` activates `selfcure lint --fix`, `--pr`, and the **Open pull request** button on the web `/lint` page. The same gate is satisfied by `SELFCURE_PRO=1` in the environment.
+- `lint.prBaseBranch` is the branch the auto-generated PR targets. **When omitted**, selfcure runs `gh repo view --json defaultBranchRef` and uses the repo's default branch — so most users don't need to set this. Override it when you want PRs to land on `develop`, a release branch, etc.
+
+The PR flow auto-generates a Markdown body that splits the patched elements into `low-score` (selectors below `--threshold`) and `ambiguous` (same selector matches multiple elements in the same component). Title, body, and branch name are not user-editable in the UI on purpose — the design is that the user edits the PR **on GitHub** after the redirect.
+
+### Pre-requisites for opening PRs
+
+selfcure does **not** store any repo URL, owner, or token. The PR feature delegates to local tools that each user must set up once:
+
+| # | Requirement | Check | Fix |
+|---|-------------|-------|-----|
+| 1 | Project is a git repository | `git rev-parse --show-toplevel` | `git init` |
+| 2 | Remote `origin` points to GitHub | `git remote -v` | `git remote add origin https://github.com/<org>/<repo>.git` |
+| 3 | GitHub CLI installed | `gh --version` | Install from [cli.github.com](https://cli.github.com) — e.g. `winget install GitHub.cli` (Windows), `brew install gh` (macOS) |
+| 4 | GitHub CLI authenticated | `gh auth status` | `gh auth login` (browser OAuth) |
+
+If `--pr` or **Open pull request** runs without items 3-4 satisfied, selfcure exits with:
+
+> `[selfcure --pr] GitHub CLI (gh) is not installed or not authenticated. Install from https://cli.github.com then run: gh auth login`
+
+**Why delegate to `gh`?** Each user keeps their own GitHub identity (token stays in `~/.config/gh/hosts.yml`, never in `selfcure.config.mjs`), permissions match what the user already has on the repo, and selfcure never touches credentials.
+
+**Limitations of this design:**
+- GitHub only — no GitLab / Bitbucket / Azure DevOps.
+- In CI, set `GH_TOKEN` instead of running `gh auth login` interactively.
 
 ---
 

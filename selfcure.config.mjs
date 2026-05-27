@@ -118,7 +118,7 @@ export default {
   playwrightConfig: './playwright.config.ts',
 
   /** Base URL of the running application during tests */
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://localhost:5000',
 
   // ── Self-healing ─────────────────────────────────────────────────────────
   /** Maximum patch attempts before a test is left as failing */
@@ -130,4 +130,16 @@ export default {
 
   /** Title displayed in the HTML report */
   reportTitle: 'Selfcure Report',
+
+  // ── Linter (Pro: `selfcure lint --fix --pr` and the web /lint page) ──────
+  //
+  // pro: true,                       // enable Pro features without SELFCURE_PRO=1
+  //
+  // lint: {
+  //   /**
+  //    * Branch the auto-generated PR targets.
+  //    * Omit to let selfcure ask `gh` for the repo's default branch.
+  //    */
+  //   prBaseBranch: 'main',
+  // },
 };

@@ -100,7 +100,7 @@ module.exports = {
   framework: 'react',
   extensions: ['.tsx', '.jsx'],
   testsOutput: './selfcure-tests',
-  baseUrl: 'http://localhost:3000',
+   baseUrl: 'http://localhost:5000',
   criticalFlows: [],
   selfcure: {
     maxRetries: 3,

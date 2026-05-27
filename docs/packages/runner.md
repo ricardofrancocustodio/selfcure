@@ -12,7 +12,7 @@ import { run } from '@selfcure/runner';
 const results = await run({
   playwrightConfig: './playwright.config.ts',
   testFiles: ['./selfcure-tests/Button.spec.ts'],  // optional subset
-  baseURL: 'http://localhost:3000',                 // optional
+  baseURL: 'http://localhost:5000',                 // optional
 });
 ```
 

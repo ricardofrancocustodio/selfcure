@@ -72,7 +72,7 @@ export default {
   exclude: ['**/*.spec.*', '**/node_modules/**'],
   testsDir: './selfcure-tests',
   playwrightConfig: './playwright.config.ts',
-  baseURL: 'http://localhost:3000',
+  baseURL: 'http://localhost:5000',
   ai: {
     provider: 'anthropic',           // anthropic | openai | google | groq | deepseek | ollama
     generationModel: 'claude-opus-4-7',
@@ -159,7 +159,7 @@ Add selfcure to your CI workflow after your test suite:
   run: npm run dev &
 
 - name: Wait for server
-  run: npx wait-on http://localhost:3000
+  run: npx wait-on http://localhost:5000
 
 - name: Run selfcure
   env:
