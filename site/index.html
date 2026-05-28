@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>selfcure — self-healing Playwright tests, any LLM</title>
-  <meta name="description" content="Selfcure cures tests, not components. Generate, run, and auto-patch Playwright tests with the LLM of your choice — Anthropic, OpenAI, Gemini, Groq, DeepSeek, or local Ollama.">
+  <title>selfcure — the preventive testability layer for frontend codebases</title>
+  <meta name="description" content="selfcure scores your frontend for testability before any test exists, flags ambiguous locators, and ships data-testid fixes as a Pull Request via one-click GitHub OAuth. The preventive layer that feeds Playwright Test Agents.">
   <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 
-  <meta property="og:title" content="selfcure — self-healing Playwright tests">
-  <meta property="og:description" content="Generate, run, and auto-patch Playwright tests with the LLM of your choice.">
+  <meta property="og:title" content="selfcure — preventive testability for frontend codebases">
+  <meta property="og:description" content="Score, lint, and PR-patch your frontend for testability before any Playwright test exists. One-click GitHub OAuth.">
   <meta property="og:type" content="website">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -450,6 +450,7 @@
     <a href="#" class="brand">selfcure</a>
     <nav class="top-nav">
       <a href="#how" data-i18n="nav.how">How it works</a>
+      <a href="#integrations" data-i18n="nav.integrations">Integrations</a>
       <a href="#providers" data-i18n="nav.providers">Providers</a>
       <a href="#quickstart" data-i18n="nav.quickstart">Quick start</a>
       <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
@@ -477,15 +478,16 @@
         └────┬────┘
        ╰────┴────╯</pre>
 
-      <p class="eyebrow" data-i18n="hero.eyebrow">Self-healing Playwright tests · BYOK · open source</p>
+      <p class="eyebrow" data-i18n="hero.eyebrow">Preventive testability · Feeds Playwright Test Agents · Open source</p>
       <h1>
         <span data-i18n="hero.headline_l1">Selfcure cures tests,</span><br>
         <span data-i18n="hero.headline_l2">not components.</span>
       </h1>
       <p class="lede" data-i18n="hero.lede">
-        Crawl your frontend, generate Playwright tests with the LLM of your choice,
-        and let selfcure auto-patch flaky locators. When the test is fine but the component
-        is broken, selfcure tells you.
+        Reactive healers wait for a test to break. selfcure reads your React/Vue/Angular/HTML
+        source <em>before any test exists</em>, scores every interactive element, flags ambiguous
+        locators, and ships <code>data-testid</code> fixes as a Pull Request — via one-click
+        GitHub OAuth. Then Playwright Test Agents take over.
       </p>
 
       <div class="ctas">
@@ -500,15 +502,14 @@
           <span class="terminal-bot">[•_•]</span>
           <span class="terminal-title">selfcure</span>
         </div>
-<div class="terminal-body"><span class="term-prompt">$</span> selfcure run
-<span class="term-comment">crawl    →  18 components found</span>
-<span class="term-comment">analyze  →  avg testability score 72/100</span>
-<span class="term-comment">generate →  18 .spec.ts files written</span>
-<span class="term-comment">run      →  16 passed · 2 failed</span>
-<span class="term-comment">heal     →  2 healed (locator drift)</span>
+<div class="terminal-body"><span class="term-prompt">$</span> selfcure lint
+<span class="term-comment">crawl    →  27 source files scanned</span>
+<span class="term-comment">score    →  avg testability 64/100</span>
+<span class="term-comment">ambiguous→  477 locators resolve to siblings</span>
+<span class="term-comment">suggest  →  500 data-testid patches ready</span>
 <span class="term-ok">────────────────────────────────────────
-  ✓ 18 passed · 2 healed · 0 needing review
-  Report: ./selfcure-report/index.html</span></div>
+  ✓ open http://localhost:3333/lint
+  → pick fixes · one click · PR opened on GitHub</span></div>
       </div>
     </div>
   </section>
@@ -528,25 +529,52 @@
     <div class="container">
       <p class="eyebrow" data-i18n="how.eyebrow">Pipeline</p>
       <h2 data-i18n="how.h2">How it works</h2>
-      <p class="small" data-i18n="how.lede">A single command runs the whole pipeline. Each stage is its own npm workspace package — pick and choose.</p>
+      <p class="small" data-i18n="how.lede">selfcure is the <strong>preventive</strong> half of the test loop. It runs before Playwright Test Agents and hands them a frontend they can actually test.</p>
 
       <div class="pipeline">
         <div class="pipeline-step">
-          <div class="step-num" data-i18n="how.step1.label">01 · CRAWL</div>
-          <h3 data-i18n="how.step1.title">Read your source</h3>
-          <p class="small" data-i18n="how.step1.desc">Static AST via <code>@typescript-eslint/parser</code> + dynamic DOM capture via Playwright codegen. Outputs a structured component map.</p>
+          <div class="step-num" data-i18n="how.step1.label">01 · CRAWL &amp; SCORE</div>
+          <h3 data-i18n="how.step1.title">Read your source, score every element</h3>
+          <p class="small" data-i18n="how.step1.desc">Static AST via <code>@typescript-eslint/parser</code> across <code>.tsx</code>, <code>.jsx</code>, <code>.vue</code>, <code>.component.ts</code>, <code>.html</code>. Each interactive element gets a 0–100 testability score and a ranked selector list.</p>
         </div>
         <div class="pipeline-step">
-          <div class="step-num" data-i18n="how.step2.label">02 · GENERATE</div>
-          <h3 data-i18n="how.step2.title">LLM writes the tests</h3>
-          <p class="small" data-i18n="how.step2.desc">Component analysis + interactive-element map go to the LLM. Returns one ready-to-run <code>.spec.ts</code> per component.</p>
+          <div class="step-num" data-i18n="how.step2.label">02 · LINT</div>
+          <h3 data-i18n="how.step2.title">Flag ambiguity nobody else catches</h3>
+          <p class="small" data-i18n="how.step2.desc">When the best selector for an element also matches a sibling, runtime tests silently bind to the wrong node. selfcure detects it at source level and suggests a dedup-aware <code>data-testid</code> patch.</p>
         </div>
         <div class="pipeline-step">
-          <div class="step-num" data-i18n="how.step3.label">03 · HEAL</div>
-          <h3 data-i18n="how.step3.title">Patch on failure</h3>
-          <p class="small" data-i18n="how.step3.desc">Failures get classified. Locator drift → ask LLM for a diff, sanity-check, apply, retry. Component-level bugs → flagged for human review.</p>
+          <div class="step-num" data-i18n="how.step3.label">03 · PR</div>
+          <h3 data-i18n="how.step3.title">Ship the fix to the frontend team</h3>
+          <p class="small" data-i18n="how.step3.desc">Open <code>/lint</code> in the browser, tick the patches you want, click once. selfcure branches, commits, pushes, and opens a Pull Request on GitHub. The frontend team owns the fix — not the QA pipeline.</p>
         </div>
       </div>
+
+      <p class="small" style="margin-top:24px" data-i18n="how.handoff">After the PR lands, <code>@playwright/mcp</code> + Playwright Test Agents (Planner / Generator / Healer) take over. selfcure does not compete with them — it feeds them.</p>
+    </div>
+  </section>
+
+  <section id="integrations">
+    <div class="container">
+      <p class="eyebrow" data-i18n="integ.eyebrow">SCM integrations</p>
+      <h2 data-i18n="integ.h2">One-click Git connection</h2>
+      <p class="small" data-i18n="integ.lede">Connect your repository in a single click via OAuth — no env vars, no client secrets, no manual app registration. selfcure ships a hosted cloud connector so end users authorize and selfcure opens the PR.</p>
+
+      <div class="features" style="margin-top:16px">
+        <div class="feature">
+          <h3><span data-i18n="integ.github.title">GitHub</span> <span class="badge" data-i18n="integ.badge_live">Live</span></h3>
+          <p data-i18n="integ.github.desc">One-click OAuth via the selfcure cloud connector. Authorize, pick fixes in <code>/lint</code>, get a Pull Request. Disconnect revokes the token remotely.</p>
+        </div>
+        <div class="feature">
+          <h3><span data-i18n="integ.gitlab.title">GitLab</span> <span class="tag tag-free" data-i18n="integ.badge_soon">coming soon</span></h3>
+          <p data-i18n="integ.gitlab.desc">Same flow, same connector — OAuth app pending. Self-hosted GitLab will be supported via per-instance config.</p>
+        </div>
+        <div class="feature">
+          <h3><span data-i18n="integ.bitbucket.title">Bitbucket</span> <span class="tag tag-free" data-i18n="integ.badge_soon">coming soon</span></h3>
+          <p data-i18n="integ.bitbucket.desc">Workspace-level OAuth, same one-click flow. Bring Your Own OAuth App is also supported today via local env vars if you want full control.</p>
+        </div>
+      </div>
+
+      <p class="small" style="margin-top:16px" data-i18n="integ.byo">Prefer no third party? Set <code>GITHUB_OAUTH_CLIENT_ID</code> / <code>SECRET</code> in your project <code>.env</code> and selfcure uses your own OAuth app. The managed connector is opt-in via <code>SELFCURE_CONNECTOR_BASE_URL</code>.</p>
     </div>
   </section>
 
@@ -557,28 +585,28 @@
 
       <div class="features">
         <div class="feature">
-          <h3><span data-i18n="features.1.title">Multi-provider</span> <span class="badge">BYOK</span></h3>
-          <p data-i18n="features.1.desc">Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama. Swap providers with one config line. No vendor lock-in.</p>
+          <h3><span data-i18n="features.1.title">Ambiguity detection</span> <span class="badge" data-i18n="features.badge_unique">unique to selfcure</span></h3>
+          <p data-i18n="features.1.desc">When the best selector for a button also matches one of its siblings, Playwright silently binds to the wrong node. selfcure catches this at the AST level — the failure mode runtime healers can’t prevent.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="features.2.title">Self-healing loop</h3>
-          <p data-i18n="features.2.desc">Failed locator? selfcure asks the LLM for a unified diff, applies it under a parse sanity check, and rolls back on failure. Max attempts configurable.</p>
+          <h3 data-i18n="features.2.title">Testability score</h3>
+          <p data-i18n="features.2.desc">Every interactive element gets a 0–100 score based on a ranked selector list: <code>data-testid</code> → <code>id</code> → <code>aria-label</code> → <code>name</code> → CSS → XPath. Low score = the FE owes a <code>data-testid</code>.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="features.3.title">Testability score</h3>
-          <p data-i18n="features.3.desc">Every component gets a 0–100 score. Low score? You learn that the FE needs <code>data-testid</code> — not that "tests are flaky."</p>
+          <h3><span data-i18n="features.3.title">One-click PR</span> <span class="badge" data-i18n="features.badge_pro">selfcure web</span></h3>
+          <p data-i18n="features.3.desc">Open <code>/lint</code>, tick the patches you want, click once. selfcure branches, commits, pushes, and opens a PR on GitHub. The frontend team reviews and ships.</p>
         </div>
         <div class="feature">
-          <h3><span data-i18n="features.4.title">Browser-based init</span> <span class="badge">selfcure web</span></h3>
-          <p data-i18n="features.4.desc">Open a wizard at <code>localhost:3333</code>. Auto-detects which provider keys you've already exported. Picks <code>./src</code>, <code>./app</code>, etc. from your project.</p>
+          <h3><span data-i18n="features.4.title">MCP server</span> <span class="badge" data-i18n="features.badge_mcp">@selfcure/mcp</span></h3>
+          <p data-i18n="features.4.desc">Publishes the crawl + score + ambiguity findings over the Model Context Protocol. Any MCP client — Claude Desktop, Cursor, VS Code, Windsurf, Claude Code — can query them.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="features.5.title">Playwright-native</h3>
-          <p data-i18n="features.5.desc">Generated tests are plain <code>@playwright/test</code> code. No proprietary runner, no lock-in. Trace + screenshot on every failure.</p>
+          <h3 data-i18n="features.5.title">Feeds Playwright Test Agents</h3>
+          <p data-i18n="features.5.desc">selfcure is the preventive layer. <code>@playwright/mcp</code> + Planner / Generator / Healer is the reactive layer. We don’t compete — we hand them a frontend they can actually test.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="features.6.title">HTML report</h3>
-          <p data-i18n="features.6.desc">Per-test status, applied diffs (collapsible), and a "Components needing FE intervention" section that calls out unfixable items.</p>
+          <h3><span data-i18n="features.6.title">Legacy BYOK pipeline</span> <span class="tag tag-free" data-i18n="features.badge_fallback">fallback</span></h3>
+          <p data-i18n="features.6.desc">Not on Playwright Test Agents yet? <code>selfcure run</code> still generates + executes + heals tests using the LLM provider of your choice. Available, not the headline.</p>
         </div>
       </div>
     </div>
@@ -586,9 +614,9 @@
 
   <section id="providers">
     <div class="container">
-      <p class="eyebrow" data-i18n="providers.eyebrow">Provider matrix</p>
-      <h2 data-i18n="providers.h2">Bring your own key</h2>
-      <p class="small" data-i18n="providers.lede">Pick the LLM that fits your wallet, compliance, or hardware. Switch any time — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.</p>
+      <p class="eyebrow" data-i18n="providers.eyebrow">Legacy BYOK fallback</p>
+      <h2 data-i18n="providers.h2">Bring your own LLM key</h2>
+      <p class="small" data-i18n="providers.lede">If you haven’t moved to Playwright Test Agents yet, <code>selfcure run</code> still generates + executes + heals tests using the LLM of your choice. Swap providers in one config line — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.</p>
 
       <div style="overflow-x:auto">
       <table class="provider-table">
@@ -649,35 +677,31 @@
       <h2 data-i18n="qs.h2">Quick start</h2>
       <p class="small" data-i18n="qs.lede">selfcure is pre-publish — install from source while we stabilise the API.</p>
 
-      <h3 style="margin-top:24px" data-i18n="qs.step1">1 · Link the CLI from source</h3>
-<pre><code><span class="token-comment"># Clone and build</span>
-git clone https://github.com/ricardofrancocustodio/selfcure.git
-cd selfcure
-npm install
-npm run build
-
-<span class="token-comment"># Register the binary globally (symlink, so rebuilds reflect automatically)</span>
-cd packages/cli
-npm link
+      <h3 style="margin-top:24px" data-i18n="qs.step1">1 · Install the CLI</h3>
+<pre><code><span class="token-comment"># Requires Node 20+</span>
+npm install -g @selfcure/cli
 </code></pre>
 
-      <h3 data-i18n="qs.step2">2 · Configure in your target project</h3>
+      <h3 data-i18n="qs.step2">2 · Lint your frontend</h3>
 <pre><code><span class="token-comment"># From your frontend project's root</span>
 cd ~/path/to/your-app
-selfcure web        <span class="token-comment"># browser wizard at http://localhost:3333</span>
-<span class="token-comment"># or</span>
-selfcure init       <span class="token-comment"># terminal wizard</span>
+selfcure init       <span class="token-comment"># scaffold selfcure.config.mjs</span>
+selfcure lint       <span class="token-comment"># score + flag ambiguous locators</span>
 </code></pre>
 
-      <p class="small" data-i18n="qs.wizard_note">The wizard detects which provider keys you already have exported in your shell and pre-selects them. Picks Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama from a dropdown.</p>
+      <h3 data-i18n="qs.step3">3 · Connect GitHub and ship a PR</h3>
+<pre><code>selfcure web                <span class="token-comment"># opens http://localhost:3333</span>
+<span class="token-comment"># → /integrations  : one-click GitHub OAuth (no env vars)</span>
+<span class="token-comment"># → /lint          : tick the fixes you want, click once</span>
+<span class="token-comment">#                    selfcure branches, commits, pushes, opens PR</span>
+</code></pre>
 
-      <h3 data-i18n="qs.step3">3 · Run</h3>
-<pre><code><span class="token-comment"># Start your dev server in another terminal first</span>
-npm run dev
+      <p class="small" data-i18n="qs.wizard_note">No client secrets to manage. The selfcure cloud connector handles the OAuth dance; your project only stores the user’s access token locally in <code>.selfcure/integrations.json</code> (auto-gitignored). Disconnect revokes the token remotely.</p>
 
-<span class="token-comment"># Then in your-app root</span>
-selfcure crawl ./src    <span class="token-comment"># sanity-check the crawler</span>
-selfcure run            <span class="token-comment"># full pipeline: crawl → generate → run → heal → report</span>
+      <h3 data-i18n="qs.step4">4 · Hand off to Playwright Test Agents</h3>
+<pre><code><span class="token-comment"># Once your PR lands and the FE has stable data-testids:</span>
+npx playwright init-agents@latest
+<span class="token-comment"># Planner → Generator → Healer take over from here.</span>
 </code></pre>
 
       <p style="margin-top:24px">
@@ -693,10 +717,11 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
       <p class="eyebrow" data-i18n="status.eyebrow">Status</p>
       <h2 data-i18n="status.h2">Where it stands</h2>
       <p data-i18n="status.p1">
-        selfcure is at <code>v0.1.0</code> — a working monorepo with the full pipeline scaffolded
-        and the LLM provider layer in place. The crawl / analyze / generate / run / heal /
-        report stages are wired end-to-end; some stages still have placeholder logic while
-        the AI integration is hardened.
+        selfcure is at <code>v0.1.0</code>. The preventive pipeline — crawl, score, ambiguity
+        detection, <code>/lint</code> page, one-click GitHub PR, MCP server, hosted OAuth
+        connector — is wired end-to-end and dogfooded on a real legacy HTML app
+        (<strong>500 issues across 27 files — 477 of them ambiguous</strong>). GitLab and
+        Bitbucket OAuth are next; the legacy BYOK generate/heal pipeline still ships and works.
       </p>
       <p data-i18n="status.p2">
         Best place to follow progress, file issues, or contribute is the GitHub repo. Stars
@@ -735,48 +760,66 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
 
 <script type="application/json" id="i18n-en">
 {
-  "meta.title": "selfcure — self-healing Playwright tests, any LLM",
-  "meta.desc": "Selfcure cures tests, not components. Generate, run, and auto-patch Playwright tests with the LLM of your choice — Anthropic, OpenAI, Gemini, Groq, DeepSeek, or local Ollama.",
+  "meta.title": "selfcure — the preventive testability layer for frontend codebases",
+  "meta.desc": "selfcure scores your frontend for testability before any test exists, flags ambiguous locators, and ships data-testid fixes as a Pull Request via one-click GitHub OAuth. The preventive layer that feeds Playwright Test Agents.",
   "nav.how": "How it works",
+  "nav.integrations": "Integrations",
   "nav.providers": "Providers",
   "nav.quickstart": "Quick start",
-  "hero.eyebrow": "Self-healing Playwright tests · BYOK · open source",
+  "hero.eyebrow": "Preventive testability · Feeds Playwright Test Agents · Open source",
   "hero.headline_l1": "Selfcure cures tests,",
   "hero.headline_l2": "not components.",
-  "hero.lede": "Crawl your frontend, generate Playwright tests with the LLM of your choice, and let selfcure auto-patch flaky locators. When the test is fine but the component is broken, selfcure tells you.",
+  "hero.lede": "Reactive healers wait for a test to break. selfcure reads your React/Vue/Angular/HTML source <em>before any test exists</em>, scores every interactive element, flags ambiguous locators, and ships <code>data-testid</code> fixes as a Pull Request — via one-click GitHub OAuth. Then Playwright Test Agents take over.",
   "hero.cta_primary": "View on GitHub →",
   "hero.cta_secondary": "Quick start",
   "mantra.quote": "Selfcure distinguishes a bad test from a bad component. It patches the test when the locator drifts. When the component has no stable identifier, it tells you — and refuses to paper over a frontend bug.",
   "mantra.cite": "— design principle, since v0.1",
   "how.eyebrow": "Pipeline",
   "how.h2": "How it works",
-  "how.lede": "A single command runs the whole pipeline. Each stage is its own npm workspace package — pick and choose.",
-  "how.step1.label": "01 · CRAWL",
-  "how.step1.title": "Read your source",
-  "how.step1.desc": "Static AST via <code>@typescript-eslint/parser</code> + dynamic DOM capture via Playwright codegen. Outputs a structured component map.",
-  "how.step2.label": "02 · GENERATE",
-  "how.step2.title": "LLM writes the tests",
-  "how.step2.desc": "Component analysis + interactive-element map go to the LLM. Returns one ready-to-run <code>.spec.ts</code> per component.",
-  "how.step3.label": "03 · HEAL",
-  "how.step3.title": "Patch on failure",
-  "how.step3.desc": "Failures get classified. Locator drift → ask LLM for a diff, sanity-check, apply, retry. Component-level bugs → flagged for human review.",
+  "how.lede": "selfcure is the <strong>preventive</strong> half of the test loop. It runs before Playwright Test Agents and hands them a frontend they can actually test.",
+  "how.step1.label": "01 · CRAWL &amp; SCORE",
+  "how.step1.title": "Read your source, score every element",
+  "how.step1.desc": "Static AST via <code>@typescript-eslint/parser</code> across <code>.tsx</code>, <code>.jsx</code>, <code>.vue</code>, <code>.component.ts</code>, <code>.html</code>. Each interactive element gets a 0–100 testability score and a ranked selector list.",
+  "how.step2.label": "02 · LINT",
+  "how.step2.title": "Flag ambiguity nobody else catches",
+  "how.step2.desc": "When the best selector for an element also matches a sibling, runtime tests silently bind to the wrong node. selfcure detects it at source level and suggests a dedup-aware <code>data-testid</code> patch.",
+  "how.step3.label": "03 · PR",
+  "how.step3.title": "Ship the fix to the frontend team",
+  "how.step3.desc": "Open <code>/lint</code> in the browser, tick the patches you want, click once. selfcure branches, commits, pushes, and opens a Pull Request on GitHub. The frontend team owns the fix — not the QA pipeline.",
+  "how.handoff": "After the PR lands, <code>@playwright/mcp</code> + Playwright Test Agents (Planner / Generator / Healer) take over. selfcure does not compete with them — it feeds them.",
+  "integ.eyebrow": "SCM integrations",
+  "integ.h2": "One-click Git connection",
+  "integ.lede": "Connect your repository in a single click via OAuth — no env vars, no client secrets, no manual app registration. selfcure ships a hosted cloud connector so end users authorize and selfcure opens the PR.",
+  "integ.badge_live": "Live",
+  "integ.badge_soon": "coming soon",
+  "integ.github.title": "GitHub",
+  "integ.github.desc": "One-click OAuth via the selfcure cloud connector. Authorize, pick fixes in <code>/lint</code>, get a Pull Request. Disconnect revokes the token remotely.",
+  "integ.gitlab.title": "GitLab",
+  "integ.gitlab.desc": "Same flow, same connector — OAuth app pending. Self-hosted GitLab will be supported via per-instance config.",
+  "integ.bitbucket.title": "Bitbucket",
+  "integ.bitbucket.desc": "Workspace-level OAuth, same one-click flow. Bring Your Own OAuth App is also supported today via local env vars if you want full control.",
+  "integ.byo": "Prefer no third party? Set <code>GITHUB_OAUTH_CLIENT_ID</code> / <code>SECRET</code> in your project <code>.env</code> and selfcure uses your own OAuth app. The managed connector is opt-in via <code>SELFCURE_CONNECTOR_BASE_URL</code>.",
   "features.eyebrow": "Capabilities",
   "features.h2": "What you get",
-  "features.1.title": "Multi-provider",
-  "features.1.desc": "Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama. Swap providers with one config line. No vendor lock-in.",
-  "features.2.title": "Self-healing loop",
-  "features.2.desc": "Failed locator? selfcure asks the LLM for a unified diff, applies it under a parse sanity check, and rolls back on failure. Max attempts configurable.",
-  "features.3.title": "Testability score",
-  "features.3.desc": "Every component gets a 0–100 score. Low score? You learn that the FE needs <code>data-testid</code> — not that 'tests are flaky.'",
-  "features.4.title": "Browser-based init",
-  "features.4.desc": "Open a wizard at <code>localhost:3333</code>. Auto-detects which provider keys you've already exported. Picks <code>./src</code>, <code>./app</code>, etc. from your project.",
-  "features.5.title": "Playwright-native",
-  "features.5.desc": "Generated tests are plain <code>@playwright/test</code> code. No proprietary runner, no lock-in. Trace + screenshot on every failure.",
-  "features.6.title": "HTML report",
-  "features.6.desc": "Per-test status, applied diffs (collapsible), and a 'Components needing FE intervention' section that calls out unfixable items.",
-  "providers.eyebrow": "Provider matrix",
-  "providers.h2": "Bring your own key",
-  "providers.lede": "Pick the LLM that fits your wallet, compliance, or hardware. Switch any time — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.",
+  "features.badge_unique": "unique to selfcure",
+  "features.badge_pro": "selfcure web",
+  "features.badge_mcp": "@selfcure/mcp",
+  "features.badge_fallback": "fallback",
+  "features.1.title": "Ambiguity detection",
+  "features.1.desc": "When the best selector for a button also matches one of its siblings, Playwright silently binds to the wrong node. selfcure catches this at the AST level — the failure mode runtime healers can't prevent.",
+  "features.2.title": "Testability score",
+  "features.2.desc": "Every interactive element gets a 0–100 score based on a ranked selector list: <code>data-testid</code> → <code>id</code> → <code>aria-label</code> → <code>name</code> → CSS → XPath. Low score = the FE owes a <code>data-testid</code>.",
+  "features.3.title": "One-click PR",
+  "features.3.desc": "Open <code>/lint</code>, tick the patches you want, click once. selfcure branches, commits, pushes, and opens a PR on GitHub. The frontend team reviews and ships.",
+  "features.4.title": "MCP server",
+  "features.4.desc": "Publishes the crawl + score + ambiguity findings over the Model Context Protocol. Any MCP client — Claude Desktop, Cursor, VS Code, Windsurf, Claude Code — can query them.",
+  "features.5.title": "Feeds Playwright Test Agents",
+  "features.5.desc": "selfcure is the preventive layer. <code>@playwright/mcp</code> + Planner / Generator / Healer is the reactive layer. We don't compete — we hand them a frontend they can actually test.",
+  "features.6.title": "Legacy BYOK pipeline",
+  "features.6.desc": "Not on Playwright Test Agents yet? <code>selfcure run</code> still generates + executes + heals tests using the LLM provider of your choice. Available, not the headline.",
+  "providers.eyebrow": "Legacy BYOK fallback",
+  "providers.h2": "Bring your own LLM key",
+  "providers.lede": "If you haven't moved to Playwright Test Agents yet, <code>selfcure run</code> still generates + executes + heals tests using the LLM of your choice. Swap providers in one config line — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.",
   "providers.col_provider": "Provider",
   "providers.col_generation": "Default generation",
   "providers.col_healing": "Default healing",
@@ -785,15 +828,16 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   "providers.tag_local": "local · no key",
   "qs.eyebrow": "Get going",
   "qs.h2": "Quick start",
-  "qs.lede": "selfcure is pre-publish — install from source while we stabilise the API.",
-  "qs.step1": "1 · Link the CLI from source",
-  "qs.step2": "2 · Configure in your target project",
-  "qs.step3": "3 · Run",
-  "qs.wizard_note": "The wizard detects which provider keys you already have exported in your shell and pre-selects them. Picks Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama from a dropdown.",
+  "qs.lede": "Four steps from zero to a PR full of <code>data-testid</code> patches.",
+  "qs.step1": "1 · Install the CLI",
+  "qs.step2": "2 · Lint your frontend",
+  "qs.step3": "3 · Connect GitHub and ship a PR",
+  "qs.step4": "4 · Hand off to Playwright Test Agents",
+  "qs.wizard_note": "No client secrets to manage. The selfcure cloud connector handles the OAuth dance; your project only stores the user's access token locally in <code>.selfcure/integrations.json</code> (auto-gitignored). Disconnect revokes the token remotely.",
   "qs.docs_cta": "Read the full getting-started guide →",
   "status.eyebrow": "Status",
   "status.h2": "Where it stands",
-  "status.p1": "selfcure is at <code>v0.1.0</code> — a working monorepo with the full pipeline scaffolded and the LLM provider layer in place. The crawl / analyze / generate / run / heal / report stages are wired end-to-end; some stages still have placeholder logic while the AI integration is hardened.",
+  "status.p1": "selfcure is at <code>v0.1.0</code>. The preventive pipeline — crawl, score, ambiguity detection, <code>/lint</code> page, one-click GitHub PR, MCP server, hosted OAuth connector — is wired end-to-end and dogfooded on a real legacy HTML app (<strong>500 issues across 27 files — 477 of them ambiguous</strong>). GitLab and Bitbucket OAuth are next; the legacy BYOK generate/heal pipeline still ships and works.",
   "status.p2": "Best place to follow progress, file issues, or contribute is the GitHub repo. Stars help; PRs help more.",
   "status.cta_primary": "Star on GitHub",
   "status.cta_secondary": "Open an issue",
@@ -805,48 +849,66 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
 
 <script type="application/json" id="i18n-pt">
 {
-  "meta.title": "selfcure — testes Playwright auto-curáveis, qualquer LLM",
-  "meta.desc": "selfcure cura testes, não componentes. Gere, execute e corrija automaticamente testes Playwright com o LLM da sua escolha — Anthropic, OpenAI, Gemini, Groq, DeepSeek ou Ollama local.",
+  "meta.title": "selfcure — a camada preventiva de testabilidade para frontends",
+  "meta.desc": "selfcure pontua a testabilidade do seu frontend antes de qualquer teste existir, identifica locators ambíguos e envia patches de data-testid como Pull Request via OAuth de um clique no GitHub. A camada preventiva que alimenta os Playwright Test Agents.",
   "nav.how": "Como funciona",
+  "nav.integrations": "Integrações",
   "nav.providers": "Provedores",
   "nav.quickstart": "Início rápido",
-  "hero.eyebrow": "Testes Playwright auto-curáveis · BYOK · código aberto",
+  "hero.eyebrow": "Testabilidade preventiva · Alimenta os Playwright Test Agents · Open source",
   "hero.headline_l1": "selfcure cura testes,",
   "hero.headline_l2": "não componentes.",
-  "hero.lede": "Faça crawl do seu frontend, gere testes Playwright com o LLM da sua escolha, e deixe o selfcure corrigir locators instáveis automaticamente. Quando o teste está OK mas o componente é que está quebrado, o selfcure te avisa.",
+  "hero.lede": "Healers reativos esperam o teste quebrar. O selfcure lê seu source React/Vue/Angular/HTML <em>antes de qualquer teste existir</em>, pontua cada elemento interativo, sinaliza locators ambíguos e envia patches de <code>data-testid</code> como Pull Request — via OAuth de um clique no GitHub. Depois os Playwright Test Agents assumem.",
   "hero.cta_primary": "Ver no GitHub →",
   "hero.cta_secondary": "Início rápido",
   "mantra.quote": "selfcure distingue um teste ruim de um componente ruim. Ele corrige o teste quando o locator muda. Quando o componente não tem identificador estável, ele te avisa — e se recusa a maquiar um bug de frontend.",
   "mantra.cite": "— princípio de design, desde v0.1",
   "how.eyebrow": "Pipeline",
   "how.h2": "Como funciona",
-  "how.lede": "Um único comando roda o pipeline inteiro. Cada estágio é um pacote npm independente — escolha o que usar.",
-  "how.step1.label": "01 · CRAWL",
-  "how.step1.title": "Lê o seu source",
-  "how.step1.desc": "AST estática via <code>@typescript-eslint/parser</code> + captura dinâmica de DOM via Playwright codegen. Gera um mapa de componentes estruturado.",
-  "how.step2.label": "02 · GERAR",
-  "how.step2.title": "LLM escreve os testes",
-  "how.step2.desc": "Análise do componente + mapa de elementos interativos vão pro LLM. Retorna um <code>.spec.ts</code> pronto pra rodar por componente.",
-  "how.step3.label": "03 · CURAR",
-  "how.step3.title": "Corrige no erro",
-  "how.step3.desc": "Falhas são classificadas. Locator mudou → pede diff pro LLM, valida, aplica, tenta de novo. Bug no componente → marcado pra revisão humana.",
+  "how.lede": "O selfcure é a metade <strong>preventiva</strong> do loop de testes. Roda antes dos Playwright Test Agents e entrega a eles um frontend de fato testável.",
+  "how.step1.label": "01 · CRAWL E SCORE",
+  "how.step1.title": "Lê seu source, pontua cada elemento",
+  "how.step1.desc": "AST estática via <code>@typescript-eslint/parser</code> em <code>.tsx</code>, <code>.jsx</code>, <code>.vue</code>, <code>.component.ts</code>, <code>.html</code>. Cada elemento interativo recebe um score 0–100 de testabilidade e uma lista ranqueada de seletores.",
+  "how.step2.label": "02 · LINT",
+  "how.step2.title": "Detecta ambiguidade que ninguém mais pega",
+  "how.step2.desc": "Quando o melhor seletor de um elemento também bate em um irmão, testes em runtime se ligam silenciosamente ao nó errado. O selfcure detecta isso no nível do source e sugere um patch de <code>data-testid</code> único.",
+  "how.step3.label": "03 · PR",
+  "how.step3.title": "Entrega a correção pro time de frontend",
+  "how.step3.desc": "Abra <code>/lint</code> no browser, marque os patches que quer, um clique. O selfcure cria branch, commit, push e abre um Pull Request no GitHub. O time de frontend é dono da correção — não o pipeline de QA.",
+  "how.handoff": "Depois que o PR entra, <code>@playwright/mcp</code> + Playwright Test Agents (Planner / Generator / Healer) assumem. O selfcure não compete com eles — alimenta eles.",
+  "integ.eyebrow": "Integrações SCM",
+  "integ.h2": "Conexão Git em um clique",
+  "integ.lede": "Conecte seu repositório em um clique via OAuth — sem variáveis de ambiente, sem client secrets, sem registro manual de app. O selfcure traz um connector cloud hospedado para o usuário final só autorizar e o selfcure abrir o PR.",
+  "integ.badge_live": "Ativo",
+  "integ.badge_soon": "em breve",
+  "integ.github.title": "GitHub",
+  "integ.github.desc": "OAuth de um clique via o connector cloud do selfcure. Autorize, escolha os fixes em <code>/lint</code>, receba um Pull Request. Desconectar revoga o token remotamente.",
+  "integ.gitlab.title": "GitLab",
+  "integ.gitlab.desc": "Mesmo fluxo, mesmo connector — app OAuth pendente. GitLab self-hosted será suportado via config por instância.",
+  "integ.bitbucket.title": "Bitbucket",
+  "integ.bitbucket.desc": "OAuth a nível de workspace, mesmo fluxo de um clique. Trazer seu próprio OAuth App também é suportado hoje via env vars locais, se quiser controle total.",
+  "integ.byo": "Prefere sem terceiros? Defina <code>GITHUB_OAUTH_CLIENT_ID</code> / <code>SECRET</code> no <code>.env</code> do projeto e o selfcure usa seu próprio OAuth App. O connector gerenciado é opt-in via <code>SELFCURE_CONNECTOR_BASE_URL</code>.",
   "features.eyebrow": "Capacidades",
   "features.h2": "O que você ganha",
-  "features.1.title": "Multi-provedor",
-  "features.1.desc": "Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, ou Ollama local. Troca de provedor numa linha de config. Sem vendor lock-in.",
-  "features.2.title": "Loop de auto-cura",
-  "features.2.desc": "Locator falhou? selfcure pede um diff unificado pro LLM, aplica sob sanity check de parse, e faz rollback se falhar. Tentativas configuráveis.",
-  "features.3.title": "Score de testabilidade",
-  "features.3.desc": "Cada componente recebe um score 0–100. Score baixo? Você descobre que o FE precisa de <code>data-testid</code> — não que 'os testes estão flaky.'",
-  "features.4.title": "Init no browser",
-  "features.4.desc": "Abre um wizard em <code>localhost:3333</code>. Auto-detecta quais chaves de provedor você já tem exportadas. Pega <code>./src</code>, <code>./app</code>, etc. do seu projeto.",
-  "features.5.title": "Nativo de Playwright",
-  "features.5.desc": "Testes gerados são código <code>@playwright/test</code> puro. Sem runner proprietário, sem lock-in. Trace + screenshot em toda falha.",
-  "features.6.title": "Relatório HTML",
-  "features.6.desc": "Status por teste, diffs aplicados (colapsável), e uma seção 'Componentes que precisam de intervenção FE' que destaca itens não-curáveis.",
-  "providers.eyebrow": "Matriz de provedores",
-  "providers.h2": "Use sua própria chave",
-  "providers.lede": "Escolha o LLM que cabe no seu bolso, compliance, ou hardware. Troque quando quiser — defaults abaixo vêm de <code>PROVIDERS</code> em <code>packages/generator/src/ai.ts</code>.",
+  "features.badge_unique": "exclusivo do selfcure",
+  "features.badge_pro": "selfcure web",
+  "features.badge_mcp": "@selfcure/mcp",
+  "features.badge_fallback": "fallback",
+  "features.1.title": "Detecção de ambiguidade",
+  "features.1.desc": "Quando o melhor seletor de um botão também bate em um irmão, o Playwright se liga silenciosamente ao nó errado. O selfcure pega isso no nível de AST — o modo de falha que healers em runtime não conseguem prevenir.",
+  "features.2.title": "Score de testabilidade",
+  "features.2.desc": "Cada elemento interativo recebe um score 0–100 baseado em uma lista ranqueada de seletores: <code>data-testid</code> → <code>id</code> → <code>aria-label</code> → <code>name</code> → CSS → XPath. Score baixo = o FE deve um <code>data-testid</code>.",
+  "features.3.title": "PR em um clique",
+  "features.3.desc": "Abra <code>/lint</code>, marque os patches que quer, um clique. O selfcure cria branch, commit, push e abre um PR no GitHub. O time de frontend revisa e entrega.",
+  "features.4.title": "Servidor MCP",
+  "features.4.desc": "Publica os achados de crawl + score + ambiguidade via Model Context Protocol. Qualquer cliente MCP — Claude Desktop, Cursor, VS Code, Windsurf, Claude Code — consegue consultar.",
+  "features.5.title": "Alimenta os Playwright Test Agents",
+  "features.5.desc": "selfcure é a camada preventiva. <code>@playwright/mcp</code> + Planner / Generator / Healer é a camada reativa. A gente não compete — entrega pra eles um frontend que dá pra testar.",
+  "features.6.title": "Pipeline legacy BYOK",
+  "features.6.desc": "Ainda não está nos Playwright Test Agents? <code>selfcure run</code> ainda gera + executa + cura testes usando o provedor LLM da sua escolha. Disponível, mas não é o destaque.",
+  "providers.eyebrow": "Fallback BYOK legacy",
+  "providers.h2": "Use sua própria chave LLM",
+  "providers.lede": "Se você ainda não migrou pros Playwright Test Agents, <code>selfcure run</code> ainda gera + executa + cura testes com o LLM da sua escolha. Troca de provedor em uma linha de config — defaults vêm de <code>PROVIDERS</code> em <code>packages/generator/src/ai.ts</code>.",
   "providers.col_provider": "Provedor",
   "providers.col_generation": "Geração padrão",
   "providers.col_healing": "Cura padrão",
@@ -855,15 +917,16 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   "providers.tag_local": "local · sem chave",
   "qs.eyebrow": "Bora começar",
   "qs.h2": "Início rápido",
-  "qs.lede": "selfcure ainda não foi publicado — instala do source enquanto estabilizamos a API.",
-  "qs.step1": "1 · Linka o CLI a partir do source",
-  "qs.step2": "2 · Configura no seu projeto alvo",
-  "qs.step3": "3 · Roda",
-  "qs.wizard_note": "O wizard detecta quais chaves de provedor você já tem exportadas no seu shell e pré-seleciona. Permite escolher Anthropic / OpenAI / Gemini / Groq / DeepSeek / Ollama num dropdown.",
+  "qs.lede": "Quatro passos do zero a um PR cheio de patches de <code>data-testid</code>.",
+  "qs.step1": "1 · Instale o CLI",
+  "qs.step2": "2 · Lint no seu frontend",
+  "qs.step3": "3 · Conecte o GitHub e abra um PR",
+  "qs.step4": "4 · Passe o bastão pros Playwright Test Agents",
+  "qs.wizard_note": "Sem client secrets pra gerenciar. O connector cloud do selfcure cuida da dança OAuth; seu projeto só guarda o access token do usuário localmente em <code>.selfcure/integrations.json</code> (auto-gitignorado). Desconectar revoga o token remotamente.",
   "qs.docs_cta": "Lê o guia completo de início rápido →",
   "status.eyebrow": "Status",
   "status.h2": "Onde a gente está",
-  "status.p1": "selfcure está em <code>v0.1.0</code> — um monorepo funcional com o pipeline completo montado e a camada de provedor LLM no lugar. Os estágios crawl / analyze / generate / run / heal / report estão conectados ponta-a-ponta; alguns ainda têm lógica placeholder enquanto a integração AI é endurecida.",
+  "status.p1": "selfcure está em <code>v0.1.0</code>. O pipeline preventivo — crawl, score, detecção de ambiguidade, página <code>/lint</code>, PR no GitHub em um clique, servidor MCP, connector OAuth hospedado — está conectado ponta-a-ponta e sendo dogfooded em um app HTML legado real (<strong>500 issues em 27 arquivos — 477 ambíguos</strong>). GitLab e Bitbucket OAuth são os próximos; o pipeline legacy BYOK de gerar/curar continua funcionando.",
   "status.p2": "O melhor lugar pra acompanhar progresso, abrir issues, ou contribuir é o repo no GitHub. Estrelas ajudam; PRs ajudam mais.",
   "status.cta_primary": "Dar estrela no GitHub",
   "status.cta_secondary": "Abrir uma issue",
@@ -878,12 +941,13 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   "meta.title": "selfcure — tests Playwright auto-reparables, cualquier LLM",
   "meta.desc": "selfcure cura los tests, no los componentes. Genera, ejecuta y auto-repara tests Playwright con el LLM de tu elección — Anthropic, OpenAI, Gemini, Groq, DeepSeek u Ollama local.",
   "nav.how": "Cómo funciona",
+  "nav.integrations": "Integraciones",
   "nav.providers": "Proveedores",
   "nav.quickstart": "Inicio rápido",
-  "hero.eyebrow": "Tests Playwright auto-reparables · BYOK · código abierto",
+  "hero.eyebrow": "Testabilidad preventiva · Alimenta los Playwright Test Agents · Código abierto",
   "hero.headline_l1": "selfcure cura los tests,",
   "hero.headline_l2": "no los componentes.",
-  "hero.lede": "Rastrea tu frontend, genera tests Playwright con el LLM de tu elección, y deja que selfcure repare locators inestables automáticamente. Cuando el test está bien pero el componente está roto, selfcure te lo dice.",
+  "hero.lede": "Los healers reactivos esperan a que un test falle. selfcure lee tu fuente React/Vue/Angular/HTML <em>antes de que exista cualquier test</em>, puntua cada elemento interactivo, marca locators ambiguos y envía parches de <code>data-testid</code> como Pull Request — vía OAuth de un clic en GitHub. Luego los Playwright Test Agents toman el relevo.",
   "hero.cta_primary": "Ver en GitHub →",
   "hero.cta_secondary": "Inicio rápido",
   "mantra.quote": "selfcure distingue un test malo de un componente malo. Repara el test cuando el locator cambia. Cuando el componente no tiene un identificador estable, te avisa — y se niega a maquillar un bug de frontend.",
@@ -948,12 +1012,13 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   "meta.title": "selfcure — tests Playwright auto-réparables, n'importe quel LLM",
   "meta.desc": "selfcure soigne les tests, pas les composants. Générez, exécutez et auto-corrigez des tests Playwright avec le LLM de votre choix — Anthropic, OpenAI, Gemini, Groq, DeepSeek ou Ollama local.",
   "nav.how": "Comment ça marche",
+  "nav.integrations": "Intégrations",
   "nav.providers": "Fournisseurs",
   "nav.quickstart": "Démarrage rapide",
-  "hero.eyebrow": "Tests Playwright auto-réparables · BYOK · open source",
+  "hero.eyebrow": "Testabilité préventive · Alimente les Playwright Test Agents · Open source",
   "hero.headline_l1": "selfcure soigne les tests,",
   "hero.headline_l2": "pas les composants.",
-  "hero.lede": "Parcourez votre frontend, générez des tests Playwright avec le LLM de votre choix, et laissez selfcure réparer automatiquement les locators instables. Quand le test va bien mais que le composant est cassé, selfcure vous le dit.",
+  "hero.lede": "Les healers réactifs attendent qu'un test casse. selfcure lit votre source React/Vue/Angular/HTML <em>avant qu'aucun test n'existe</em>, note chaque élément interactif, signale les locators ambigus et envoie les correctifs <code>data-testid</code> sous forme de Pull Request — via OAuth en un clic sur GitHub. Ensuite les Playwright Test Agents prennent le relais.",
   "hero.cta_primary": "Voir sur GitHub →",
   "hero.cta_secondary": "Démarrage rapide",
   "mantra.quote": "selfcure distingue un mauvais test d'un mauvais composant. Il corrige le test quand le locator change. Quand le composant n'a pas d'identifiant stable, il vous le dit — et refuse de masquer un bug frontend.",
@@ -1018,12 +1083,13 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   "meta.title": "selfcure — selbstheilende Playwright-Tests, beliebiges LLM",
   "meta.desc": "selfcure heilt Tests, nicht Komponenten. Generiere, führe aus und auto-patche Playwright-Tests mit dem LLM deiner Wahl — Anthropic, OpenAI, Gemini, Groq, DeepSeek oder lokales Ollama.",
   "nav.how": "Wie es funktioniert",
+  "nav.integrations": "Integrationen",
   "nav.providers": "Provider",
   "nav.quickstart": "Schnellstart",
-  "hero.eyebrow": "Selbstheilende Playwright-Tests · BYOK · Open Source",
+  "hero.eyebrow": "Präventive Testbarkeit · Versorgt Playwright Test Agents · Open Source",
   "hero.headline_l1": "selfcure heilt Tests,",
   "hero.headline_l2": "nicht Komponenten.",
-  "hero.lede": "Crawle dein Frontend, generiere Playwright-Tests mit dem LLM deiner Wahl, und lass selfcure instabile Locators automatisch reparieren. Wenn der Test in Ordnung ist, aber die Komponente kaputt ist, sagt selfcure es dir.",
+  "hero.lede": "Reaktive Healer warten, bis ein Test bricht. selfcure liest deinen React/Vue/Angular/HTML-Source <em>bevor irgendein Test existiert</em>, bewertet jedes interaktive Element, markiert mehrdeutige Locators und liefert <code>data-testid</code>-Fixes als Pull Request — via Ein-Klick-GitHub-OAuth. Danach übernehmen die Playwright Test Agents.",
   "hero.cta_primary": "Auf GitHub ansehen →",
   "hero.cta_secondary": "Schnellstart",
   "mantra.quote": "selfcure unterscheidet einen schlechten Test von einer schlechten Komponente. Es patcht den Test, wenn sich der Locator ändert. Wenn die Komponente keinen stabilen Identifier hat, sagt es dir Bescheid — und weigert sich, einen Frontend-Bug zu kaschieren.",
@@ -1088,12 +1154,13 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   "meta.title": "selfcure — 自愈 Playwright 测试，任意 LLM",
   "meta.desc": "selfcure 治愈测试，而非组件。使用您选择的 LLM 生成、运行并自动修复 Playwright 测试 — Anthropic、OpenAI、Gemini、Groq、DeepSeek 或本地 Ollama。",
   "nav.how": "工作原理",
+  "nav.integrations": "集成",
   "nav.providers": "提供商",
   "nav.quickstart": "快速开始",
-  "hero.eyebrow": "自愈 Playwright 测试 · BYOK · 开源",
+  "hero.eyebrow": "预防性可测试性 · 为 Playwright Test Agents 提供输入 · 开源",
   "hero.headline_l1": "selfcure 治愈测试，",
   "hero.headline_l2": "而非组件。",
-  "hero.lede": "扫描您的前端代码，使用您选择的 LLM 生成 Playwright 测试，让 selfcure 自动修复不稳定的 locator。当测试没问题但组件坏了，selfcure 会告诉您。",
+  "hero.lede": "响应式 healer 等到测试崩溃才修复。selfcure <em>在任何测试存在之前</em> 就读取您的 React/Vue/Angular/HTML 源码，为每个交互元素评分，标记模糊的 locator，并通过一键 GitHub OAuth 以 Pull Request 的形式交付 <code>data-testid</code> 补丁。随后 Playwright Test Agents 接手。",
   "hero.cta_primary": "在 GitHub 上查看 →",
   "hero.cta_secondary": "快速开始",
   "mantra.quote": "selfcure 区分坏测试和坏组件。当 locator 漂移时它修复测试；当组件没有稳定标识符时它告诉您 — 并拒绝掩盖前端 bug。",
@@ -1158,12 +1225,13 @@ selfcure run            <span class="token-comment"># full pipeline: crawl → g
   "meta.title": "selfcure — 自己修復する Playwright テスト、任意の LLM",
   "meta.desc": "selfcure はテストを治す。コンポーネントではない。お好みの LLM で Playwright テストを生成、実行、自動修復 — Anthropic、OpenAI、Gemini、Groq、DeepSeek、またはローカル Ollama。",
   "nav.how": "仕組み",
+  "nav.integrations": "連携",
   "nav.providers": "プロバイダー",
   "nav.quickstart": "クイックスタート",
-  "hero.eyebrow": "自己修復する Playwright テスト · BYOK · オープンソース",
+  "hero.eyebrow": "予防的テスト可能性 · Playwright Test Agents へ引き継ぐ · オープンソース",
   "hero.headline_l1": "selfcure はテストを治す。",
   "hero.headline_l2": "コンポーネントではない。",
-  "hero.lede": "フロントエンドをクロールし、お好みの LLM で Playwright テストを生成、selfcure が不安定な locator を自動修復します。テストは正しくてもコンポーネントが壊れているとき、selfcure が教えてくれます。",
+  "hero.lede": "リアクティブな healer はテストが壊れるのを待ちます。selfcure は <em>テストが存在する前に</em> React/Vue/Angular/HTML ソースを読み、すべてのインタラクティブ要素をスコアし、曖昧な locator をフラグし、ワンクリックの GitHub OAuth で <code>data-testid</code> パッチを Pull Request として送ります。その後 Playwright Test Agents が引き継ぎます。",
   "hero.cta_primary": "GitHub で見る →",
   "hero.cta_secondary": "クイックスタート",
   "mantra.quote": "selfcure は悪いテストと悪いコンポーネントを区別します。locator が変わったらテストにパッチを当て、コンポーネントに安定した識別子がないときは知らせます — フロントエンドのバグを覆い隠すことを拒みます。",
