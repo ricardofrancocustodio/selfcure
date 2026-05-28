@@ -180,6 +180,84 @@ function callbackUrl(port: number, provider: ScmProviderId): string {
   return `http://localhost:${port}/oauth/callback/${provider}`;
 }
 
+function isRevocableToken(value: string | undefined): boolean {
+  if (!value) return false;
+  return value !== 'managed-by-connector';
+}
+
+async function revokeProviderToken(
+  cwd: string,
+  provider: ScmProviderId,
+  accessToken: string,
+): Promise<void> {
+  const meta = PROVIDERS[provider];
+  const cfg = getConfig(cwd, meta);
+  if (cfg.missingEnv.length > 0) {
+    throw new Error(`Missing OAuth env vars for ${meta.label}: ${cfg.missingEnv.join(', ')}`);
+  }
+
+  if (provider === 'github') {
+    const basic = Buffer.from(`${cfg.clientId}:${cfg.clientSecret}`).toString('base64');
+    const resp = await fetch(
+      `https://api.github.com/applications/${cfg.clientId}/grant`,
+      {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/vnd.github+json',
+          Authorization: `Basic ${basic}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'selfcure-web',
+        },
+        body: JSON.stringify({ access_token: accessToken }),
+      },
+    );
+
+    if (!resp.ok) {
+      const body = await resp.text();
+      throw new Error(`GitHub token revoke failed (${resp.status}): ${body || resp.statusText}`);
+    }
+    return;
+  }
+
+  if (provider === 'gitlab') {
+    const body = new URLSearchParams({
+      client_id: cfg.clientId,
+      client_secret: cfg.clientSecret,
+      token: accessToken,
+    }).toString();
+
+    const resp = await fetch('https://gitlab.com/oauth/revoke', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      throw new Error(`GitLab token revoke failed (${resp.status}): ${text || resp.statusText}`);
+    }
+    return;
+  }
+
+  const basic = Buffer.from(`${cfg.clientId}:${cfg.clientSecret}`).toString('base64');
+  const body = new URLSearchParams({ token: accessToken }).toString();
+  const resp = await fetch('https://bitbucket.org/site/oauth2/revoke', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${basic}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    throw new Error(`Bitbucket token revoke failed (${resp.status}): ${text || resp.statusText}`);
+  }
+}
+
 export function isScmProviderId(value: string): value is ScmProviderId {
   return value === 'github' || value === 'gitlab' || value === 'bitbucket';
 }
@@ -532,8 +610,18 @@ export async function handleManagedOAuthCallback(
 
 export async function disconnectProvider(cwd: string, provider: ScmProviderId): Promise<void> {
   const file = await readIntegrations(cwd);
-  if (file.connections[provider]) {
-    delete file.connections[provider];
-    await writeIntegrations(cwd, file);
+  const conn = file.connections[provider];
+  if (!conn) return;
+
+  if (isRevocableToken(conn.token.accessToken)) {
+    try {
+      await revokeProviderToken(cwd, provider, conn.token.accessToken);
+    } catch {
+      // Best effort: local disconnect must still work even when provider
+      // revocation fails (network, already-revoked token, provider outage).
+    }
   }
+
+  delete file.connections[provider];
+  await writeIntegrations(cwd, file);
 }

@@ -40,6 +40,7 @@ create / update / delete each one.
 | `docs/packages/selfcure.md` | `@selfcure/selfcure` — `heal()` API, heal prompt, sanity check |
 | `docs/packages/reporter.md` | `@selfcure/reporter` — `report()` API, output files, HTML columns |
 | `docs/packages/web.md` | `@selfcure/web` — `startWebServer()` API, HTTP routes, init page, generator |
+| `docs/packages/mcp.md` | `@selfcure/mcp` — Model Context Protocol server exposing crawler/analyzer/lint to AI clients |
 
 ### `docs/implementations/` — incremental implementation notes
 
@@ -52,6 +53,7 @@ create / update / delete each one.
 | `docs/implementations/2026-05-27-managed-oauth-connector-mode.md` | Added managed cloud connector mode via `SELFCURE_CONNECTOR_BASE_URL` for no-secrets-on-client OAuth |
 | `docs/implementations/2026-05-27-vercel-managed-connector-deploy.md` | Added and deployed a Vercel OAuth connector service for GitHub/GitLab/Bitbucket |
 | `docs/implementations/2026-05-27-vercel-project-rename-selfcure.md` | Renamed Vercel project from connector to selfcure and added canonical alias |
+| `docs/implementations/2026-05-27-disconnect-remote-revoke.md` | Disconnect now performs best-effort remote provider token revocation before clearing local state |
 
 ### `site/` — public landing page (GitHub Pages)
 

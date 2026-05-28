@@ -32,7 +32,7 @@ Returns a `http.Server` instance.
 | `GET` | `/api/dirs` | Returns the wizard `cwd` and its immediate subdirectories (used to populate the source-folder picker) |
 | `GET` | `/api/providers` | Returns the supported LLM providers + which env vars are already set in the server's environment |
 | `GET` | `/api/integrations` | Returns `{ providers }` with configured/connected status for each SCM provider |
-| `DELETE` | `/api/integrations/:provider` | Disconnects a provider and removes saved tokens from `.selfcure/integrations.json` |
+| `DELETE` | `/api/integrations/:provider` | Disconnects a provider, attempts remote token revocation, then removes saved token from `.selfcure/integrations.json` |
 | `POST` | `/api/init` | Writes `selfcure.config.mjs` + `.env`, returns `GenerateResult` JSON |
 | `POST` | `/api/crawl` | Loads `selfcure.config.mjs`, runs `crawl()` + `analyze()`, and returns serializable component metadata |
 | `POST` | `/api/lint` | Scans the source, returns `{ issues, totalFiles, fixedCount, skippedCount, pro }` (no file mutations) |
@@ -112,6 +112,11 @@ Managed connector mode (commercial-friendly, no per-provider client secrets on c
 
 Tokens are stored locally in `.selfcure/integrations.json` and `.selfcure/`
 is auto-added to `.gitignore` when the first provider is connected.
+
+Disconnect behavior:
+
+- `DELETE /api/integrations/:provider` performs best-effort remote revoke first (GitHub/GitLab/Bitbucket), then clears local connection data.
+- Remote revoke failures do not block local disconnect (the API still removes local state).
 
 ### POST `/api/init` request body (`InitOptions`)
 
