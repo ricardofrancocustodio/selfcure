@@ -161,11 +161,20 @@
       flex-shrink: 0;
     }
     .brand:hover { text-decoration: none; color: var(--text); }
-    .brand-icon {
+    .brand-glyph {
       width: 24px;
       height: 24px;
       border-radius: 6px;
-      display: block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-strong);
+      color: var(--accent);
+      background: var(--surface);
+      font-family: var(--mono);
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1;
     }
 
     nav.top-nav {
@@ -210,7 +219,17 @@
       height: 72px;
       border-radius: 16px;
       margin: 0 0 24px;
-      display: block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-strong);
+      color: var(--accent);
+      background: var(--surface);
+      font-family: var(--mono);
+      font-size: 62px;
+      font-weight: 700;
+      line-height: 1;
+      box-shadow: 0 1px 0 var(--border) inset;
     }
 
     .hero-bot {
@@ -461,7 +480,7 @@
 <header class="top">
   <div class="container">
     <a href="#" class="brand">
-      <img class="brand-icon" src="dist/img/selfcure_logo.png" alt="" width="24" height="24">
+      <span class="brand-glyph" aria-hidden="true">›</span>
       <span>selfcure</span>
     </a>
     <nav class="top-nav">
@@ -489,7 +508,7 @@
   <section class="hero">
     <div class="container">
 
-      <img class="hero-mark" src="dist/img/selfcure_logo.png" alt="selfcure">
+      <span class="hero-mark" aria-label="selfcure">›</span>
 
 <pre class="hero-bot" aria-hidden="true">        ┌─────────┐
         │  <span class="bot-eyes">•_•</span>    │
@@ -786,7 +805,7 @@ npx playwright init-agents@latest
   <div class="container">
     <div>
       <span class="brand">
-        <img class="brand-icon" src="dist/img/selfcure_logo.png" alt="" width="24" height="24">
+        <span class="brand-glyph" aria-hidden="true">›</span>
         <span>selfcure</span>
       </span>
       <span style="margin-left:16px;color:var(--muted)" data-i18n="footer.license">MIT · © ricardofrancocustodio</span>
