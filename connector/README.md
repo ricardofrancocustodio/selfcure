@@ -4,8 +4,12 @@ Managed OAuth connector for GitHub, GitLab, and Bitbucket.
 
 ## Routes
 
+- GET /
 - GET /oauth/connect/:provider
 - GET /oauth/callback/:provider
+
+`/` serves the public enterprise landing page. The OAuth connector routes remain
+under `/oauth/*` and are rewritten to `/api/oauth/*` by `vercel.json`.
 
 ## Required env vars
 

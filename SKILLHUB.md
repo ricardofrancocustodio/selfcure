@@ -62,6 +62,14 @@ create / update / delete each one.
 | `site/index.html` | Marketing landing page hero, mantra, pipeline, providers table, quick-start, status — served via GitHub Pages from `/site` |
 | `site/.nojekyll` | Prevents Jekyll preprocessing — `site/` is plain HTML |
 
+### `connector/` — public Vercel connector + enterprise landing
+
+| File | Covers |
+|------|--------|
+| `connector/index.html` | Enterprise-oriented public landing page served from the Vercel connector root (`/`) and linking back to the GitHub Pages site |
+| `connector/vercel.json` | Vercel rewrites for managed OAuth connector routes |
+| `connector/api/` | Managed OAuth connector API for GitHub, GitLab, and Bitbucket |
+
 ---
 
 ## 2. Change → document matrix
