@@ -484,10 +484,10 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div>
-          <p class="eyebrow">Preventive testability governance for enterprise frontend teams</p>
-          <h1>Make Playwright reliable before tests are generated.</h1>
+          <p class="eyebrow">Preventive testability & accessibility governance for enterprise teams</p>
+          <h1>Make Playwright reliable and WCAG compliant before tests exist.</h1>
           <p class="lede">
-            selfcure scores React, Vue, Angular, and HTML surfaces before runtime. It flags ambiguous locators, routes fixes back to frontend owners, and gives platform teams a measurable readiness layer for large monorepos.
+            selfcure scores React, Vue, Angular, and HTML surfaces for testability and accessibility before any test is written. It flags ambiguous locators, audits WCAG violations, and routes fixes back to frontend owners.
           </p>
           <div class="hero-actions">
             <a class="button primary" href="#platform">Explore the platform</a>
@@ -520,18 +520,19 @@
               <span>ambiguous-selector class found in dogfood findings</span>
             </div>
             <div class="metric">
-              <strong>4</strong>
-              <span>MCP tools for AI-assisted testability review</span>
+              <strong>10+</strong>
+              <span>WCAG rules audited via static source analysis</span>
             </div>
             <div class="metric">
-              <strong>0</strong>
-              <span>source code sent to selfcure cloud by default</span>
+              <strong>4</strong>
+              <span>MCP tools for AI-assisted review</span>
             </div>
           </div>
           <div class="pipeline-log">
             <div><span class="ok">✓</span> scan monorepo packages/web, packages/admin, apps/checkout</div>
             <div><span class="ok">✓</span> score interactive elements against selector policy</div>
-            <div><span class="warn">!</span> 477 ambiguous locators routed to frontend owners</div>
+            <div><span class="ok">✓</span> audit WCAG 2.1 level AA compliance</div>
+            <div><span class="warn">!</span> 477 ambiguous locators & 12 accessibility violations routed</div>
             <div><span class="ok">✓</span> open pull request with audit trail and CI annotation</div>
           </div>
         </aside>
@@ -548,8 +549,8 @@
         <div class="grid-3">
           <div class="card">
             <span class="tag">Governance</span>
-            <h3>Policy-based readiness gates</h3>
-            <p>Fail builds when components fall below threshold, when locators are ambiguous, or when a critical flow lacks stable identifiers.</p>
+            <h3>WCAG Accessibility Audit</h3>
+            <p>Static analysis for 10+ WCAG rules including labels, names, and focus order. Ensure compliance before design intent becomes component debt.</p>
           </div>
           <div class="card">
             <span class="tag">Scale</span>
@@ -599,6 +600,7 @@
           <ul class="check-list">
             <li>Local-first source analysis with no mandatory cloud code upload.</li>
             <li>GitHub Enterprise, GitLab, and Bitbucket flows through scoped OAuth or local CLI auth.</li>
+            <li>WCAG accessibility compliance gates and reporting.</li>
             <li>Reviewable pull requests instead of direct production mutations.</li>
             <li>Structured logs for compliance evidence and incident review.</li>
             <li>Policy thresholds for CI, release gates, and platform scorecards.</li>
@@ -645,7 +647,7 @@
             <cite>Platform QA lead, representative enterprise rollout</cite>
           </div>
           <div class="card">
-            <blockquote>“In dogfood, 477 of 500 findings were ambiguous locators. That is exactly the class of risk runtime healing discovers too late.”</blockquote>
+            <blockquote>“In dogfood, 477 of 500 findings were ambiguous locators and 12 were critical accessibility violations. That is exactly the class of risk runtime healing discovers too late.”</blockquote>
             <cite>selfcure validation note, legacy HTML application</cite>
           </div>
         </div>
