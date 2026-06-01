@@ -107,6 +107,42 @@ const ACTIONS: Record<ElementType, string[]> = {
   custom: ['click'],
 };
 
+/** Attribute names that signal an element is clickable even if non-semantic. */
+const CLICK_HANDLER_ATTRS = ['ng-click', '(click)', 'onclick', '@click', 'v-on:click', 'data-ng-click', 'click'];
+
+const INTERACTIVE_ROLE_TYPE: Record<string, ElementType> = {
+  button: 'button', tab: 'button', menuitem: 'button', menuitemcheckbox: 'button',
+  menuitemradio: 'button', checkbox: 'button', radio: 'button', switch: 'button',
+  option: 'button', link: 'link', combobox: 'input', slider: 'input', spinbutton: 'input',
+};
+
+/**
+ * Classify any element (native or non-semantic) into an ElementType.
+ * Returns null when the element shows no interactivity signal.
+ */
+function classifyElementType(tag: string, attrs: Record<string, string | undefined>): ElementType | null {
+  if (TAG_TYPE[tag]) return TAG_TYPE[tag];
+
+  // Non-semantic: classify by ARIA role, else mark as custom when interactive.
+  const role = (attrs['role'] ?? '').toLowerCase();
+  if (role && INTERACTIVE_ROLE_TYPE[role]) return INTERACTIVE_ROLE_TYPE[role];
+
+  const hasClick  = CLICK_HANDLER_ATTRS.some((a) => a in attrs);
+  const hasTab    = 'tabindex' in attrs;
+  const hasTestId = 'data-testid' in attrs || 'testid' in attrs;
+  if (hasClick || hasTab || hasTestId || role) return 'custom';
+
+  return null;
+}
+
+/** Recognise `testid` as an alias for `data-testid` (non-standard but common). */
+function normalizeTestId(attrs: Record<string, string | undefined>): Record<string, string | undefined> {
+  if (!attrs['data-testid'] && attrs['testid']) {
+    return { ...attrs, 'data-testid': attrs['testid'] };
+  }
+  return attrs;
+}
+
 /** Pull the string value out of a JSXAttribute value node. */
 function attrStringValue(valueNode: unknown): string | undefined {
   if (!valueNode || typeof valueNode !== 'object') return undefined;
@@ -243,10 +279,12 @@ function extractInteractiveElements(ast: unknown): InteractiveElement[] {
 function extractInteractiveElementsFromHtml(htmlElements: HtmlElementMeta[]): InteractiveElement[] {
   const elements: InteractiveElement[] = [];
 
-  for (const { tag, attrs } of htmlElements) {
-    if (!TAG_TYPE[tag]) continue;
+  for (const raw of htmlElements) {
+    const tag   = raw.tag;
+    const attrs = normalizeTestId(raw.attrs);
+    const type  = classifyElementType(tag, attrs);
+    if (!type) continue;
     const selector = buildSelector(tag, attrs);
-    const type = TAG_TYPE[tag]!;
     const ranking = buildSelectorRanking(tag, attrs);
     elements.push({
       type,

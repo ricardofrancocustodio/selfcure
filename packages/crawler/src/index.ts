@@ -160,9 +160,38 @@ export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
     if (filePath.endsWith('.html')) {
       const root = parseHtml(source);
       const htmlElements: HtmlElementMeta[] = [];
-      for (const tag of ['button', 'input', 'a', 'form', 'select', 'textarea']) {
+      const seenEls = new Set<unknown>();
+
+      // 1) Native interactive elements
+      const NATIVE_TAGS = ['button', 'input', 'a', 'form', 'select', 'textarea'];
+      for (const tag of NATIVE_TAGS) {
         for (const el of root.querySelectorAll(tag)) {
+          if (seenEls.has(el)) continue;
+          seenEls.add(el);
           htmlElements.push({ tag, attrs: el.attributes as Record<string, string> });
+        }
+      }
+
+      // 2) Non-semantic interactive elements (div/span/li/… acting as controls).
+      //    Common in Angular/React apps that bind click handlers to divs.
+      const CLICK_ATTRS = ['ng-click', '(click)', 'onclick', '@click', 'v-on:click', 'data-ng-click', 'click'];
+      const INTERACTIVE_ROLES = new Set([
+        'button', 'link', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio',
+        'checkbox', 'radio', 'switch', 'option', 'combobox', 'slider', 'spinbutton',
+      ]);
+      for (const el of root.querySelectorAll('*')) {
+        if (seenEls.has(el)) continue;
+        const tag = (el.rawTagName || '').toLowerCase();
+        if (!tag || NATIVE_TAGS.includes(tag)) continue;
+        const attrs = el.attributes as Record<string, string>;
+        const hasClick  = CLICK_ATTRS.some((a) => a in attrs);
+        const role      = (attrs['role'] || '').toLowerCase();
+        const hasRole   = role !== '' && INTERACTIVE_ROLES.has(role);
+        const hasTab    = 'tabindex' in attrs;
+        const hasTestId = 'data-testid' in attrs || 'testid' in attrs;
+        if (hasClick || hasRole || hasTab || hasTestId) {
+          seenEls.add(el);
+          htmlElements.push({ tag, attrs });
         }
       }
       results.push({
