@@ -1,6 +1,6 @@
 import { input, select, password, confirm } from '@inquirer/prompts';
-import { writeFile }  from 'node:fs/promises';
-import path           from 'node:path';
+import { writeFile, stat }  from 'node:fs/promises';
+import path                 from 'node:path';
 import { PROVIDERS, type ProviderId } from '@selfcure/generator';
 import { discoverProject } from '@selfcure/crawler';
 
@@ -27,24 +27,61 @@ const PROVIDER_CHOICES = (Object.values(PROVIDERS) as Array<typeof PROVIDERS[Pro
     value: p.id,
   }));
 
+/** Detect the most likely source directory (for rootDir / crawl). */
+async function detectSourceDir(cwd: string, projectRoot: string): Promise<string> {
+  const abs = path.resolve(cwd, projectRoot);
+  for (const candidate of ['src', 'app', 'pages', 'components']) {
+    try {
+      const s = await stat(path.join(abs, candidate));
+      if (s.isDirectory()) return `./${candidate}`;
+    } catch { /* not found */ }
+  }
+  return projectRoot === '.' ? './src' : projectRoot;
+}
+
+/** Detect file extensions used in the project. */
+async function detectExtensions(cwd: string, sourceDir: string): Promise<string[]> {
+  const abs = path.resolve(cwd, sourceDir);
+  const found: string[] = [];
+  for (const [ext, check] of [
+    ['**/*.tsx', 'tsconfig.json'],
+    ['**/*.jsx', 'vite.config.js'],
+    ['**/*.vue', 'vue.config.js'],
+  ] as Array<[string, string]>) {
+    try { await stat(path.join(path.resolve(cwd, '.'), check)); found.push(ext); } catch { /* skip */ }
+  }
+  // Default: always include tsx and jsx
+  if (found.length === 0) found.push('**/*.tsx', '**/*.jsx');
+  return found;
+}
+
 function buildConfigContent(
   projectRoot: string,
+  sourceDir:   string,
+  extensions:  string[],
   baseUrl:     string,
   provider:    ProviderId,
   model:       string,
 ): string {
-  // Use JSON.stringify for safe quoting of user-supplied strings
   const pr  = JSON.stringify(projectRoot);
+  const sd  = JSON.stringify(sourceDir);
   const bu  = JSON.stringify(baseUrl);
   const pv  = JSON.stringify(provider);
   const mo  = JSON.stringify(model);
+  const inc = JSON.stringify(extensions);
 
   return [
-    '// selfcure.config.mjs — agentic discovery config',
+    '// selfcure.config.mjs',
     '// See: https://github.com/ricardofrancocustodio/selfcure',
     'export default {',
     `  projectRoot: ${pr},`,
     `  baseUrl: ${bu},`,
+    '',
+    '  // Required by selfcure lint, selfcure web, selfcure crawl',
+    `  rootDir: ${sd},`,
+    `  include: ${inc},`,
+    `  exclude: ["**/*.test.*", "**/*.spec.*", "**/*.stories.*"],`,
+    `  baseURL: ${bu},`,
     '',
     '  ai: {',
     `    provider: ${pv},`,
@@ -54,7 +91,7 @@ function buildConfigContent(
     '  discovery: {',
     '    mode: "agentic",',
     '    static: true,',
-    '    runtime: false,       // enable with selfcure discover --runtime',
+    '    runtime: false,',
     '    maxRoutes: 50,',
     '    maxDepth: 3,',
     '    includeHiddenStates: true,',
@@ -129,11 +166,16 @@ export async function runInitWizard(cwd: string): Promise<void> {
     default: true,
   });
 
+  // Auto-detect source dir and extensions
+  const sourceDir  = await detectSourceDir(cwd, projectRoot);
+  const extensions = await detectExtensions(cwd, sourceDir);
+
   // Write config
   const configPath    = path.join(cwd, 'selfcure.config.mjs');
-  const configContent = buildConfigContent(projectRoot, baseUrl, provider, model);
+  const configContent = buildConfigContent(projectRoot, sourceDir, extensions, baseUrl, provider, model);
   await writeFile(configPath, configContent, 'utf-8');
   console.log(`\n✔  selfcure.config.mjs created`);
+  console.log(`   rootDir: ${sourceDir}   include: ${extensions.join(', ')}`);
 
   // Optional discovery run
   if (runNow) {
