@@ -1,6 +1,6 @@
 import http from 'node:http';
 import fs from 'node:fs';
-import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdtemp, rm, readdir } from 'node:fs/promises';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
@@ -113,6 +113,98 @@ async function loadCrawlConfig(cwd: string, configPath?: string): Promise<WebCra
   const resolved = resolveConfigPath(cwd, configPath);
   const { default: config } = await import(`${pathToFileURL(resolved).href}?t=${Date.now()}`);
   return config as WebCrawlConfig;
+}
+
+// ---------------------------------------------------------------------------
+// Element-in-source search (find which file/component a DOM element belongs to)
+// ---------------------------------------------------------------------------
+
+/** Generic framework/CSS classes that carry no locating value. */
+const GENERIC_CLASSES = new Set([
+  'btn', 'btn-primary', 'btn-secondary', 'btn-default', 'btn-link', 'btn-danger',
+  'btn-success', 'btn-warning', 'btn-info', 'btn-xs', 'btn-sm', 'btn-md', 'btn-lg',
+  'btn-block', 'row', 'col', 'container', 'container-fluid', 'active', 'disabled',
+  'open', 'show', 'hide', 'hidden', 'd-flex', 'd-none', 'd-block', 'text-center',
+  'pull-right', 'pull-left', 'clearfix', 'form-control', 'form-group', 'input-group',
+  'ng-star-inserted', 'ng-untouched', 'ng-pristine', 'ng-valid',
+]);
+
+interface SearchToken { label: string; value: string }
+
+/** Extract distinctive, locatable tokens from a pasted DOM element snippet. */
+function extractElementTokens(raw: string): SearchToken[] {
+  const tokens: SearchToken[] = [];
+  const seen   = new Set<string>();
+  const push = (label: string, value: string) => {
+    const v = value.trim();
+    if (v.length >= 2 && !seen.has(v)) { seen.add(v); tokens.push({ label, value: v }); }
+  };
+
+  // attribute="value" or attribute='value'
+  const attrRe = /([a-zA-Z_:@()[\]*.-]+)\s*=\s*"([^"]*)"|([a-zA-Z_:@()[\]*.-]+)\s*=\s*'([^']*)'/g;
+  let m: RegExpExecArray | null;
+  while ((m = attrRe.exec(raw)) !== null) {
+    const name  = (m[1] ?? m[3] ?? '').toLowerCase();
+    const value = (m[2] ?? m[4] ?? '');
+    if (!value) continue;
+    if (name === 'class') {
+      for (const cls of value.split(/\s+/)) {
+        if (cls && !GENERIC_CLASSES.has(cls) && !/^col-/.test(cls)) push('class', cls);
+      }
+    } else if (name === 'data-testid')                          push('data-testid', value);
+    else if (name === 'id')                                     push('id', value);
+    else if (name.includes('click'))                            push('handler', value);
+    else if (name === 'ng-if' || name === '*ngif')             push('ng-if', value);
+    else if (name === 'aria-label')                             push('aria-label', value);
+    else if (name === 'formcontrolname')                        push('formControlName', value);
+    else if (name === 'name')                                   push('name', value);
+    else if (name === 'ng-model' || name === '[(ngmodel)]')    push('ng-model', value);
+  }
+
+  // visible inner text: >text<
+  const textRe = />([^<>{}]+)</g;
+  while ((m = textRe.exec(raw)) !== null) {
+    const t = (m[1] ?? '').trim();
+    if (t.length >= 3 && !/^[\W\d]+$/.test(t)) push('text', t);
+  }
+
+  // No HTML detected → treat the whole thing as a literal search term
+  if (tokens.length === 0 && raw.trim().length >= 2) push('literal', raw.trim());
+
+  return tokens;
+}
+
+/** File extensions to scan, derived from the config's include globs. */
+function extensionsFromInclude(include?: string[]): string[] {
+  const globs = include ?? ['**/*.html', '**/*.ts', '**/*.tsx', '**/*.jsx', '**/*.vue'];
+  const exts  = globs
+    .map((g) => { const mm = g.match(/\.([a-z0-9]+)$/i); return mm ? `.${mm[1].toLowerCase()}` : null; })
+    .filter((x): x is string => Boolean(x));
+  return exts.length ? [...new Set(exts)] : ['.html', '.ts'];
+}
+
+const WALK_SKIP_DIRS = new Set(['node_modules', 'dist', 'build', 'out', 'coverage', '.git', '.next', '.nuxt', '.svelte-kit', '.angular']);
+
+/** Recursively list files under `dir` matching one of `exts`. */
+async function walkSourceFiles(dir: string, exts: string[], limit = 5000): Promise<string[]> {
+  const out: string[] = [];
+  async function rec(d: string): Promise<void> {
+    if (out.length >= limit) return;
+    let entries;
+    try { entries = await readdir(d, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      if (out.length >= limit) return;
+      const full = path.join(d, e.name);
+      if (e.isDirectory()) {
+        if (WALK_SKIP_DIRS.has(e.name)) continue;
+        await rec(full);
+      } else if (exts.some((x) => e.name.toLowerCase().endsWith(x))) {
+        out.push(full);
+      }
+    }
+  }
+  await rec(dir);
+  return out;
 }
 
 async function runCrawlAnalysis(cwd: string, body: CrawlRequestBody) {
@@ -698,6 +790,70 @@ export function startWebServer(
     if (req.method === 'GET' && pathname === '/tml') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(tmlPageHtml);
+      return;
+    }
+
+    // ── Element → Component search ──────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/find-element') {
+      const q = parsed.searchParams.get('q') ?? '';
+      (async () => {
+        try {
+          const config  = await loadCrawlConfig(cwd);
+          const rootDir = path.resolve(cwd, config.rootDir);
+          const tokens  = extractElementTokens(q);
+
+          if (tokens.length === 0) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No searchable tokens extracted from input' }));
+            return;
+          }
+
+          const exts  = extensionsFromInclude(config.include);
+          const files = await walkSourceFiles(rootDir, exts);
+
+          // Load project-map for route cross-reference
+          let routeCandidates: Array<{ path: string; filePath: string }> = [];
+          try {
+            const mapRaw = await readFile(path.join(cwd, '.selfcure', 'project-map.json'), 'utf-8');
+            routeCandidates = (JSON.parse(mapRaw).routeCandidates ?? []) as typeof routeCandidates;
+          } catch { /* no map yet */ }
+
+          interface FileMatch { file: string; absFile: string; score: number; hits: Array<{ token: string; value: string; line: number }>; route?: string }
+          const matches: FileMatch[] = [];
+
+          for (const abs of files) {
+            const content = await readFile(abs, 'utf-8').catch(() => '');
+            if (!content) continue;
+            const hits: FileMatch['hits'] = [];
+            for (const t of tokens) {
+              const idx = content.indexOf(t.value);
+              if (idx >= 0) {
+                const line = content.slice(0, idx).split('\n').length;
+                hits.push({ token: t.label, value: t.value, line });
+              }
+            }
+            if (hits.length > 0) {
+              // weight: data-testid/id/handler/class hits count more than plain text
+              const weight = hits.reduce((s, h) => s + (['data-testid', 'id', 'handler', 'class'].includes(h.token) ? 2 : 1), 0);
+              const rel    = path.relative(cwd, abs);
+              const route  = routeCandidates.find((r) => path.resolve(r.filePath) === abs)?.path;
+              matches.push({ file: rel, absFile: abs, score: weight, hits, route });
+            }
+          }
+
+          matches.sort((a, b) => b.score - a.score || b.hits.length - a.hits.length);
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            tokens: tokens.map((t) => ({ label: t.label, value: t.value })),
+            scannedFiles: files.length,
+            matches: matches.slice(0, 12).map(({ absFile, ...rest }) => rest),
+          }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      })();
       return;
     }
 

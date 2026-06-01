@@ -279,16 +279,16 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   <a class="nav-link" href="/integrations">integrations</a>
 </nav>
 
-<!-- URL → Component lookup bar -->
-<div id="urlLookup" style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--canvas);border-bottom:1px solid var(--border);">
-  <span style="font-size:12px;color:var(--muted);white-space:nowrap">🔍 URL → componente:</span>
-  <input id="urlInput" type="text" placeholder="Cole a URL do app (ex: https://…/#/retail) ou só o path (/retail)"
-    style="flex:1;padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--mono);"
-    autocomplete="off" spellcheck="false">
-  <button onclick="lookupUrl()" style="padding:4px 12px;font-size:12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer">
+<!-- Lookup bar: URL → componente  OR  elemento HTML → arquivo -->
+<div id="urlLookup" style="display:flex;align-items:flex-start;gap:8px;padding:8px 16px;background:var(--canvas);border-bottom:1px solid var(--border);">
+  <span style="font-size:12px;color:var(--muted);white-space:nowrap;padding-top:6px">🔍 Buscar:</span>
+  <textarea id="urlInput" rows="1" placeholder="Cole uma URL (/retail), OU cole o elemento HTML (&lt;button class=...&gt;) para achar o arquivo"
+    style="flex:1;padding:6px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--mono);resize:vertical;min-height:32px;"
+    autocomplete="off" spellcheck="false"></textarea>
+  <button onclick="runLookup()" style="padding:6px 12px;font-size:12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;white-space:nowrap">
     Buscar
   </button>
-  <button onclick="clearLookup()" style="padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer">
+  <button onclick="clearLookup()" style="padding:6px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer">
     ✕
   </button>
 </div>
@@ -902,6 +902,31 @@ function esc(s) {
     setTimeout(() => { btn.innerHTML = orig; }, 1500);
   };
 
+  // Highlight + scroll to a file card by best-effort path match (basename or suffix).
+  // Called from the element/URL lookup above the IIFE. Pass null to clear.
+  window._filterByFile = function (targetPath) {
+    diffArea.querySelectorAll('[data-file-card]').forEach(function (card) {
+      card.style.outline = '';
+      card.style.opacity = '';
+    });
+    if (!targetPath) return;
+    const norm = String(targetPath).replace(/\\\\/g, '/');
+    const base = norm.split('/').pop();
+    const cards = Array.prototype.slice.call(diffArea.querySelectorAll('[data-file-card]'));
+    let hit = null;
+    for (const card of cards) {
+      const fp = (card.getAttribute('data-file-card') || '').replace(/\\\\/g, '/');
+      if (fp === norm || fp.endsWith(norm) || norm.endsWith(fp) || (base && fp.split('/').pop() === base)) {
+        hit = card;
+        break;
+      }
+    }
+    if (hit) {
+      hit.style.outline = '2px solid var(--accent)';
+      hit.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
 })();
 
 // ---------------------------------------------------------------------------
@@ -986,6 +1011,72 @@ async function lookupUrl() {
   }
 }
 
+// Element-in-source search: paste a DOM element, find which file/component it lives in
+async function findElement(raw) {
+  const box = document.getElementById('urlResult');
+  box.style.display = 'block';
+  box.innerHTML = '<span style="color:var(--muted)">Procurando o elemento no source…</span>';
+
+  try {
+    const resp = await fetch('/api/find-element?q=' + encodeURIComponent(raw));
+    const data = await resp.json();
+
+    if (data.error || !data.matches || data.matches.length === 0) {
+      box.innerHTML =
+        '<span style="color:var(--error)">Elemento não encontrado no source.</span>' +
+        (data.tokens && data.tokens.length
+          ? '<br><span style="color:var(--muted)">Tokens buscados: ' +
+            data.tokens.map(t => '<code>' + esc(t.value) + '</code>').join(', ') + '</span>'
+          : '');
+      if (window._filterByFile) window._filterByFile(null);
+      return;
+    }
+
+    const tokensLine = '<div style="color:var(--muted);margin-bottom:6px">Tokens: ' +
+      data.tokens.map(t => '<code title="' + esc(t.label) + '">' + esc(t.value) + '</code>').join(' ') +
+      ' &nbsp;·&nbsp; ' + data.scannedFiles + ' arquivos varridos</div>';
+
+    const rows = data.matches.map((m, i) => {
+      const best = i === 0;
+      const hitChips = m.hits.map(h =>
+        '<span style="background:var(--add-bg);color:var(--add-mk);padding:1px 6px;border-radius:4px;margin-right:4px;font-size:11px">' +
+        esc(h.token) + ':' + esc(h.value) + ' <span style="opacity:.6">L' + h.line + '</span></span>'
+      ).join('');
+      const routeBadge = m.route
+        ? '<span style="background:var(--hunk-ln);color:var(--hunk-text);padding:1px 6px;border-radius:4px;margin-left:6px">rota: ' + esc(m.route) + '</span>'
+        : '';
+      return '<div style="margin:6px 0;padding:8px;border-radius:6px;' +
+        (best ? 'background:var(--add-bg);border:1px solid var(--add-ln)' : 'background:var(--bg);border:1px solid var(--border)') + '">' +
+        '<div style="margin-bottom:4px">' +
+          (best ? '⭐ ' : '') +
+          '<b style="color:var(--accent)">' + esc(m.file) + '</b>' +
+          '<span style="color:var(--muted);margin-left:8px">' + m.hits.length + ' match(es), score ' + m.score + '</span>' +
+          routeBadge +
+        '</div>' +
+        '<div>' + hitChips + '</div>' +
+      '</div>';
+    }).join('');
+
+    box.innerHTML = tokensLine + rows;
+
+    // Filter lint results to the best match
+    if (data.matches[0] && window._filterByFile) {
+      window._filterByFile(data.matches[0].file);
+    }
+  } catch (err) {
+    box.innerHTML = '<span style="color:var(--error)">Erro: ' + esc(String(err)) + '</span>';
+  }
+}
+
+// Auto-detect: HTML element snippet → findElement; URL/path → lookupUrl
+function runLookup() {
+  const raw = document.getElementById('urlInput').value.trim();
+  if (!raw) return;
+  const looksLikeHtml = raw.includes('<') || /\b(class|ng-click|data-testid|aria-label|formcontrolname|ng-if)\s*=/i.test(raw);
+  if (looksLikeHtml) findElement(raw);
+  else lookupUrl();
+}
+
 function clearLookup() {
   document.getElementById('urlInput').value = '';
   document.getElementById('urlResult').style.display = 'none';
@@ -993,7 +1084,8 @@ function clearLookup() {
 }
 
 document.getElementById('urlInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') lookupUrl();
+  // Enter (without Shift) triggers search; Shift+Enter inserts newline
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runLookup(); }
 });
 </script>
 </body>
