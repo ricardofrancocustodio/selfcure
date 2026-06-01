@@ -129,16 +129,30 @@ const GENERIC_CLASSES = new Set([
   'ng-star-inserted', 'ng-untouched', 'ng-pristine', 'ng-valid',
 ]);
 
-interface SearchToken { label: string; value: string }
+interface SearchToken { label: string; value: string; weight: number }
+interface SnippetInfo { tokens: SearchToken[]; tag: string | null; interactive: boolean }
 
-/** Extract distinctive, locatable tokens from a pasted DOM element snippet. */
-function extractElementTokens(raw: string): SearchToken[] {
+const INTERACTIVE_TAGS = new Set(['button', 'a', 'input', 'select', 'textarea', 'form']);
+
+/** Weight a class by specificity: more dashes = more specific (filter-num-margin-right > main-title). */
+function classWeight(cls: string): number {
+  const dashes = (cls.match(/-/g) || []).length;
+  return Math.min(4, 1 + dashes);
+}
+
+/** Analyse a pasted DOM element: extract weighted, locatable tokens + outer tag. */
+function analyzeSnippet(raw: string): SnippetInfo {
   const tokens: SearchToken[] = [];
   const seen   = new Set<string>();
-  const push = (label: string, value: string) => {
+  const push = (label: string, value: string, weight: number) => {
     const v = value.trim();
-    if (v.length >= 2 && !seen.has(v)) { seen.add(v); tokens.push({ label, value: v }); }
+    if (v.length >= 2 && !seen.has(v)) { seen.add(v); tokens.push({ label, value: v, weight }); }
   };
+
+  // Outer tag name: first <tagname
+  const tagMatch = raw.match(/<\s*([a-zA-Z][a-zA-Z0-9-]*)/);
+  const tag = tagMatch ? tagMatch[1].toLowerCase() : null;
+  const interactive = tag ? INTERACTIVE_TAGS.has(tag) : false;
 
   // attribute="value" or attribute='value'
   const attrRe = /([a-zA-Z_:@()[\]*.-]+)\s*=\s*"([^"]*)"|([a-zA-Z_:@()[\]*.-]+)\s*=\s*'([^']*)'/g;
@@ -147,31 +161,63 @@ function extractElementTokens(raw: string): SearchToken[] {
     const name  = (m[1] ?? m[3] ?? '').toLowerCase();
     const value = (m[2] ?? m[4] ?? '');
     if (!value) continue;
+
+    const isExpr = /\b(vm|ctrl|\$ctrl|this)\.|\(/.test(value); // Angular binding → very specific
+
     if (name === 'class') {
       for (const cls of value.split(/\s+/)) {
-        if (cls && !GENERIC_CLASSES.has(cls) && !/^col-/.test(cls)) push('class', cls);
+        if (cls && !GENERIC_CLASSES.has(cls) && !/^col-/.test(cls)) push('class', cls, classWeight(cls));
       }
-    } else if (name === 'data-testid')                          push('data-testid', value);
-    else if (name === 'id')                                     push('id', value);
-    else if (name.includes('click'))                            push('handler', value);
-    else if (name === 'ng-if' || name === '*ngif')             push('ng-if', value);
-    else if (name === 'aria-label')                             push('aria-label', value);
-    else if (name === 'formcontrolname')                        push('formControlName', value);
-    else if (name === 'name')                                   push('name', value);
-    else if (name === 'ng-model' || name === '[(ngmodel)]')    push('ng-model', value);
+    } else if (name === 'data-testid')                       push('data-testid', value, 5);
+    else if (name === 'id')                                  push('id', value, 5);
+    else if (name.includes('click'))                         push('handler', value, 5);
+    else if (name === 'ng-if'   || name === '*ngif')         push('ng-if', value, isExpr ? 4 : 3);
+    else if (name === 'ng-class')                            push('ng-class', value, isExpr ? 4 : 3);
+    else if (name === 'ng-show' || name === 'ng-hide')       push('ng-show', value, isExpr ? 4 : 2);
+    else if (name === 'ng-repeat')                           push('ng-repeat', value, 4);
+    else if (name === 'ng-bind')                             push('ng-bind', value, 4);
+    else if (name === 'aria-label')                          push('aria-label', value, 3);
+    else if (name === 'formcontrolname')                     push('formControlName', value, 3);
+    else if (name === 'name')                                push('name', value, 3);
+    else if (name === 'ng-model' || name === '[(ngmodel)]')  push('ng-model', value, 3);
   }
 
-  // visible inner text: >text<
+  // visible inner text: >text<  (low weight — unreliable in i18n/translate apps)
   const textRe = />([^<>{}]+)</g;
   while ((m = textRe.exec(raw)) !== null) {
     const t = (m[1] ?? '').trim();
-    if (t.length >= 3 && !/^[\W\d]+$/.test(t)) push('text', t);
+    if (t.length >= 3 && !/^[\W\d]+$/.test(t)) {
+      const w = t.length >= 12 ? 3 : t.length >= 6 ? 2 : 1;
+      push('text', t, w);
+    }
   }
 
   // No HTML detected → treat the whole thing as a literal search term
-  if (tokens.length === 0 && raw.trim().length >= 2) push('literal', raw.trim());
+  if (tokens.length === 0 && raw.trim().length >= 2) push('literal', raw.trim(), 3);
 
-  return tokens;
+  return { tokens, tag, interactive };
+}
+
+/** Regex-escape a string for safe RegExp construction. */
+function reEscape(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Find a token in file content. Tries exact match, then whitespace-flexible. Returns 1-based line or null. */
+function findTokenLine(content: string, value: string): number | null {
+  const idx = content.indexOf(value);
+  if (idx >= 0) return content.slice(0, idx).split('\n').length;
+
+  // Whitespace-flexible fallback (handles formatting differences in expressions)
+  if (/\s/.test(value)) {
+    try {
+      const pattern = reEscape(value).replace(/\s+/g, '\\s+');
+      const re = new RegExp(pattern);
+      const mm = re.exec(content);
+      if (mm) return content.slice(0, mm.index).split('\n').length;
+    } catch { /* ignore bad regex */ }
+  }
+  return null;
 }
 
 /** File extensions to scan, derived from the config's include globs. */
@@ -800,7 +846,8 @@ export function startWebServer(
         try {
           const config  = await loadCrawlConfig(cwd);
           const rootDir = path.resolve(cwd, config.rootDir);
-          const tokens  = extractElementTokens(q);
+          const snippet = analyzeSnippet(q);
+          const tokens  = snippet.tokens;
 
           if (tokens.length === 0) {
             res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -818,7 +865,10 @@ export function startWebServer(
             routeCandidates = (JSON.parse(mapRaw).routeCandidates ?? []) as typeof routeCandidates;
           } catch { /* no map yet */ }
 
-          interface FileMatch { file: string; absFile: string; score: number; hits: Array<{ token: string; value: string; line: number }>; route?: string }
+          interface FileMatch {
+            file: string; absFile: string; score: number; strong: boolean;
+            hits: Array<{ token: string; value: string; line: number; weight: number }>; route?: string;
+          }
           const matches: FileMatch[] = [];
 
           for (const abs of files) {
@@ -826,28 +876,31 @@ export function startWebServer(
             if (!content) continue;
             const hits: FileMatch['hits'] = [];
             for (const t of tokens) {
-              const idx = content.indexOf(t.value);
-              if (idx >= 0) {
-                const line = content.slice(0, idx).split('\n').length;
-                hits.push({ token: t.label, value: t.value, line });
-              }
+              const line = findTokenLine(content, t.value);
+              if (line !== null) hits.push({ token: t.label, value: t.value, line, weight: t.weight });
             }
             if (hits.length > 0) {
-              // weight: data-testid/id/handler/class hits count more than plain text
-              const weight = hits.reduce((s, h) => s + (['data-testid', 'id', 'handler', 'class'].includes(h.token) ? 2 : 1), 0);
+              // Sum of token weights — specific tokens (handlers, multi-dash classes) dominate.
+              const score  = hits.reduce((s, h) => s + h.weight, 0);
+              // "strong" match = has at least one high-specificity token (weight >= 3)
+              const strong = hits.some((h) => h.weight >= 3);
               const rel    = path.relative(cwd, abs);
               const route  = routeCandidates.find((r) => path.resolve(r.filePath) === abs)?.path;
-              matches.push({ file: rel, absFile: abs, score: weight, hits, route });
+              matches.push({ file: rel, absFile: abs, score, strong, hits, route });
             }
           }
 
-          matches.sort((a, b) => b.score - a.score || b.hits.length - a.hits.length);
+          // Strong matches first, then by score, then by # of distinct tokens
+          matches.sort((a, b) =>
+            (Number(b.strong) - Number(a.strong)) || (b.score - a.score) || (b.hits.length - a.hits.length));
 
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({
-            tokens: tokens.map((t) => ({ label: t.label, value: t.value })),
+            tokens:       tokens.map((t) => ({ label: t.label, value: t.value, weight: t.weight })),
+            searchedTag:  snippet.tag,
+            interactive:  snippet.interactive,
             scannedFiles: files.length,
-            matches: matches.slice(0, 12).map(({ absFile, ...rest }) => rest),
+            matches:      matches.slice(0, 12).map(({ absFile, ...rest }) => rest),
           }));
         } catch (err) {
           res.writeHead(500, { 'Content-Type': 'application/json' });

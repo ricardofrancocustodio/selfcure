@@ -1032,36 +1032,65 @@ async function findElement(raw) {
       return;
     }
 
-    const tokensLine = '<div style="color:var(--muted);margin-bottom:6px">Tokens: ' +
-      data.tokens.map(t => '<code title="' + esc(t.label) + '">' + esc(t.value) + '</code>').join(' ') +
+    const best    = data.matches[0];
+    const bestLine = best.hits.reduce((lo, h) => Math.min(lo, h.line), Infinity);
+
+    // Primary answer banner — the source location (works for ANY tag, incl. <div>)
+    const tagNote = data.searchedTag
+      ? '<span style="color:var(--muted)">&lt;' + esc(data.searchedTag) + '&gt;</span> '
+      : '';
+    const interactiveNote = (data.searchedTag && !data.interactive)
+      ? '<div style="margin-top:6px;color:var(--warning)">⚠ Este é um <code>&lt;' + esc(data.searchedTag) +
+        '&gt;</code> não-semântico — não aparece no lint (apenas button/input/a/form são analisados). ' +
+        'Localização mostrada pelo source. Para tratá-lo como testável, considere runtime discovery ou adicionar um data-testid.</div>'
+      : '';
+    const routeBadge = best.route
+      ? ' <span style="background:var(--hunk-ln);color:var(--hunk-text);padding:1px 6px;border-radius:4px">rota: ' + esc(best.route) + '</span>'
+      : '';
+
+    const banner =
+      '<div style="margin-bottom:8px;padding:8px;border-radius:6px;background:var(--add-bg);border:1px solid var(--add-ln)">' +
+        '<div>' + tagNote + 'Encontrado em: <b style="color:var(--accent)">' + esc(best.file) + '</b>' +
+        ' <span style="color:var(--muted)">linha ' + (bestLine === Infinity ? '?' : bestLine) + '</span>' +
+        (best.strong ? '' : ' <span style="color:var(--warning)">(match fraco — confira abaixo)</span>') +
+        routeBadge + '</div>' +
+        interactiveNote +
+      '</div>';
+
+    const tokensLine = '<div style="color:var(--muted);margin-bottom:6px">Tokens buscados: ' +
+      data.tokens.map(t => '<code title="' + esc(t.label) + ' (peso ' + t.weight + ')">' + esc(t.value) + '</code>').join(' ') +
       ' &nbsp;·&nbsp; ' + data.scannedFiles + ' arquivos varridos</div>';
 
     const rows = data.matches.map((m, i) => {
-      const best = i === 0;
+      const isBest = i === 0;
       const hitChips = m.hits.map(h =>
-        '<span style="background:var(--add-bg);color:var(--add-mk);padding:1px 6px;border-radius:4px;margin-right:4px;font-size:11px">' +
+        '<span style="background:var(--add-bg);color:var(--add-mk);padding:1px 6px;border-radius:4px;margin-right:4px;font-size:11px" title="peso ' + h.weight + '">' +
         esc(h.token) + ':' + esc(h.value) + ' <span style="opacity:.6">L' + h.line + '</span></span>'
       ).join('');
-      const routeBadge = m.route
+      const routeB = m.route
         ? '<span style="background:var(--hunk-ln);color:var(--hunk-text);padding:1px 6px;border-radius:4px;margin-left:6px">rota: ' + esc(m.route) + '</span>'
         : '';
+      const strongB = m.strong ? '' : '<span style="color:var(--warning);margin-left:6px;font-size:11px">fraco</span>';
       return '<div style="margin:6px 0;padding:8px;border-radius:6px;' +
-        (best ? 'background:var(--add-bg);border:1px solid var(--add-ln)' : 'background:var(--bg);border:1px solid var(--border)') + '">' +
+        (isBest ? 'background:var(--add-bg);border:1px solid var(--add-ln)' : 'background:var(--bg);border:1px solid var(--border)') + '">' +
         '<div style="margin-bottom:4px">' +
-          (best ? '⭐ ' : '') +
+          (isBest ? '⭐ ' : '') +
           '<b style="color:var(--accent)">' + esc(m.file) + '</b>' +
           '<span style="color:var(--muted);margin-left:8px">' + m.hits.length + ' match(es), score ' + m.score + '</span>' +
-          routeBadge +
+          strongB + routeB +
         '</div>' +
         '<div>' + hitChips + '</div>' +
       '</div>';
     }).join('');
 
-    box.innerHTML = tokensLine + rows;
+    box.innerHTML = banner + tokensLine + rows;
 
-    // Filter lint results to the best match
-    if (data.matches[0] && window._filterByFile) {
-      window._filterByFile(data.matches[0].file);
+    // Only scroll/highlight the lint card when the searched element is interactive
+    // (a <div> won't have a lint card — it isn't a flagged interactive element).
+    if (data.interactive && best && window._filterByFile) {
+      window._filterByFile(best.file);
+    } else if (window._filterByFile) {
+      window._filterByFile(null);
     }
   } catch (err) {
     box.innerHTML = '<span style="color:var(--error)">Erro: ' + esc(String(err)) + '</span>';
