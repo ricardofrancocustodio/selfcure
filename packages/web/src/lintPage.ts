@@ -366,6 +366,11 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 </div>
 
 <script>
+// Global helpers (available to both IIFE and URL-lookup functions below)
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 (function () {
   'use strict';
 
@@ -909,11 +914,11 @@ function extractRoutePath(raw) {
     // Hash-based router: #/path → /path
     if (url.hash && url.hash.startsWith('#/')) {
       const hash = url.hash.slice(1); // remove #
-      const [pathPart] = hash.split('?');
+      const pathPart = hash.split('?')[0];
       return pathPart || '/';
     }
     return url.pathname || raw;
-  } catch {
+  } catch(_e) {
     // Not a full URL — treat as raw path
     return raw.trim().startsWith('/') ? raw.trim() : '/' + raw.trim();
   }
