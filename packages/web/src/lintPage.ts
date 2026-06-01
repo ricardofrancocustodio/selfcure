@@ -926,7 +926,9 @@ function extractRoutePath(raw) {
 
 function stripDynamicSegments(p) {
   // Remove numeric IDs from path segments: /1000002718/retail → /retail
-  return p.replace(/\/\d{5,}/g, '');
+  // NOTE: this string is served inside a JS template literal, so we build the
+  // RegExp from a backslash-free string to avoid template-escape mangling.
+  return p.replace(new RegExp('/[0-9]{5,}', 'g'), '');
 }
 
 async function lookupUrl() {
