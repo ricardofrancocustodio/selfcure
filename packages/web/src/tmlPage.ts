@@ -82,6 +82,7 @@ export const tmlPageHtml = /* html */`<!DOCTYPE html>
     <a href="/a11y">Accessibility</a>
     <a href="/discovery">Discovery</a>
     <a href="/tml" class="active">Tag Maturity</a>
+    <a href="/integrations">Integrations</a>
   </nav>
 </header>
 

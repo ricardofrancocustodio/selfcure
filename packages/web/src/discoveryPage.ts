@@ -100,6 +100,8 @@ export const discoveryPageHtml = /* html */`<!DOCTYPE html>
     <a href="/lint">Lint</a>
     <a href="/a11y">Accessibility</a>
     <a href="/discovery" class="active">Discovery</a>
+    <a href="/tml">TML</a>
+    <a href="/integrations">Integrations</a>
   </nav>
 </header>
 

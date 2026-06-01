@@ -701,6 +701,103 @@ export function startWebServer(
       return;
     }
 
+    // ── URL → Component lookup ──────────────────────────────────────────────
+    if (req.method === 'GET' && pathname === '/api/url-to-component') {
+      const rawRoute = parsed.searchParams.get('route') ?? '/';
+      (async () => {
+        try {
+          const { analyze } = await import('@selfcure/analyzer');
+          const { enrichTmlWithInventory, loadInventory } = await import('@selfcure/analyzer');
+          const { crawl } = await import('@selfcure/crawler');
+          const { discoverProject } = await import('@selfcure/crawler');
+
+          const config    = await loadCrawlConfig(cwd);
+          const rootDir   = path.resolve(cwd, config.rootDir);
+
+          // Load project-map to get route candidates
+          const mapFile = path.join(cwd, '.selfcure', 'project-map.json');
+          let routeCandidates: Array<{ path: string; filePath: string }> = [];
+          try {
+            const mapRaw = await readFile(mapFile, 'utf-8');
+            const map    = JSON.parse(mapRaw) as { routeCandidates: typeof routeCandidates };
+            routeCandidates = map.routeCandidates ?? [];
+          } catch {
+            // Fall back to fresh discovery
+            const map = await discoverProject({ projectRoot: rootDir });
+            routeCandidates = map.routeCandidates;
+          }
+
+          // Match route — try exact, then partial (last segment), then closest
+          const normalize = (p: string) => p.toLowerCase().replace(/\/$/, '') || '/';
+          const target    = normalize(rawRoute);
+          let matched = routeCandidates.find((r) => normalize(r.path) === target);
+          if (!matched) {
+            // Try matching last segment: /1000002718/retail → find /retail
+            const last = '/' + target.split('/').filter(Boolean).pop();
+            matched = routeCandidates.find((r) => normalize(r.path) === last);
+          }
+          if (!matched) {
+            // Partial substring match
+            matched = routeCandidates.find((r) => normalize(r.path).includes(target) || target.includes(normalize(r.path)));
+          }
+
+          if (!matched) {
+            const candidates = routeCandidates.slice(0, 6).map((r) => r.path);
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'No route matched', route: rawRoute, candidates }));
+            return;
+          }
+
+          // Crawl only the matched component file
+          const components = await crawl({
+            rootDir,
+            include:   [path.relative(rootDir, matched.filePath).replace(/\\/g, '/')],
+            exclude:   config.exclude,
+            framework: config.framework,
+          });
+
+          const results = await analyze(components);
+
+          // Enrich with inventory
+          const invPath   = path.join(cwd, '.selfcure', 'testid-inventory.json');
+          const invResult = await loadInventory(invPath).catch(() => null);
+          if (invResult?.ok) enrichTmlWithInventory(results, invResult.inventory!);
+
+          // Collect elements
+          const elements: unknown[] = [];
+          for (const r of results) {
+            r.interactiveElements.forEach((el, i) => {
+              const label = el.label ?? el.selectors?.ariaLabel ?? el.selectors?.id ?? '';
+              const suggested = label
+                ? label.replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase()
+                : `${el.type}-${i + 1}`;
+              elements.push({
+                type:             el.type,
+                selector:         el.selector,
+                label:            el.label,
+                testabilityScore: el.testabilityScore,
+                ambiguous:        el.ambiguous,
+                suggestedTestId:  suggested,
+                tml:              el.tml ? { level: el.tml.level, label: el.tml.label } : undefined,
+              });
+            });
+          }
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({
+            route:         rawRoute,
+            matchedRoute:  matched.path,
+            componentFile: path.relative(cwd, matched.filePath),
+            elements,
+          }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      })();
+      return;
+    }
+
     if (req.method === 'GET' && pathname === '/api/tml-analysis') {
       // Run TML analysis in-process using the server's loaded config
       (async () => {

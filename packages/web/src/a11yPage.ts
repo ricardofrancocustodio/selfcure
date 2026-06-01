@@ -98,14 +98,18 @@ a:hover{text-decoration:underline}
 <body>
 <nav class="topnav">
   <a href="/">selfcure</a>
-  <span class="sep">/</span>
+  <span class="sep">|</span>
   <a href="/crawl">crawl</a>
-  <span class="sep">/</span>
+  <span class="sep">|</span>
   <a href="/lint">lint</a>
-  <span class="sep">/</span>
-  <a href="/integrations">integrations</a>
-  <span class="sep">/</span>
+  <span class="sep">|</span>
   <span class="active">a11y</span>
+  <span class="sep">|</span>
+  <a href="/discovery">discovery</a>
+  <span class="sep">|</span>
+  <a href="/tml">TML</a>
+  <span class="sep">|</span>
+  <a href="/integrations">integrations</a>
 </nav>
 
 <div class="wrap">

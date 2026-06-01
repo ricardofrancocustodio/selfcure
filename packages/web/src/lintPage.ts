@@ -273,8 +273,26 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   <a class="nav-link" href="/">init</a>
   <a class="nav-link" href="/crawl">crawl</a>
   <a class="nav-link active" href="/lint">lint</a>
+  <a class="nav-link" href="/a11y">a11y</a>
+  <a class="nav-link" href="/discovery">discovery</a>
+  <a class="nav-link" href="/tml">TML</a>
   <a class="nav-link" href="/integrations">integrations</a>
 </nav>
+
+<!-- URL → Component lookup bar -->
+<div id="urlLookup" style="display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--canvas);border-bottom:1px solid var(--border);">
+  <span style="font-size:12px;color:var(--muted);white-space:nowrap">🔍 URL → componente:</span>
+  <input id="urlInput" type="text" placeholder="Cole a URL do app (ex: https://…/#/retail) ou só o path (/retail)"
+    style="flex:1;padding:4px 8px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:var(--mono);"
+    autocomplete="off" spellcheck="false">
+  <button onclick="lookupUrl()" style="padding:4px 12px;font-size:12px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer">
+    Buscar
+  </button>
+  <button onclick="clearLookup()" style="padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer">
+    ✕
+  </button>
+</div>
+<div id="urlResult" style="display:none;padding:10px 16px;background:var(--hunk-bg);border-bottom:1px solid var(--hunk-ln);font-size:12px;font-family:var(--mono);"></div>
 
 <form id="lintForm"><div class="run-bar">
   <label for="configPath">Config</label>
@@ -880,6 +898,96 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   };
 
 })();
+
+// ---------------------------------------------------------------------------
+// URL → Component lookup
+// ---------------------------------------------------------------------------
+
+function extractRoutePath(raw) {
+  try {
+    const url = new URL(raw);
+    // Hash-based router: #/path → /path
+    if (url.hash && url.hash.startsWith('#/')) {
+      const hash = url.hash.slice(1); // remove #
+      const [pathPart] = hash.split('?');
+      return pathPart || '/';
+    }
+    return url.pathname || raw;
+  } catch {
+    // Not a full URL — treat as raw path
+    return raw.trim().startsWith('/') ? raw.trim() : '/' + raw.trim();
+  }
+}
+
+function stripDynamicSegments(p) {
+  // Remove numeric IDs from path segments: /1000002718/retail → /retail
+  return p.replace(/\/\d{5,}/g, '');
+}
+
+async function lookupUrl() {
+  const raw   = document.getElementById('urlInput').value.trim();
+  if (!raw) return;
+  const route = extractRoutePath(raw);
+  const clean = stripDynamicSegments(route);
+  const box   = document.getElementById('urlResult');
+
+  box.style.display = 'block';
+  box.innerHTML = '<span style="color:var(--muted)">Buscando…</span>';
+
+  try {
+    const resp = await fetch('/api/url-to-component?route=' + encodeURIComponent(clean));
+    const data = await resp.json();
+
+    if (data.error || !data.componentFile) {
+      box.innerHTML =
+        '<span style="color:var(--error)">Nenhum componente encontrado para: <b>' + esc(clean) + '</b></span>' +
+        (data.candidates ? '<br>Rotas próximas: ' + data.candidates.map(c => '<code>' + esc(c) + '</code>').join(', ') : '');
+      return;
+    }
+
+    const els = (data.elements || []);
+    const rows = els.length === 0
+      ? '<i style="color:var(--muted)">Nenhum elemento interativo encontrado neste componente.</i>'
+      : els.map(e => {
+          const sc = e.testabilityScore;
+          const col = sc >= 65 ? 'var(--success)' : sc >= 35 ? 'var(--warning)' : 'var(--error)';
+          const tml = e.tml ? ' <span style="color:' + col + '">[TML-' + e.tml.level + ':' + e.tml.label + ']</span>' : '';
+          return '<div style="margin:4px 0;display:flex;gap:12px;align-items:center">' +
+            '<span style="min-width:60px;color:var(--accent)">' + esc(e.type) + '</span>' +
+            '<code style="flex:1;overflow:hidden;text-overflow:ellipsis">' + esc(e.selector) + '</code>' +
+            '<span style="color:' + col + ';min-width:60px">score: ' + sc + '</span>' +
+            tml +
+            (e.suggestedTestId ? '<span style="color:var(--muted)">→ data-testid="' + esc(e.suggestedTestId) + '"</span>' : '') +
+            '</div>';
+        }).join('');
+
+    box.innerHTML =
+      '<div style="margin-bottom:6px">' +
+        '<b>Rota:</b> <code>' + esc(data.matchedRoute || clean) + '</code>' +
+        ' &nbsp;→&nbsp; ' +
+        '<b>Componente:</b> <code style="color:var(--accent)">' + esc(data.componentFile) + '</code>' +
+        ' &nbsp;<span style="color:var(--muted)">(' + els.length + ' elemento(s) interativo(s))</span>' +
+      '</div>' +
+      '<div style="border-top:1px solid var(--hunk-ln);padding-top:6px">' + rows + '</div>';
+
+    // Also filter the lint results to show only this file
+    if (data.componentFile && window._filterByFile) {
+      window._filterByFile(data.componentFile);
+    }
+  } catch (err) {
+    box.innerHTML = '<span style="color:var(--error)">Erro: ' + esc(String(err)) + '</span>';
+  }
+}
+
+function clearLookup() {
+  document.getElementById('urlInput').value = '';
+  document.getElementById('urlResult').style.display = 'none';
+  if (window._filterByFile) window._filterByFile(null);
+}
+
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') lookupUrl();
+});
 </script>
 </body>
 </html>
