@@ -60,7 +60,7 @@ export function buildDiscoveryInput(
     input.runtimeFindings = rtResult.routes.map((r) => ({
       route:        r.route,
       status:       r.status,
-      flaggedCount: r.interactiveElements.filter((e) => e.score < 80).length,
+      flaggedCount: r.interactiveElements.filter((e: { score: number }) => e.score < 80).length,
     }));
   }
 
@@ -88,7 +88,7 @@ export function shouldUseLlm(
   if (avgConf < 0.85) return true;
 
   if (rtResult) {
-    const hasUnreachable = rtResult.routes.some((r) => r.status !== 'reachable');
+    const hasUnreachable = rtResult.routes.some((r: { status: string }) => r.status !== 'reachable');
     if (hasUnreachable) return true;
   }
 
