@@ -39,20 +39,31 @@ async function detectSourceDir(cwd: string, projectRoot: string): Promise<string
   return projectRoot === '.' ? './src' : projectRoot;
 }
 
-/** Detect file extensions used in the project. */
-async function detectExtensions(cwd: string, sourceDir: string): Promise<string[]> {
-  const abs = path.resolve(cwd, sourceDir);
-  const found: string[] = [];
-  for (const [ext, check] of [
-    ['**/*.tsx', 'tsconfig.json'],
-    ['**/*.jsx', 'vite.config.js'],
-    ['**/*.vue', 'vue.config.js'],
-  ] as Array<[string, string]>) {
-    try { await stat(path.join(path.resolve(cwd, '.'), check)); found.push(ext); } catch { /* skip */ }
-  }
-  // Default: always include tsx and jsx
-  if (found.length === 0) found.push('**/*.tsx', '**/*.jsx');
-  return found;
+/** Detect file extensions used in the project from package.json deps. */
+async function detectExtensions(cwd: string): Promise<string[]> {
+  try {
+    const raw  = await import('node:fs/promises').then((m) => m.readFile(path.join(cwd, 'package.json'), 'utf-8'));
+    const pkg  = JSON.parse(raw) as Record<string, unknown>;
+    const deps = { ...(pkg['dependencies'] as object ?? {}), ...(pkg['devDependencies'] as object ?? {}) };
+
+    // Angular: templates are .html, components are .ts
+    if ('@angular/core' in deps) return ['**/*.html', '**/*.ts'];
+    // Vue: single-file components
+    if ('vue' in deps)           return ['**/*.vue'];
+    // Nuxt: also vue files
+    if ('nuxt' in deps)          return ['**/*.vue'];
+    // Svelte
+    if ('svelte' in deps)        return ['**/*.svelte'];
+    // React with TypeScript
+    if ('react' in deps && 'typescript' in deps) return ['**/*.tsx', '**/*.ts'];
+    // React without TypeScript
+    if ('react' in deps)         return ['**/*.jsx', '**/*.js'];
+    // Next.js (TypeScript default)
+    if ('next' in deps)          return ['**/*.tsx', '**/*.ts'];
+  } catch { /* no package.json */ }
+
+  // Fallback
+  return ['**/*.tsx', '**/*.jsx'];
 }
 
 function buildConfigContent(
@@ -168,7 +179,7 @@ export async function runInitWizard(cwd: string): Promise<void> {
 
   // Auto-detect source dir and extensions
   const sourceDir  = await detectSourceDir(cwd, projectRoot);
-  const extensions = await detectExtensions(cwd, sourceDir);
+  const extensions = await detectExtensions(cwd);
 
   // Write config
   const configPath    = path.join(cwd, 'selfcure.config.mjs');
