@@ -45,21 +45,20 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
       color: var(--text);
     }
     nav {
-      position: sticky; top: 0; z-index: 20;
-      display: flex; align-items: center; gap: 6px;
-      height: 46px; padding: 0 18px;
-      background: color-mix(in srgb, var(--surface) 92%, transparent);
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 4px;
+      height: 44px; padding: 0 16px;
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(6px);
     }
-    .nav-brand { color: var(--accent); text-decoration: none; font-family: var(--mono); font-size: 13px; font-weight: 700; }
-    .nav-sep { color: var(--muted); }
+    .nav-brand { color: var(--accent); text-decoration: none; font-family: var(--mono); font-size: 13px; font-weight: 700; margin-right: 8px; }
+    .nav-sep { color: var(--muted); margin: 0 2px; }
     .nav-link {
       text-decoration: none; color: var(--muted); font-size: 13px;
-      padding: 4px 10px; border-radius: 6px;
+      padding: 4px 10px; border-radius: 6px; transition: background 100ms, color 100ms;
     }
-    .nav-link:hover { background: color-mix(in srgb, var(--surface) 80%, transparent); color: var(--text); }
-    .nav-link.active { color: var(--text); background: color-mix(in srgb, var(--surface) 90%, transparent); }
+    .nav-link:hover { background: var(--border); color: var(--text); }
+    .nav-link.active { color: var(--text); background: var(--border); font-weight: 600; }
 
     main { max-width: 900px; margin: 0 auto; padding: 28px 20px 70px; }
     h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
@@ -168,6 +167,9 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
   <a class="nav-link" href="/">init</a>
   <a class="nav-link" href="/crawl">crawl</a>
   <a class="nav-link" href="/lint">lint</a>
+  <a class="nav-link" href="/a11y">a11y</a>
+  <a class="nav-link" href="/discovery">discovery</a>
+  <a class="nav-link" href="/tml">TML</a>
   <a class="nav-link active" href="/integrations">integrations</a>
 </nav>
 

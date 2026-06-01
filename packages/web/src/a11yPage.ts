@@ -11,18 +11,19 @@ export const a11yPageHtml = /* html */`<!DOCTYPE html>
   --error:#f85149;--error-bg:#3d1a1a;--warning:#d29922;--warning-bg:#2d2100;
   --info:#58a6ff;--info-bg:#1c2c43;--success:#3fb950;--success-bg:#122620;
   --minor:#58a6ff;--minor-bg:#1c2c43;
-  --radius:6px;--font:system-ui,-apple-system,sans-serif;--mono:'SFMono-Regular',Consolas,'Liberation Mono',monospace;
+  --radius:6px;--font:system-ui,-apple-system,sans-serif;--mono:'SFMono-Regular',Consolas,'Liberation Mono',monospace;--accent:#58a6ff;--border-hi:#6e7681;--nav-h:44px;
 }
 body{font-family:var(--font);background:var(--canvas);color:var(--text);min-height:100vh}
 a{color:var(--info);text-decoration:none}
 a:hover{text-decoration:underline}
 
 /* ── nav ─────────────────────────────────────────────────────────────────── */
-.topnav{display:flex;align-items:center;gap:.5rem;padding:.55rem 1rem;background:var(--canvas-sub);border-bottom:1px solid var(--border);font-size:.78rem;color:var(--muted);position:sticky;top:0;z-index:40}
-.topnav a{color:var(--muted)}
-.topnav a:hover{color:var(--text)}
-.topnav .sep{color:var(--border)}
-.topnav .active{color:var(--text);font-weight:600}
+nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:4px;padding:0 16px;background:var(--canvas-sub);border-bottom:1px solid var(--border);height:var(--nav-h)}
+.nav-brand{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--accent);text-decoration:none;margin-right:8px}
+.nav-sep{color:var(--border-hi);margin:0 2px}
+.nav-link{font-size:13px;padding:4px 10px;border-radius:6px;color:var(--muted);text-decoration:none;transition:background 100ms,color 100ms}
+.nav-link:hover{background:rgba(255,255,255,.08);color:var(--text)}
+.nav-link.active{background:rgba(255,255,255,.1);color:var(--text);font-weight:600}
 
 /* ── layout ──────────────────────────────────────────────────────────────── */
 .wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1rem 3rem}
@@ -96,20 +97,16 @@ a:hover{text-decoration:underline}
 </style>
 </head>
 <body>
-<nav class="topnav">
-  <a href="/">selfcure</a>
-  <span class="sep">|</span>
-  <a href="/crawl">crawl</a>
-  <span class="sep">|</span>
-  <a href="/lint">lint</a>
-  <span class="sep">|</span>
-  <span class="active">a11y</span>
-  <span class="sep">|</span>
-  <a href="/discovery">discovery</a>
-  <span class="sep">|</span>
-  <a href="/tml">TML</a>
-  <span class="sep">|</span>
-  <a href="/integrations">integrations</a>
+<nav>
+  <a class="nav-brand" href="/">selfcure</a>
+  <span class="nav-sep">/</span>
+  <a class="nav-link" href="/">init</a>
+  <a class="nav-link" href="/crawl">crawl</a>
+  <a class="nav-link" href="/lint">lint</a>
+  <a class="nav-link active" href="/a11y">a11y</a>
+  <a class="nav-link" href="/discovery">discovery</a>
+  <a class="nav-link" href="/tml">TML</a>
+  <a class="nav-link" href="/integrations">integrations</a>
 </nav>
 
 <div class="wrap">

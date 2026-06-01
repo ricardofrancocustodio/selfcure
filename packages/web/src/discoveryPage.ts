@@ -24,16 +24,20 @@ export const discoveryPageHtml = /* html */`<!DOCTYPE html>
       --blue:    #3b82f6;
       --purple:  #a855f7;
       --radius:  8px;
+      --accent:  #3b82f6;
+      --mono:    ui-monospace, SFMono-Regular, Consolas, monospace;
+      --nav-h:   44px;
     }
     body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; font-size: 14px; }
     a { color: var(--blue); text-decoration: none; }
     a:hover { text-decoration: underline; }
 
-    header { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--border); }
-    header h1 { font-size: 16px; font-weight: 600; }
-    header nav { display: flex; gap: 16px; margin-left: auto; }
-    header nav a { color: var(--muted); font-size: 13px; }
-    header nav a:hover, header nav a.active { color: var(--text); }
+    nav { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 4px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); height: var(--nav-h); }
+    .nav-brand { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; margin-right: 8px; }
+    .nav-sep { color: var(--muted); margin: 0 2px; }
+    .nav-link { font-size: 13px; padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; transition: background 100ms, color 100ms; }
+    .nav-link:hover { background: rgba(255,255,255,.05); color: var(--text); }
+    .nav-link.active { background: rgba(255,255,255,.08); color: var(--text); font-weight: 600; }
 
     .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
     .page-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
@@ -93,17 +97,17 @@ export const discoveryPageHtml = /* html */`<!DOCTYPE html>
   </style>
 </head>
 <body>
-<header>
-  <h1>selfcure</h1>
-  <nav>
-    <a href="/">Overview</a>
-    <a href="/lint">Lint</a>
-    <a href="/a11y">Accessibility</a>
-    <a href="/discovery" class="active">Discovery</a>
-    <a href="/tml">TML</a>
-    <a href="/integrations">Integrations</a>
-  </nav>
-</header>
+<nav>
+  <a class="nav-brand" href="/">selfcure</a>
+  <span class="nav-sep">/</span>
+  <a class="nav-link" href="/">init</a>
+  <a class="nav-link" href="/crawl">crawl</a>
+  <a class="nav-link" href="/lint">lint</a>
+  <a class="nav-link" href="/a11y">a11y</a>
+  <a class="nav-link active" href="/discovery">discovery</a>
+  <a class="nav-link" href="/tml">TML</a>
+  <a class="nav-link" href="/integrations">integrations</a>
+</nav>
 
 <div class="container">
   <div class="page-title">Agentic Discovery</div>
