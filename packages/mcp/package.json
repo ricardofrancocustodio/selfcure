@@ -1,0 +1,28 @@
+{
+  "name": "@selfcure/mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server exposing selfcure's testability analysis (crawl + analyze + lint) to any MCP client — Claude Desktop, Cursor, VS Code, Claude Code, Windsurf, etc.",
+  "type": "module",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "selfcure-mcp": "dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup --config tsup.config.ts",
+    "dev": "tsup src/index.ts --format esm --watch",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "latest",
+    "@selfcure/analyzer": "*",
+    "@selfcure/crawler": "*"
+  }
+}

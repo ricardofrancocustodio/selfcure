@@ -31,7 +31,9 @@ Created and deployed a managed OAuth connector on Vercel for GitHub, GitLab, and
 ## Deployment
 
 - Vercel project created and deployed successfully.
-- Active production alias:
+- Canonical production URL (after project rename to "selfcure"):
+  - `https://selfcure.vercel.app`
+- Legacy alias (still active, kept for backwards compatibility):
   - `https://connector-ten-khaki.vercel.app`
 
 ## Next required configuration
@@ -48,4 +50,10 @@ Set Vercel env vars for OAuth app credentials and state secret:
 
 Then set this in the target project `.env`:
 
-- `SELFCURE_CONNECTOR_BASE_URL=https://connector-ten-khaki.vercel.app`
+- `SELFCURE_CONNECTOR_BASE_URL=https://selfcure.vercel.app`
+
+And register these callback URLs in each OAuth App:
+
+- GitHub: `https://selfcure.vercel.app/oauth/callback/github`
+- GitLab: `https://selfcure.vercel.app/oauth/callback/gitlab`
+- Bitbucket: `https://selfcure.vercel.app/oauth/callback/bitbucket`

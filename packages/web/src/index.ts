@@ -20,7 +20,11 @@ import {
 } from './integrations.js';
 import { integrationsPageHtml } from './integrationsPage.js';
 import { initPageHtml } from './initPage.js';
-import { lintPageHtml } from './lintPage.js';
+import { lintPageHtml }  from './lintPage.js';
+import { a11yPageHtml }      from './a11yPage.js';
+import { discoveryPageHtml } from './discoveryPage.js';
+import { tmlPageHtml }       from './tmlPage.js';
+import { detectProvider } from './git-providers.js';
 
 // Directories that should never appear in the source-folder picker
 const IGNORED_DIRS = new Set([
@@ -59,8 +63,8 @@ interface WebCrawlConfig {
   framework?: 'react' | 'vue' | 'angular' | 'auto';
   /** Enables Pro features (auto-fix, open PR) without the SELFCURE_PRO env var. */
   pro?: boolean;
-  /** Optional linter settings (currently just PR base branch). */
-  lint?: { prBaseBranch?: string };
+  /** Optional linter settings (PR base branch, git provider override). */
+  lint?: { prBaseBranch?: string; gitProvider?: 'github' | 'gitlab' | 'auto' };
 }
 
 interface CrawlRequestBody {
@@ -348,21 +352,6 @@ function issueKey(filePath: string, suggestedTestId: string): string {
   return `${filePath}|${suggestedTestId}`;
 }
 
-/** Resolve base branch: explicit config → repo default via `gh` → undefined. */
-function resolveBaseBranch(configured: string | undefined, gitRoot: string): string | undefined {
-  if (configured) return configured;
-  try {
-    const out = execSync(
-      'gh repo view --json defaultBranchRef --jq .defaultBranchRef.name',
-      { cwd: gitRoot, stdio: 'pipe', encoding: 'utf-8' },
-    ) as string;
-    const name = out.trim();
-    return name || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 function buildPrBody(
   applied: LintIssue[],
   threshold: number,
@@ -424,6 +413,8 @@ async function runOpenPr(cwd: string, reqBody: OpenPrRequestBody): Promise<{
   fixedCount: number;
   baseBranch?: string;
   branch: string;
+  provider: 'github' | 'gitlab';
+  prKindLabel: string;
 }> {
   const config    = await loadCrawlConfig(cwd, reqBody.configPath);
   const threshold = reqBody.threshold ?? 65;
@@ -446,14 +437,9 @@ async function runOpenPr(cwd: string, reqBody: OpenPrRequestBody): Promise<{
     );
   }
 
-  try {
-    execSync('gh auth status', { cwd: gitRoot, stdio: 'pipe' });
-  } catch {
-    throw new Error(
-      'GitHub CLI (gh) is not installed or not authenticated. ' +
-      'Install from https://cli.github.com then run: gh auth login',
-    );
-  }
+  // Detect provider (GitHub vs GitLab) and verify its CLI is ready.
+  const earlyProvider = detectProvider(gitRoot, config.lint?.gitProvider ?? 'auto');
+  earlyProvider.ensureReady(gitRoot);
 
   // ── 2. Re-run lint to get the authoritative issue list ─────────────────
   const rootDir = path.resolve(cwd, config.rootDir);
@@ -537,8 +523,16 @@ async function runOpenPr(cwd: string, reqBody: OpenPrRequestBody): Promise<{
     );
   }
 
-  // ── 4. Resolve base branch + remember current branch ───────────────────
-  const baseBranch = resolveBaseBranch(config.lint?.prBaseBranch, gitRoot);
+  // ── 4. Resolve provider + base branch + remember current branch ────────
+  const provider = detectProvider(gitRoot, config.lint?.gitProvider ?? 'auto');
+  // Provider readiness was already checked at step 1; re-check after a fresh
+  // import (auth tokens expire, etc.) — fail loudly before mutating the repo.
+  try {
+    provider.ensureReady(gitRoot);
+  } catch (err) {
+    throw new Error(err instanceof Error ? err.message : String(err));
+  }
+  const baseBranch = provider.resolveBaseBranch(config.lint?.prBaseBranch, gitRoot);
 
   let originalBranch: string | undefined;
   try {
@@ -583,13 +577,7 @@ async function runOpenPr(cwd: string, reqBody: OpenPrRequestBody): Promise<{
 
     execSync(`git push -u origin ${JSON.stringify(branch)}`, { cwd: gitRoot, stdio: 'pipe' });
 
-    const baseFlag = baseBranch ? ` --base ${JSON.stringify(baseBranch)}` : '';
-    const raw = execSync(
-      `gh pr create --title ${JSON.stringify(title)} ` +
-      `--body-file ${JSON.stringify(bodyFile)} --head ${JSON.stringify(branch)}${baseFlag}`,
-      { cwd: gitRoot, encoding: 'utf-8', stdio: 'pipe' },
-    ).trim();
-    prUrl = raw.split('\n').filter((l) => l.startsWith('https://')).pop() ?? raw;
+    prUrl = provider.openPr({ gitRoot, branch, baseBranch, title, bodyFile });
   } finally {
     await rm(tmpDir, { recursive: true, force: true });
     // Best-effort: return user to their original branch so they're not stranded.
@@ -600,7 +588,14 @@ async function runOpenPr(cwd: string, reqBody: OpenPrRequestBody): Promise<{
     }
   }
 
-  return { prUrl, fixedCount, baseBranch, branch };
+  return {
+    prUrl,
+    fixedCount,
+    baseBranch,
+    branch,
+    provider:    provider.id,
+    prKindLabel: provider.prKindLabel,
+  };
 }
 
 function listProviders(): {
@@ -685,6 +680,116 @@ export function startWebServer(
     if (req.method === 'GET' && pathname === '/integrations') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(integrationsPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/a11y') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(a11yPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/discovery') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(discoveryPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/tml') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(tmlPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/tml-analysis') {
+      // Run TML analysis in-process using the server's loaded config
+      (async () => {
+        try {
+          const { analyze } = await import('@selfcure/analyzer');
+          const { enrichTmlWithInventory, loadInventory } = await import('@selfcure/analyzer');
+          const { crawl } = await import('@selfcure/crawler');
+          const config = await loadCrawlConfig(cwd);
+          const rootDir = path.resolve(cwd, config.rootDir);
+          const components = await crawl({
+            rootDir,
+            include:   config.include ?? ['**/*.tsx', '**/*.jsx'],
+            exclude:   config.exclude ?? [],
+            framework: config.framework,
+          });
+          const results = await analyze(components);
+          const invPath = path.join(cwd, '.selfcure', 'testid-inventory.json');
+          const invResult = await loadInventory(invPath).catch(() => null);
+          if (invResult?.ok) enrichTmlWithInventory(results, invResult.inventory!);
+
+          // Collect distribution + findings
+          const dist: Record<string, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+          const findings: unknown[] = [];
+          for (const r of results) {
+            for (const el of r.interactiveElements) {
+              if (!el.tml) continue;
+              dist[el.tml.level]++;
+              findings.push({ filePath: r.component.filePath, componentName: r.component.componentName, elementType: el.type, selector: el.selector, score: el.testabilityScore, tml: el.tml });
+            }
+          }
+          const total = Object.values(dist).reduce((s, n) => s + n, 0);
+          const minimumLevel = 2;
+          const violations = findings.filter((f: any) => f.tml.level < minimumLevel).length;
+
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ totalElements: total, violations, minimumLevel, distribution: dist, findings }));
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: String(err) }));
+        }
+      })();
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/discovery-artifact') {
+      const dir  = parsed.searchParams.get('dir')  ?? '.selfcure';
+      const file = parsed.searchParams.get('file') ?? '';
+      if (!file || file.includes('..')) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid file parameter' }));
+        return;
+      }
+      const absPath = path.resolve(cwd, dir, file);
+      readFile(absPath, 'utf-8')
+        .then((raw) => {
+          try {
+            const data = JSON.parse(raw);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid JSON in artifact file' }));
+          }
+        })
+        .catch(() => {
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Artifact not found' }));
+        });
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/api/a11y-findings') {
+      const filePath = parsed.searchParams.get('path') ?? '.selfcure/a11y-findings.json';
+      const absPath  = path.resolve(cwd, filePath);
+      readFile(absPath, 'utf-8')
+        .then((raw) => {
+          try {
+            const data = JSON.parse(raw);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(data));
+          } catch {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid JSON in findings file' }));
+          }
+        })
+        .catch(() => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Findings file not found — run selfcure a11y scan first', findings: [] }));
+        });
       return;
     }
 

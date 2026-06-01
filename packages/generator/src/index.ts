@@ -13,6 +13,9 @@ export {
   type ModelKind,
 } from './ai.js';
 
+export type { DiscoveryLlmInput, DiscoveryLlmOutput, HiddenStateHint } from './discovery.js';
+export { buildDiscoveryInput, buildDiscoveryPrompt, validateDiscoveryOutput, shouldUseLlm, runLlmDiscovery } from './discovery.js';
+
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------

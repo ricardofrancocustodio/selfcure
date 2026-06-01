@@ -4,8 +4,12 @@
   "description": "Local web UI for selfcure init — serves the configuration wizard in the browser",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",

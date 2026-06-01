@@ -18,6 +18,7 @@ packages/
   selfcure/       — @selfcure/selfcure— Self-healing loop: trace + error → Claude diff → patch + re-run
   reporter/       — @selfcure/reporter— HTML report + JSON summary + evidence (screenshots, diffs)
   web/            — @selfcure/web     — Local HTTP server + browser init wizard (selfcure web)
+  mcp/            — @selfcure/mcp     — Model Context Protocol stdio server (Claude Desktop, Cursor, VS Code, …)
 selfcure.config.mjs — Config template for the TARGET project under test
 package.json      — Workspace root (private, no runtime deps)
 tsconfig.json     — Shared base TypeScript config (extended by each package)
@@ -45,6 +46,7 @@ packages/<name>/
 | `npx selfcure lint --fix` | [Pro] Auto-apply data-testid patches to source files |
 | `npx selfcure lint --fix --pr` | [Pro] Auto-patch + open a GitHub PR with the changes |
 | `npx selfcure web` | Open the browser init wizard at http://localhost:3333 |
+| `npx selfcure mcp` | Start the MCP stdio server (equivalent to `npx @selfcure/mcp`) — consumable by Claude Desktop, Cursor, VS Code, Windsurf, Claude Code |
 
 ## Documentation maintenance
 Before creating, updating, or deleting any doc or related file, read **`SKILLHUB.md`**.

@@ -3,13 +3,14 @@
 // Pro plan feature: --fix applies data-testid patches; --pr opens a GitHub PR.
 // ---------------------------------------------------------------------------
 
-import { crawl }    from '@selfcure/crawler';
-import { analyze }  from '@selfcure/analyzer';
-import type { AnalysisResult, InteractiveElement } from '@selfcure/analyzer';
+import { crawl, extractA11yEvidenceFromAll }    from '@selfcure/crawler';
+import { analyze, runStaticAnalysis }           from '@selfcure/analyzer';
+import type { AnalysisResult, InteractiveElement, AccessibilityFinding, WcagLevel } from '@selfcure/analyzer';
 import { readFile, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import os           from 'node:os';
 import path         from 'node:path';
 import { execSync } from 'node:child_process';
+import { detectProvider } from './git-providers.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -23,6 +24,8 @@ export interface LintConfig {
   framework?: 'react' | 'vue' | 'angular' | 'auto';
   /** Set to true in selfcure.config.mjs to enable Pro features without env var */
   pro?:       boolean;
+  /** Optional linter block — currently only `prBaseBranch`. */
+  lint?:      { prBaseBranch?: string; gitProvider?: 'github' | 'gitlab' | 'auto' };
 }
 
 export interface LintIssue {
@@ -48,11 +51,12 @@ export interface LintIssue {
 }
 
 export interface LintSummary {
-  issues:       LintIssue[];
-  totalFiles:   number;
-  fixedCount:   number;
-  skippedCount: number;
-  prUrl?:       string;
+  issues:         LintIssue[];
+  totalFiles:     number;
+  fixedCount:     number;
+  skippedCount:   number;
+  prUrl?:         string;
+  a11yFindings?:  AccessibilityFinding[];
 }
 
 // ---------------------------------------------------------------------------
@@ -183,7 +187,7 @@ function patchSource(source: string, issue: LintIssue, testId: string): string {
 
 export async function runLint(
   config: LintConfig,
-  opts: { threshold: number; fix: boolean; pr: boolean },
+  opts: { threshold: number; fix: boolean; pr: boolean; a11y?: boolean; wcag?: WcagLevel },
 ): Promise<LintSummary> {
   // ── 1. Crawl + analyse ────────────────────────────────────────────────────
   const components = await crawl({
@@ -194,6 +198,13 @@ export async function runLint(
   });
 
   const results: AnalysisResult[] = await analyze(components);
+
+  // ── 1b. Accessibility analysis (opt-in, same crawl result) ───────────────
+  let a11yFindings: AccessibilityFinding[] | undefined;
+  if (opts.a11y) {
+    const evidenceList = extractA11yEvidenceFromAll(components);
+    a11yFindings = runStaticAnalysis(evidenceList, { level: opts.wcag ?? 'AA' });
+  }
 
   // ── 2. Collect lint issues ────────────────────────────────────────────────
   const issues: LintIssue[] = [];
@@ -267,15 +278,25 @@ export async function runLint(
       );
     }
 
-    // ── 4b. Verificar que gh CLI está instalado e autenticado ─────────────────
+    // ── 4b. Detectar provider (GitHub / GitLab) e validar CLI dele ───────────
+    const provider = detectProvider(gitRoot, config.lint?.gitProvider ?? 'auto');
     try {
-      execSync('gh auth status', { stdio: 'pipe' });
-    } catch {
-      throw new Error(
-        '[selfcure --pr] GitHub CLI (gh) is not installed or not authenticated. ' +
-        'Install from https://cli.github.com then run: gh auth login',
-      );
+      provider.ensureReady(gitRoot);
+    } catch (err) {
+      throw new Error(`[selfcure --pr] ${err instanceof Error ? err.message : String(err)}`);
     }
+
+    // ── 4b'. Resolver branch base (config → provider default branch) ────────
+    const baseBranch = provider.resolveBaseBranch(config.lint?.prBaseBranch, gitRoot);
+
+    // ── 4b''. Lembrar branch atual para restaurar no final ────────────────────
+    let originalBranch: string | undefined;
+    try {
+      originalBranch = (execSync('git rev-parse --abbrev-ref HEAD', {
+        cwd: gitRoot, stdio: 'pipe', encoding: 'utf-8',
+      }) as string).trim();
+      if (originalBranch === 'HEAD') originalBranch = undefined; // detached
+    } catch { /* keep undefined */ }
 
     // ── 4c. Coletar APENAS os arquivos que o selfcure efetivamente tocou ──────
     const patchedFiles = [...byFile.keys()]
@@ -368,7 +389,7 @@ export async function runLint(
       `chore(testids): add data-testid to ${fixedCount} element(s) — selfcure lint`;
 
     try {
-      execSync(`git checkout -b ${branch}`, { cwd: gitRoot, stdio: 'pipe' });
+      execSync(`git checkout -b ${JSON.stringify(branch)}`, { cwd: gitRoot, stdio: 'pipe' });
 
       // Stage SOMENTE os arquivos que o selfcure tocou — nunca changes não-relacionadas
       const relPaths = patchedFiles
@@ -382,20 +403,22 @@ export async function runLint(
         `Threshold: ${opts.threshold}/100`;
       execSync(`git commit -m ${JSON.stringify(commitMsg)}`, { cwd: gitRoot, stdio: 'pipe' });
 
-      execSync(`git push -u origin ${branch}`, { cwd: gitRoot, stdio: 'pipe' });
+      execSync(`git push -u origin ${JSON.stringify(branch)}`, { cwd: gitRoot, stdio: 'pipe' });
 
-      const result = execSync(
-        `gh pr create --title ${JSON.stringify(title)} ` +
-        `--body-file ${JSON.stringify(bodyFile)} --head ${branch}`,
-        { cwd: gitRoot, stdio: 'pipe', encoding: 'utf-8' },
-      ) as string;
-
-      prUrl = result.trim();
+      // Delegate to the detected provider (GitHub `gh` or GitLab `glab`).
+      prUrl = provider.openPr({ gitRoot, branch, baseBranch, title, bodyFile });
     } finally {
       // Remover sempre o arquivo temporário, mesmo em caso de erro
       await rm(tmpDir, { recursive: true, force: true });
+
+      // Best-effort: voltar pro branch original para não deixar o user perdido
+      if (originalBranch) {
+        try {
+          execSync(`git checkout ${JSON.stringify(originalBranch)}`, { cwd: gitRoot, stdio: 'pipe' });
+        } catch { /* não-fatal */ }
+      }
     }
   }
 
-  return { issues, totalFiles: results.length, fixedCount, skippedCount, prUrl };
+  return { issues, totalFiles: results.length, fixedCount, skippedCount, prUrl, a11yFindings };
 }

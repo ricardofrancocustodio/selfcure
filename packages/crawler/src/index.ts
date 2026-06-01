@@ -207,3 +207,12 @@ export async function crawl(options: CrawlOptions): Promise<ComponentMeta[]> {
 }
 
 export default crawl;
+
+export type { TestIdUsage, ExtractOptions, ExtractResult } from './testids/extract.js';
+export { extractFromSource, extractTestIds } from './testids/extract.js';
+
+export type { A11yElementInfo, A11yFileEvidence } from './a11y/extract.js';
+export { extractA11yEvidence, extractA11yEvidenceFromAll } from './a11y/extract.js';
+
+export type { DetectedFramework, PackageManager, RouteCandidate, ComponentCandidate, ProjectMap, DiscoverProjectOptions } from './discover.js';
+export { discoverProject, detectFramework, detectPackageManager } from './discover.js';

@@ -4,6 +4,7 @@
   "description": "CLI entry-point for selfcure (init, crawl, run, heal, report)",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "selfcure": "dist/index.js"
   },
@@ -17,6 +18,7 @@
     "@selfcure/analyzer": "*",
     "@selfcure/crawler": "*",
     "@selfcure/generator": "*",
+    "@selfcure/mcp": "*",
     "@selfcure/reporter": "*",
     "@selfcure/runner": "*",
     "@selfcure/selfcure": "*",

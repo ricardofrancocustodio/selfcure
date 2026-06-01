@@ -59,10 +59,24 @@ pro: true
 `--pr` requires the [GitHub CLI (`gh`)](https://cli.github.com/) installed and authenticated
 in the target project's working directory. selfcure:
 
-1. Creates a branch `selfcure/lint-fix-<timestamp>`
-2. Commits all patched files
-3. Pushes the branch
-4. Runs `gh pr create` with a generated description listing every changed element
+1. Resolves the **base branch** (`lint.prBaseBranch` in your config, or — when omitted — the repo's default branch via `gh repo view`).
+2. Remembers the current branch so it can return you there once the PR is open.
+3. Creates a branch `selfcure/lint-fix-<YYYY-MM-DD>-<short>` (date + short collision-avoidance suffix).
+4. Stages **only** the files selfcure patched — never unrelated dirty changes.
+5. Commits, pushes, and runs `gh pr create --base <baseBranch>` with an auto-generated title and Markdown body that separates `low-score` fixes from `ambiguous` fixes.
+6. Checks out the original branch again (best-effort) so you're not stranded on the lint branch.
+
+Configure the target with `lint.prBaseBranch` in `selfcure.config.mjs`:
+
+```js
+export default {
+  // …
+  pro: true,
+  lint: {
+    prBaseBranch: 'main',   // or 'develop', 'release/v2', etc.
+  },
+};
+```
 
 ### Suggested `data-testid` values
 

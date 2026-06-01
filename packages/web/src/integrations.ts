@@ -59,6 +59,8 @@ export interface ProviderStatus {
 }
 
 export interface ProviderStatusResponse {
+  managed: boolean;
+  connectorUrl: string | null;
   providers: ProviderStatus[];
 }
 
@@ -265,6 +267,7 @@ export function isScmProviderId(value: string): value is ScmProviderId {
 export async function getProviderStatus(cwd: string): Promise<ProviderStatusResponse> {
   const file = await readIntegrations(cwd);
   const managed = hasManagedConnector(cwd);
+  const base = connectorBaseUrl(cwd);
   const providers: ProviderStatus[] = (Object.values(PROVIDERS) as ScmProviderMeta[])
     .map((meta) => {
       const cfg = managed
@@ -283,7 +286,7 @@ export async function getProviderStatus(cwd: string): Promise<ProviderStatusResp
       };
     });
 
-  return { providers };
+  return { managed, connectorUrl: managed ? base : null, providers };
 }
 
 export function getOAuthStartUrl(cwd: string, provider: ScmProviderId, port: number): { redirectTo?: string; error?: string } {

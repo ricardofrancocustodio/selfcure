@@ -1,18 +1,23 @@
-import { input, select, password, checkbox, confirm } from '@inquirer/prompts';
-import path from 'node:path';
-import { generateConfig, FRAMEWORK_EXTENSIONS, type InitOptions } from '@selfcure/web';
+import { input, select, password, confirm } from '@inquirer/prompts';
+import { writeFile }  from 'node:fs/promises';
+import path           from 'node:path';
 import { PROVIDERS, type ProviderId } from '@selfcure/generator';
+import { discoverProject } from '@selfcure/crawler';
 
 // ---------------------------------------------------------------------------
-// selfcure init — interactive CLI wizard
+// selfcure init — simplified wizard (Phase 1 of agentic discovery)
 // ---------------------------------------------------------------------------
-
-const FRAMEWORK_CHOICES = [
-  { name: 'React', value: 'react' },
-  { name: 'Vue', value: 'vue' },
-  { name: 'Angular', value: 'angular' },
-  { name: 'HTML / Other', value: 'auto' },
-] as const;
+//
+// Asks only 5 questions:
+//   1. Project root
+//   2. Base URL
+//   3. AI provider
+//   4. Model (single — used for both generation and healing)
+//   5. Run discovery now?
+//
+// Writes selfcure.config.mjs in the new agentic-discovery format.
+// Existing configs (old format with rootDir/include/etc.) remain valid.
+// ---------------------------------------------------------------------------
 
 const PROVIDER_CHOICES = (Object.values(PROVIDERS) as Array<typeof PROVIDERS[ProviderId]>)
   .map((p) => ({
@@ -22,103 +27,139 @@ const PROVIDER_CHOICES = (Object.values(PROVIDERS) as Array<typeof PROVIDERS[Pro
     value: p.id,
   }));
 
+function buildConfigContent(
+  projectRoot: string,
+  baseUrl:     string,
+  provider:    ProviderId,
+  model:       string,
+): string {
+  // Use JSON.stringify for safe quoting of user-supplied strings
+  const pr  = JSON.stringify(projectRoot);
+  const bu  = JSON.stringify(baseUrl);
+  const pv  = JSON.stringify(provider);
+  const mo  = JSON.stringify(model);
+
+  return [
+    '// selfcure.config.mjs — agentic discovery config',
+    '// See: https://github.com/ricardofrancocustodio/selfcure',
+    'export default {',
+    `  projectRoot: ${pr},`,
+    `  baseUrl: ${bu},`,
+    '',
+    '  ai: {',
+    `    provider: ${pv},`,
+    `    model: ${mo},`,
+    '  },',
+    '',
+    '  discovery: {',
+    '    mode: "agentic",',
+    '    static: true,',
+    '    runtime: false,       // enable with selfcure discover --runtime',
+    '    maxRoutes: 50,',
+    '    maxDepth: 3,',
+    '    includeHiddenStates: true,',
+    '    routeHints: [],',
+    '    ignore: ["node_modules", "dist", "coverage", ".git"],',
+    '  },',
+    '',
+    '  testability: {',
+    '    preferRoleLocators: true,',
+    '    suggestTestIds: true,',
+    '    minimumScore: 80,',
+    '  },',
+    '};',
+    '',
+  ].join('\n');
+}
+
 export async function runInitWizard(cwd: string): Promise<void> {
-  const rootDir = await input({
-    message: 'Onde está o source do projeto?',
-    default: './src',
+  console.log('');
+  console.log('selfcure init — agentic discovery setup');
+  console.log('');
+
+  // ── 1. Project root ──────────────────────────────────────────────────────
+  const projectRoot = await input({
+    message: 'Project root (relative to cwd)?',
+    default: '.',
   });
 
-  const framework = await select({
-    message: 'Qual framework?',
-    choices: FRAMEWORK_CHOICES,
+  // ── 2. Base URL ───────────────────────────────────────────────────────────
+  const baseUrl = await input({
+    message: 'App base URL (dev server)?',
+    default: 'http://localhost:3000',
   });
 
-  const defaultExtensions = FRAMEWORK_EXTENSIONS[framework] ?? ['**/*.tsx'];
-
-  const include = await checkbox({
-    message: 'Extensões dos componentes?',
-    choices: defaultExtensions.map((ext) => ({ name: ext, value: ext, checked: true })),
-  });
-
-  const testsDir = await input({
-    message: 'Onde salvar os testes gerados?',
-    default: './selfcure-tests',
-  });
-
-  const baseURL = await input({
-    message: 'URL do ambiente de testes?',
-    default: 'http://localhost:5000',
-  });
-
-  // ── AI provider ─────────────────────────────────────────────────────────
-  const providerSuggested =
+  // ── 3. AI provider ────────────────────────────────────────────────────────
+  const suggestedProvider =
     (Object.values(PROVIDERS) as Array<typeof PROVIDERS[ProviderId]>)
       .find((p) => p.envVar && process.env[p.envVar])?.id ?? 'anthropic';
 
   const provider = await select<ProviderId>({
-    message: 'Qual provedor de LLM?',
+    message: 'AI provider?',
     choices: PROVIDER_CHOICES,
-    default: providerSuggested,
+    default: suggestedProvider,
   });
 
   const meta = PROVIDERS[provider];
 
-  const generationModel = await input({
-    message: 'Modelo para geração de testes?',
+  // ── 4. Model ──────────────────────────────────────────────────────────────
+  const model = await input({
+    message: 'Model?',
     default: meta.defaultGenerationModel,
   });
 
-  const healingModel = await input({
-    message: 'Modelo para self-healing?',
-    default: meta.defaultHealingModel,
+  // API key (when needed)
+  if (meta.envVar && !process.env[meta.envVar]) {
+    const apiKey = await password({
+      message: `${meta.label} API key (${meta.envVar})?`,
+      mask: '*',
+    });
+    if (apiKey) {
+      const envPath = path.join(cwd, '.env');
+      const line    = `\n${meta.envVar}=${apiKey}\n`;
+      const { appendFile } = await import('node:fs/promises');
+      await appendFile(envPath, line, 'utf-8');
+      console.log(`  ✔ appended to ${path.relative(cwd, envPath)}`);
+    }
+  }
+
+  // ── 5. Run discovery now? ─────────────────────────────────────────────────
+  const runNow = await confirm({
+    message: 'Run static project discovery now?',
+    default: true,
   });
 
-  let apiKey = '';
-  let useExistingEnv = false;
-  if (meta.envVar) {
-    const envValuePresent = Boolean(process.env[meta.envVar]);
-    if (envValuePresent) {
-      useExistingEnv = await confirm({
-        message: `Usar ${meta.envVar} já detectada no seu ambiente?`,
-        default: true,
-      });
-    }
-    if (!useExistingEnv) {
-      apiKey = await password({
-        message: `${meta.label} API key (${meta.envVar})?`,
-        mask: '*',
-      });
+  // Write config
+  const configPath    = path.join(cwd, 'selfcure.config.mjs');
+  const configContent = buildConfigContent(projectRoot, baseUrl, provider, model);
+  await writeFile(configPath, configContent, 'utf-8');
+  console.log(`\n✔  selfcure.config.mjs created`);
+
+  // Optional discovery run
+  if (runNow) {
+    console.log('');
+    const { default: ora } = await import('ora');
+    const spinner = ora('Discovering project structure…').start();
+    try {
+      const root   = path.resolve(cwd, projectRoot);
+      const map    = await discoverProject({ projectRoot: root });
+      const outDir = path.join(cwd, '.selfcure');
+      const { mkdir, writeFile: wf } = await import('node:fs/promises');
+      await mkdir(outDir, { recursive: true });
+      await wf(path.join(outDir, 'project-map.json'), JSON.stringify(map, null, 2), 'utf-8');
+
+      spinner.succeed(`Discovered ${map.routeCandidates.length} route candidate(s) · ${map.componentCandidates.length} component(s)`);
+      console.log(`  Framework: ${map.framework}   Package manager: ${map.packageManager}`);
+      if (map.devCommand) console.log(`  Dev:       ${map.devCommand}`);
+      console.log(`  Artifacts: .selfcure/project-map.json`);
+    } catch (err) {
+      spinner.warn(`Discovery skipped: ${String(err)}`);
     }
   }
 
-  let aiBaseURL: string | undefined;
-  if (meta.defaultBaseURL) {
-    aiBaseURL = await input({
-      message: `Endpoint para ${meta.label}?`,
-      default: meta.defaultBaseURL,
-    });
-  }
-
-  const initOptions: InitOptions = {
-    rootDir,
-    framework,
-    include,
-    testsDir,
-    baseURL,
-    ai: {
-      provider,
-      generationModel,
-      healingModel,
-      apiKey,
-      useExistingEnv,
-      baseURL: aiBaseURL,
-    },
-  };
-
-  const result = await generateConfig(initOptions, cwd);
-
-  const relative = path.relative(cwd, result.configPath);
-  console.log(`\n✔  ${relative} created`);
-  console.log(`✔  ${result.envNote}`);
-  console.log(`\nNext step:\n  selfcure crawl ${rootDir}\n`);
+  console.log('\nNext steps:');
+  console.log('  selfcure discover          — (re)run static discovery');
+  console.log('  selfcure lint              — testability lint');
+  console.log('  selfcure a11y scan         — WCAG accessibility scan');
+  console.log('');
 }

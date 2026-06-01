@@ -247,13 +247,19 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .pr-success { display: flex; align-items: center; gap: 10px; background: var(--success-bg); border: 1px solid var(--success); border-radius: 6px; padding: 12px 16px; margin: 16px 16px 0; font-size: 13px; }
     .pr-success a { color: var(--accent); font-weight: 600; }
     .pr-error { font-size: 12px; color: var(--error); background: var(--error-bg); border: 1px solid var(--error); border-radius: 6px; padding: 6px 12px; }
-    /* per-issue checkbox */
+    /* checkboxes — issue / file / global */
     .issue-pick { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 8px; }
     .issue-pick input { cursor: pointer; accent-color: var(--success); width: 14px; height: 14px; }
     .file-pick { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 10px; }
     .file-pick input { cursor: pointer; accent-color: var(--success); width: 14px; height: 14px; }
+    .global-pick { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; user-select: none; margin-right: 6px; font-size: 12px; color: var(--muted); }
+    .global-pick input { cursor: pointer; accent-color: var(--success); width: 14px; height: 14px; }
     tbody.r-unselected .cd { opacity: 0.4; }
     tbody.r-unselected .tag-disp { text-decoration: line-through; }
+    /* sidebar selection feedback */
+    .fn-item.fn-none .fn-name { opacity: 0.4; text-decoration: line-through; }
+    .fn-badge.partial { color: var(--warning); background: var(--warning-bg); }
+    .fn-badge.dim     { color: var(--muted);   background: var(--canvas-sub); }
     /* spinner */
     .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border-hi); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -304,6 +310,11 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 <div id="prSuccess" hidden></div>
 
 <div id="diffSum" class="diff-sum" hidden>
+  <label class="global-pick" title="Select / deselect all issues">
+    <input type="checkbox" id="globalPick" checked>
+    <span id="globalLabel">All</span>
+  </label>
+  <span class="ds-sep" style="margin:0 2px">·</span>
   <span id="sumFiles" class="ds-stat">—</span>
   <span class="ds-sep">files &nbsp;·&nbsp;</span>
   <span id="sumIssues" class="ds-stat red">—</span>
@@ -366,6 +377,8 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   const openPrBtn      = $('openPrBtn');
   const prInlineError  = $('prInlineError');
   const prSuccess      = $('prSuccess');
+  const globalPick     = $('globalPick');
+  const globalLabel    = $('globalLabel');
 
   let allExpanded = true;
   let lastResult  = null;
@@ -651,6 +664,8 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     }
 
     diffArea.innerHTML = html;
+    syncGlobal();
+    syncSidebar();
   }
 
   /* ── PR action bar ──────────────────────────────────────────────────── */
@@ -691,6 +706,54 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     });
   }
 
+  function syncGlobal() {
+    const total = allKeys.size;
+    const sel   = selected.size;
+    globalPick.checked       = sel === total && total > 0;
+    globalPick.indeterminate = sel > 0 && sel < total;
+    globalLabel.textContent  = sel === total ? 'All' : sel === 0 ? 'None' : sel + '/' + total;
+  }
+
+  function syncSidebar() {
+    document.querySelectorAll('.fn-item').forEach(function (item) {
+      const fp   = item.dataset.fp;
+      const card = diffArea.querySelector('[data-file-card="' + cssEsc(fp) + '"]');
+      if (!card) return;
+      const total   = card.querySelectorAll('.js-issue-pick').length;
+      const checked = card.querySelectorAll('.js-issue-pick:checked').length;
+      item.classList.toggle('fn-none', checked === 0);
+      const badge = item.querySelector('.fn-badge');
+      if (!badge) return;
+      if (checked === 0) {
+        badge.textContent = '0/' + total;
+        badge.className   = 'fn-badge dim';
+      } else if (checked === total) {
+        badge.textContent = String(total);
+        badge.className   = 'fn-badge err';
+      } else {
+        badge.textContent = checked + '/' + total;
+        badge.className   = 'fn-badge partial';
+      }
+    });
+  }
+
+  globalPick.addEventListener('change', function () {
+    const shouldCheck = globalPick.checked;
+    diffArea.querySelectorAll('.js-issue-pick').forEach(function (cb) {
+      if (cb.checked === shouldCheck) return;
+      cb.checked = shouldCheck;
+      const key  = cb.getAttribute('data-key');
+      if (shouldCheck) selected.add(key);
+      else             selected.delete(key);
+      const body = cb.closest('tbody');
+      if (body) body.classList.toggle('r-unselected', !shouldCheck);
+    });
+    syncFilePicks();
+    syncSidebar();
+    globalLabel.textContent = shouldCheck ? 'All' : 'None';
+    updateSelInfo();
+  });
+
   /* Delegated checkbox handling — per-issue + per-file master. */
   diffArea.addEventListener('change', function (e) {
     const t = e.target;
@@ -702,6 +765,8 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
       else           selected.delete(key);
       if (body) body.classList.toggle('r-unselected', !t.checked);
       syncFilePicks();
+      syncGlobal();
+      syncSidebar();
       updateSelInfo();
     } else if (t.classList && t.classList.contains('js-file-pick')) {
       const fp   = t.getAttribute('data-fp');
@@ -716,6 +781,8 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
         const body = cb.closest('tbody');
         if (body) body.classList.toggle('r-unselected', !t.checked);
       });
+      syncGlobal();
+      syncSidebar();
       updateSelInfo();
     }
   });
@@ -771,7 +838,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
         '<div class="pr-success">' +
           '<svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="color:var(--success);flex-shrink:0" aria-hidden="true"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>' +
           '<div>' +
-            '<div style="font-weight:600">Pull request created' + (data.baseBranch ? ' against <code>' + esc(data.baseBranch) + '</code>' : '') + '</div>' +
+            '<div style="font-weight:600">' + (data.prKindLabel ? data.prKindLabel.charAt(0).toUpperCase() + data.prKindLabel.slice(1) : 'Pull request') + ' created' + (data.baseBranch ? ' against <code>' + esc(data.baseBranch) + '</code>' : '') + '</div>' +
             '<div style="margin-top:2px"><a href="' + esc(data.prUrl) + '" target="_blank" rel="noreferrer">' + esc(data.prUrl) + '</a> &middot; <span style="color:var(--muted)">' + data.fixedCount + ' element(s) patched on branch <code>' + esc(data.branch) + '</code></span></div>' +
           '</div>' +
         '</div>';

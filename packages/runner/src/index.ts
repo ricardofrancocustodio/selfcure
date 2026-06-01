@@ -93,3 +93,9 @@ export async function run(options: RunOptions): Promise<TestResult[]> {
 }
 
 export default run;
+
+export type { DynamicScanOptions, DynamicScanRoute, DynamicScanResult } from './a11y/dynamic.js';
+export { runDynamicScan, wcagRefsFromTags, impactToSeverity, levelFromTags } from './a11y/dynamic.js';
+
+export type { RuntimeElement, RuntimeRouteEvidence, RuntimeDiscoveryOptions, RuntimeDiscoveryResult } from './discovery/runtime.js';
+export { runRuntimeDiscovery, scoreElement, buildRuntimeSelector } from './discovery/runtime.js';

@@ -7,6 +7,10 @@ import { pathToFileURL } from 'node:url';
 import { execSync } from 'node:child_process';
 import { runInitWizard } from './init.js';
 import { runLint }       from './lint.js';
+import { printA11ySection, registerA11yCommands } from './a11y.js';
+import { registerTestIdsCommands } from './testids.js';
+import { registerDiscoverCommand }  from './discover.js';
+import { registerTmlCommands, tmlBadge } from './tml.js';
 import { startWebServer } from '@selfcure/web';
 import { crawl } from '@selfcure/crawler';
 import type { AIConfig, ProviderId } from '@selfcure/generator';
@@ -78,8 +82,67 @@ export interface BrowserConfig {
   slowMo?: number;
 }
 
+// ---------------------------------------------------------------------------
+// New agentic-discovery config blocks (Phase 1 — backward-compatible additions)
+// ---------------------------------------------------------------------------
+
+export interface DiscoveryConfig {
+  /** 'agentic' uses static + optional runtime discovery; 'static' is AST-only. */
+  mode?: 'agentic' | 'static';
+  /** Enable static (AST) discovery — default true */
+  static?: boolean;
+  /** Enable runtime Playwright discovery — default false */
+  runtime?: boolean;
+  /** Maximum routes to visit during runtime discovery — default 50 */
+  maxRoutes?: number;
+  /** Maximum link-follow depth from baseUrl — default 3 */
+  maxDepth?: number;
+  /** Also discover hidden states (modals, wizards) — default true */
+  includeHiddenStates?: boolean;
+  /** Extra route paths to always visit (e.g. auth-protected routes) */
+  routeHints?: string[];
+  /** Glob patterns to ignore during static discovery */
+  ignore?: string[];
+}
+
+export interface TestabilityConfig {
+  /** Prefer role/accessible-name locators over CSS selectors — default true */
+  preferRoleLocators?: boolean;
+  /** Auto-suggest data-testid values for unidentifiable elements — default true */
+  suggestTestIds?: boolean;
+  /** Minimum testability score (0–100) before an element is flagged — default 80 */
+  minimumScore?: number;
+}
+
+/** Optional linter behaviour — only required for `selfcure lint --pr` */
+export interface LintOptions {
+  /**
+   * Base branch the auto-generated PR will target.
+   * When omitted, selfcure asks `gh` / `glab` for the repo's default branch.
+   */
+  prBaseBranch?: string;
+
+  /**
+   * Force a specific git host provider. When `'auto'` (default), selfcure
+   * inspects `git remote get-url origin` and picks GitHub or GitLab based on
+   * the hostname. Set explicitly for self-hosted GitLab with custom domain.
+   */
+  gitProvider?: 'github' | 'gitlab' | 'auto';
+}
+
 /** Full selfcure configuration — used in selfcure.config.mjs */
 export interface SelfcureConfig {
+  // ── NEW: agentic-discovery fields (Phase 1) ──────────────────────────────
+  /** Project root — alternative to rootDir for the new config format. */
+  projectRoot?: string;
+  /** App base URL — alternative to baseURL for the new config format. */
+  baseUrl?: string;
+  /** Discovery configuration block. */
+  discovery?: DiscoveryConfig;
+  /** Testability scoring configuration. */
+  testability?: TestabilityConfig;
+
+  // ── LEGACY: original fields — kept for backward compatibility ────────────
   // Source crawl
   rootDir: string;
   include: string[];
@@ -110,6 +173,12 @@ export interface SelfcureConfig {
   // Reporting
   reportDir: string;
   reportTitle?: string;
+
+  /** Optional Pro flag — enables `selfcure lint --fix` and `--pr` without the env var. */
+  pro?: boolean;
+
+  /** Optional linter settings (currently just PR base branch). */
+  lint?: LintOptions;
 }
 
 /**
@@ -266,8 +335,10 @@ program
   .description('[Pro] Lint source files for unstable test selectors and suggest data-testid patches')
   .option('-c, --config <path>', 'path to selfcure.config.mjs (falls back to selfcure.config.js)', './selfcure.config.mjs')
   .option('--threshold <n>', 'testability score below which an element is flagged', '65')
-  .option('--fix', '[Pro] apply data-testid patches to source files automatically')
-  .option('--pr',  '[Pro] create a GitHub PR with the applied fixes (requires --fix)')
+  .option('--fix',          '[Pro] apply data-testid patches to source files automatically')
+  .option('--pr',           '[Pro] create a GitHub PR with the applied fixes (requires --fix)')
+  .option('--a11y',         '[Pro] also run WCAG accessibility lint alongside testability')
+  .option('--wcag <level>', 'WCAG target level when using --a11y: A, AA, or AAA', 'AA')
   .action(async (opts) => {
     const spinner = ora('Analysing source files…').start();
     try {
@@ -278,7 +349,7 @@ program
       const threshold = Number(opts.threshold ?? 65);
       const isPro     = config.pro === true || process.env['SELFCURE_PRO'] === '1';
 
-      // Pro-gate: --fix and --pr require Pro
+      // Pro-gate: --fix, --pr, and --a11y (full details) require Pro
       if ((opts.fix || opts.pr) && !isPro) {
         spinner.stop();
         console.log('');
@@ -289,19 +360,23 @@ program
         // Fall through and run the report-only mode
       }
 
-      const fix = opts.fix && isPro;
-      const pr  = opts.pr  && isPro && fix;
+      const fix  = opts.fix  && isPro;
+      const pr   = opts.pr   && isPro && fix;
+      const a11y = Boolean(opts.a11y);
 
-      const summary = await runLint(config, { threshold, fix, pr });
+      const summary = await runLint(config, { threshold, fix, pr, a11y, wcag: opts.wcag as 'A' | 'AA' | 'AAA' });
       spinner.stop();
 
-      const { issues, totalFiles, fixedCount, skippedCount, prUrl } = summary;
+      const { issues, totalFiles, fixedCount, skippedCount, prUrl, a11yFindings } = summary;
 
       // ── Report header ────────────────────────────────────────────────────
       console.log('');
-      if (issues.length === 0) {
+      if (issues.length === 0 && (!a11yFindings || a11yFindings.length === 0)) {
         console.log(chalk.green.bold('✔ selfcure lint — no issues found'));
         console.log(chalk.dim(`  ${totalFiles} file(s) scanned — all elements have a testability score ≥ ${threshold}`));
+        if (a11yFindings) {
+          console.log(chalk.dim(`  WCAG ${opts.wcag ?? 'AA'} — 0 accessibility issues`));
+        }
         return;
       }
 
@@ -322,21 +397,34 @@ program
       for (const [filePath, fileIssues] of byFile) {
         console.log(chalk.underline(path.relative(process.cwd(), filePath)));
         for (const issue of fileIssues) {
-          const score   = issue.element.testabilityScore;
+          const score    = issue.element.testabilityScore;
           const scoreTxt = score >= 50
             ? chalk.yellow(`score: ${score}`)
             : chalk.red(`score: ${score}`);
           const fixTxt = issue.fixApplied
             ? chalk.green(' ✔ patched')
             : chalk.dim(` → add data-testid="${issue.suggestedTestId}"`);
+          const tml    = issue.element.tml;
+          const tmlTxt = tml ? '  ' + tmlBadge(tml.level, tml.label) : '';
           console.log(
             `  ${chalk.cyan(issue.element.type.padEnd(8))}` +
             `  ${chalk.dim(issue.element.selector.padEnd(30))}` +
-            `  ${scoreTxt}` +
+            `  ${scoreTxt}${tmlTxt}` +
             fixTxt,
           );
         }
         console.log('');
+      }
+
+      // ── Accessibility section ─────────────────────────────────────────────
+      if (a11yFindings && a11yFindings.length > 0) {
+        console.log(chalk.dim('─'.repeat(60)));
+        console.log('');
+        printA11ySection(a11yFindings, {
+          isPro,
+          wcagLevel: (opts.wcag ?? 'AA') as 'A' | 'AA' | 'AAA',
+          cwd: process.cwd(),
+        });
       }
 
       // ── Summary line ─────────────────────────────────────────────────────
@@ -359,6 +447,14 @@ program
       spinner.fail(chalk.red(String(err)));
       process.exit(1);
     }
+  });
+
+program
+  .command('mcp')
+  .description('Start the selfcure MCP server on stdio (consumable by Claude Desktop, Cursor, VS Code, etc.)')
+  .action(async () => {
+    // Lazy import: side-effectful module that boots the stdio server.
+    await import('@selfcure/mcp');
   });
 
 program
@@ -394,5 +490,10 @@ program
       console.log(chalk.yellow(`No process found on port ${port}.`));
     }
   });
+
+registerDiscoverCommand(program);
+registerTmlCommands(program);
+registerTestIdsCommands(program);
+registerA11yCommands(program);
 
 program.parse();

@@ -4,8 +4,12 @@
   "description": "Generates HTML report with test evidence — screenshots, traces, diffs",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",

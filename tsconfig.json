@@ -7,8 +7,6 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "declaration": true,
-    "declarationMap": true,
     "sourceMap": true,
     "ignoreDeprecations": "6.0",
     "types": ["node"]

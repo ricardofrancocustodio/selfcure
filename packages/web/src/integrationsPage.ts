@@ -127,6 +127,30 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
     button.danger:hover { color: #ffffff; background: var(--danger-hover); border-color: var(--danger-hover); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    .setup-banner {
+      margin: 0 0 20px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      font-size: 13px;
+    }
+    .setup-banner h3 { margin: 0 0 8px; font-size: 14px; }
+    .setup-banner ol { margin: 8px 0 0; padding-left: 20px; line-height: 1.9; }
+    .setup-banner code {
+      font-family: var(--mono); font-size: 11.5px;
+      background: color-mix(in srgb, var(--border) 60%, transparent);
+      padding: 1px 5px; border-radius: 4px;
+    }
+    .managed-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+      background: color-mix(in srgb, var(--ok) 12%, transparent);
+      color: var(--ok);
+      border: 1px solid color-mix(in srgb, var(--ok) 30%, var(--border));
+      margin-bottom: 16px;
+    }
     .foot {
       margin-top: 22px;
       color: var(--muted);
@@ -152,20 +176,20 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
   <p class="lede">Connect once and keep your Git provider linked for PR-based workflows.</p>
 
   <div id="flash" class="flash" role="status" aria-live="polite"></div>
+  <div id="connector-banner"></div>
 
   <section id="cards" class="grid"></section>
 
-  <p class="foot">
-    Managed mode (recommended): <code>SELFCURE_CONNECTOR_BASE_URL</code>.<br>
-    Required env vars: <code>SELFCURE_GITHUB_CLIENT_ID</code>, <code>SELFCURE_GITHUB_CLIENT_SECRET</code>,
-    <code>SELFCURE_GITLAB_CLIENT_ID</code>, <code>SELFCURE_GITLAB_CLIENT_SECRET</code>,
-    <code>SELFCURE_BITBUCKET_CLIENT_ID</code>, <code>SELFCURE_BITBUCKET_CLIENT_SECRET</code>.
-  </p>
+  <p class="foot" id="foot-note"></p>
 </main>
 
 <script>
+  const CANONICAL_CONNECTOR = 'https://selfcure.vercel.app';
+
   const cards = document.getElementById('cards');
   const flash = document.getElementById('flash');
+  const banner = document.getElementById('connector-banner');
+  const footNote = document.getElementById('foot-note');
 
   function escapeHtml(s) {
     return (s || '')
@@ -180,6 +204,43 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
     if (!text) return;
     flash.textContent = text;
     flash.style.display = 'block';
+  }
+
+  function renderBanner(managed, connectorUrl) {
+    if (managed) {
+      const url = escapeHtml(connectorUrl || CANONICAL_CONNECTOR);
+      banner.innerHTML =
+        '<div class="managed-pill">' +
+          '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">' +
+            '<circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.5"/>' +
+            '<path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
+          'Managed connector: <code style="font-family:var(--mono);font-size:11px">' + url + '</code>' +
+        '</div>';
+      footNote.innerHTML =
+        'OAuth is routed through the selfcure connector at <code>' + url + '</code>. ' +
+        'Make sure the GitHub OAuth App callback URL includes <code>' + url + '/oauth/callback/github</code>.';
+    } else {
+      banner.innerHTML =
+        '<div class="setup-banner">' +
+          '<h3>Recommended: use the selfcure managed connector</h3>' +
+          '<p style="margin:0;color:var(--muted)">Zero-config OAuth — no need to create your own GitHub/GitLab/Bitbucket OAuth App.</p>' +
+          '<ol>' +
+            '<li>Add to your project <code>.env</code>:<br>' +
+              '<code>SELFCURE_CONNECTOR_BASE_URL=' + CANONICAL_CONNECTOR + '</code></li>' +
+            '<li>In your GitHub OAuth App settings, set the callback URL to:<br>' +
+              '<code>' + CANONICAL_CONNECTOR + '/oauth/callback/github</code></li>' +
+            '<li>Restart selfcure and return to this page.</li>' +
+          '</ol>' +
+          '<p style="margin:8px 0 0;color:var(--muted)">Or bring your own OAuth App by setting ' +
+            '<code>SELFCURE_GITHUB_CLIENT_ID</code> and <code>SELFCURE_GITHUB_CLIENT_SECRET</code> ' +
+            '(plus equivalents for GitLab/Bitbucket).</p>' +
+        '</div>';
+      footNote.innerHTML =
+        'Env vars for self-managed mode: <code>SELFCURE_GITHUB_CLIENT_ID</code>, <code>SELFCURE_GITHUB_CLIENT_SECRET</code>, ' +
+        '<code>SELFCURE_GITLAB_CLIENT_ID</code>, <code>SELFCURE_GITLAB_CLIENT_SECRET</code>, ' +
+        '<code>SELFCURE_BITBUCKET_CLIENT_ID</code>, <code>SELFCURE_BITBUCKET_CLIENT_SECRET</code>.';
+    }
   }
 
   function cardHtml(p) {
@@ -213,6 +274,7 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
   async function load() {
     const res = await fetch('/api/integrations');
     const data = await res.json();
+    renderBanner(data.managed, data.connectorUrl);
     cards.innerHTML = (data.providers || []).map(cardHtml).join('');
 
     cards.querySelectorAll('.connect').forEach((btn) => {

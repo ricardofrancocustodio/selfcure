@@ -1,59 +1,109 @@
 # Selfcure — Build Roadmap
 
-> **Para o agente IA:** Este documento é o plano de construção do Selfcure. Implemente módulo por módulo, na ordem definida. Não pule etapas. Cada módulo tem critério de pronto (Definition of Done) — só avance quando o atual estiver validado.
+> **Para o agente IA:** Este documento é o plano de construção do Selfcure. As Fases 0–9 originais já foram entregues e o produto pivotou para uma camada preventiva sobre o Playwright. Leia "Reposicionamento" antes de continuar e respeite o que está marcado como "fallback legado" vs o que é "headline".
+
+---
+
+## 🎯 Reposicionamento (2026-05) — leia primeiro
+
+O mercado de healing pós-falha está **saturado**: Playwright Test Agents (oficial Microsoft — Planner, Generator, Healer), Shiplight, BrowserStack Self-Heal, LambdaTest AutoHeal, ZeroStep, Octomind, etc. Reimplementar healing competindo com a Microsoft é guerra perdida.
+
+**Selfcure pivotou para a camada PREVENTIVA** — o que ninguém mais faz a partir do source FE:
+
+```
+selfcure (preventive)                       Playwright Test Agents (reactive)
+─────────────────────                       ────────────────────────────────
+crawl FE source (AST)                       run app, observe DOM
+score testability per component       →     Planner: explore + Markdown plan
+flag ambiguous / weak selectors             Generator: plan → .spec.ts
+suggest data-testid patches                 Healer: re-run + repair failures
+ship the fix as a PR (FE owns)
+```
+
+**Pitch oficial:** "Playwright Healer cures tests that break. Selfcure prevents them from breaking — by analyzing the component before it becomes a test and shipping the fix back to the frontend team."
+
+**Entrada comercial:** `@selfcure/mcp` — servidor Model Context Protocol gratuito que qualquer cliente IA (Claude Desktop, Cursor, VS Code, Claude Code, Windsurf) instala em uma linha. A partir daí o agente do usuário consome `selfcure_lint`, `selfcure_analyze_component`, etc. Pro features (auto-fix, PR opening, Figma plugin) ficam em cima.
+
+**Validação real (qnexytest dogfood, 2026-05-28):**
+- 82 componentes analisados, score médio 43/100.
+- 500 issues totais: 477 `ambiguous` (95%) + 23 `low-score`.
+- Ambiguidade é o problema dominante — exatamente o que healers reativos não previnem.
 
 ---
 
 ## 🎯 Visão do produto
 
-Selfcure é uma CLI que automatiza testes de regressão em aplicações legadas (sem `data-testid`, sem padrão, sem documentação). Lê o código, mapeia elementos, gera testes Playwright, executa e se autocorrige quando locators falham.
+**O que selfcure é hoje:** um *lint de testabilidade + pipeline de PR* para frontends. Lê código React/Vue/Angular/HTML, marca componentes que não estão prontos pra teste, e abre PR com a correção via `gh` CLI.
 
-**Público-alvo:** times com aplicações grandes e antigas que precisam implementar regressão automatizada.
+**O que selfcure NÃO é (e nunca mais será):** um competidor direto do Playwright Healer Agent. A geração/cura de testes vira commodity gerenciada por Playwright Test Agents quando o cliente migra; nosso `@selfcure/generator` + `@selfcure/selfcure` ficam como **fallback BYOK** para times que ainda não migraram.
 
-**Diferencial:** sabe distinguir teste ruim de componente ruim — não tenta "curar" o que é responsabilidade do frontend corrigir.
+**Público-alvo:**
+1. **Frontend devs** que querem aplicações testáveis sem pedir favor pro time de QA.
+2. **Tech leads** que querem score de testabilidade quantificável por componente.
+3. **QA engineers** usando Playwright Test Agents que precisam de um pré-filtro de componentes prontos pra teste.
+
+**Diferencial defensável:** análise estática do source FE + detecção de ambiguidade intra-componente. Nenhum healer reativo enxerga isso.
 
 ---
 
-## 🏗️ Arquitetura geral
+## 🏗️ Arquitetura atual
 
 ```
 selfcure/
 ├── packages/
-│   ├── cli/           # entry point (commander)
-│   ├── crawler/       # leitura estática + dinâmica
-│   ├── analyzer/      # classificação + score
-│   ├── generator/     # geração de testes Playwright
-│   ├── runner/        # execução
-│   ├── selfcure/      # loop de autocura
-│   └── reporter/      # relatório HTML
-├── examples/          # apps de teste para validação
+│   ├── cli/           # entry point (commander) — init / crawl / lint / mcp / web / [legacy: run/heal/report]
+│   ├── crawler/       # AST estática via @typescript-eslint/parser           ★ moat
+│   ├── analyzer/      # score 0-100 + detecção de ambiguidade                ★ moat
+│   ├── web/           # /lint page com checkboxes + PR flow                  ★ moat
+│   ├── mcp/           # Model Context Protocol stdio server                  ★ entrada comercial
+│   │
+│   ├── generator/     # (fallback BYOK) source → LLM → Playwright spec
+│   ├── runner/        # (fallback BYOK) @playwright/test wrapper
+│   ├── selfcure/      # (fallback BYOK) heal loop
+│   └── reporter/      # (fallback BYOK) HTML report
 ├── docs/
-├── selfcure.config.mjs # exemplo de config
+├── selfcure.config.mjs # template
 └── package.json
 ```
 
 **Stack:**
 - Node.js 20+
 - TypeScript
-- Playwright 1.60+
-- Anthropic SDK
+- Playwright 1.60+ (apenas como runtime de teste — não como agent)
+- `@modelcontextprotocol/sdk` (servidor MCP)
+- Vercel AI SDK (apenas no fallback legado)
 - Commander (CLI)
-- Vitest (testes internos)
+- Vitest (testes internos — ainda sem cobertura, dogfood é o teste atual)
+
+**Dependências externas críticas:**
+- `gh` CLI — usado pelo PR flow. Selfcure delega autenticação; nunca armazenamos token.
+- `glab` CLI — análogo ao gh para GitLab (suporte previsto na próxima onda).
 
 ---
 
 ## 📋 Ordem de implementação
 
-### Fase 0 — Setup do monorepo
-### Fase 1 — CLI esqueleto + `selfcure init`
-### Fase 2 — Crawler estático
-### Fase 3 — Crawler dinâmico + Codegen
-### Fase 4 — Analyzer + score de testabilidade
-### Fase 5 — Generator (testes Playwright)
-### Fase 6 — Runner
-### Fase 7 — Selfcure (loop de autocura)
-### Fase 8 — Reporter HTML
-### Fase 9 — Publicação npm
+### Fases 0–9 (CONCLUÍDAS — pipeline BYOK original)
+- Fase 0 — Setup do monorepo ✅
+- Fase 1 — CLI esqueleto + `selfcure init` ✅
+- Fase 2 — Crawler estático ✅
+- Fase 3 — ~Crawler dinâmico + Codegen~ (despriorizado após reposicionamento — Playwright Test Agents cobre isso)
+- Fase 4 — Analyzer + score de testabilidade ✅
+- Fase 5 — Generator (BYOK Playwright) ✅ — agora classificado como fallback legado
+- Fase 6 — Runner ✅ — agora classificado como fallback legado
+- Fase 7 — Selfcure heal loop ✅ — agora classificado como fallback legado
+- Fase 8 — Reporter HTML ✅
+- Fase 9 — Publicação npm (parcial — pacotes prontos, ainda não publicados)
+
+### Fases 10+ (PÓS-REPOSICIONAMENTO — em curso)
+
+- **Fase 10 — Ambiguidade ✅** (2026-05) — analyzer detecta selectors compartilhados entre siblings na mesma component; penalidade ×0.4 no score; replace mode no patcher.
+- **Fase 11 — Lint web + PR flow ✅** (2026-05) — `/lint` page com checkboxes por issue, botão "Open pull request" único, branch + push + `gh pr create` em um clique, redirect pra GitHub. Base branch via `lint.prBaseBranch` ou auto-detect via `gh repo view`.
+- **Fase 12 — MCP server ✅** (2026-05-28) — `@selfcure/mcp` stdio server com 4 tools (lint/list/analyze/suggest), 3 resources (config/lint-summary/reports-placeholder), 2 prompts (prepare/handoff). Licença MIT. Smoke test em qnexytest passou.
+- **Fase 13 — Provider abstraction (em curso)** — refatorar PR flow atrás de uma interface `GitProvider`. Implementações: GitHub via `gh` (já existe, vai ser movida); GitLab via `glab`. Auto-detecção via `git remote get-url origin`. Linguagem dinâmica "pull/merge request" na UI.
+- **Fase 14 — Dogfood pago** — primeiro repo real (não-qnexytest) abrindo um PR mergeado via selfcure. Critério: 1 FE dev fora do ricardo aplicando um patch que selfcure abriu.
+- **Fase 15 — Figma plugin** — plugin que roda lint conceitual sobre o design antes de virar código. Mover trabalho de testabilidade pra esquerda do pipeline. Spike de prazo: começa quando Fases 13+14 estiverem fechadas.
+- **Fase 16 — Integração profunda com Playwright Test Agents** — consumir `@playwright/mcp` server pra healing dinâmico atrás de feature flag. Spike só quando alguém pedir.
 
 ---
 

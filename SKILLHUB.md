@@ -31,6 +31,11 @@ create / update / delete each one.
 | `docs/getting-started.md` | Prerequisites, install, API key, `selfcure run` walkthrough, CI recipe |
 | `docs/configuration.md` | Every `selfcure.config.mjs` option — types, defaults, examples |
 | `docs/architecture.md` | Full pipeline diagram, per-stage descriptions, package dependency graph, design decisions |
+| `docs/agentic-discovery-init-plan.md` | Implementation plan for agentic project discovery, simplified init configuration, Playwright runtime crawling, and MCP/IDE-agent integration |
+| `docs/playwright-selfcure-reporting-plan.md` | Implementation plan for a richer Playwright + Selfcure test report with artifacts, diagnosis, healing context, CI outputs, MCP, and web integration |
+| `docs/tag-maturity-level-plan.md` | Implementation plan for Tag Maturity Level (TML), a per-tag maturity model that explains testability, required changes, reporting, CI, web, and MCP integration |
+| `docs/testid-inventory-plan.md` | Implementation plan for governed `data-testid` inventory, scanner, audit, CI, reporting, and web UI |
+| `docs/accessibility-wcag-module-plan.md` | Implementation plan for the paid Accessibility WCAG module, rule catalog, finding inventory, lint integration, CI, and reports |
 | `docs/self-healing.md` | Heal loop design, prompt structure, diff algorithm, sanity check, rollback, limitations |
 | `docs/packages/cli.md` | `@selfcure/cli` — commands, flags, pipeline orchestration |
 | `docs/packages/crawler.md` | `@selfcure/crawler` — `crawl()` API, types, framework detection |

@@ -1,4 +1,6 @@
 import type { ComponentMeta, HtmlElementMeta } from '@selfcure/crawler';
+import { assessTagMaturity } from './tml/score.js';
+import type { TagMaturityResult } from './tml/schema.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -52,6 +54,8 @@ export interface InteractiveElement {
   ambiguous: boolean;
   /** Human-readable explanation when {@link ambiguous} is true */
   ambiguityReason?: string;
+  /** Tag Maturity Level assessment — populated by analyze() */
+  tml?: TagMaturityResult;
 }
 
 export interface AnalysisResult {
@@ -378,6 +382,20 @@ export async function analyze(components: ComponentMeta[]): Promise<AnalysisResu
     applyAmbiguity(interactiveElements, intraCounts, crossCounts);
   }
 
+  // Third pass: attach TML to each element (uses final post-ambiguity scores).
+  for (const { interactiveElements } of perComponent) {
+    for (const el of interactiveElements) {
+      const best = el.selectorRanking[0];
+      el.tml = assessTagMaturity({
+        testabilityScore: el.testabilityScore,
+        ambiguous:        el.ambiguous,
+        bestStrategy:     best?.strategy ?? 'css',
+        label:            el.label,
+        elementType:      el.type,
+      });
+    }
+  }
+
   return perComponent.map(({ component, interactiveElements }) => ({
     component,
     score: computeScore(interactiveElements),
@@ -387,3 +405,29 @@ export async function analyze(components: ComponentMeta[]): Promise<AnalysisResu
 }
 
 export default analyze;
+
+export type { TestIdInventory, InventoryRoute, InventoryElement, InventoryElementStatus, InventoryElementStability } from './testids/schema.js';
+export type { ParseResult } from './testids/inventory.js';
+export { parseInventory, loadInventory, allTestIds } from './testids/inventory.js';
+export type { AuditResult as TestIdAuditResult, AuditIssue, AuditSummary, AuditRuleId, IssueSeverity } from './testids/audit.js';
+export { audit } from './testids/audit.js';
+export type { NamingViolation } from './testids/naming.js';
+export { checkNaming, isValidTestId } from './testids/naming.js';
+
+export type { WcagLevel, A11ySeverity, A11yCategory, A11ySource, FindingStatus, AccessibilityRule, AccessibilityFinding, FindingInventory, FindingSuppression } from './a11y/schema.js';
+export type { RuleFilterOptions } from './a11y/rules.js';
+export { accessibilityRules, getRuleById, getRulesByLevel, getRulesBySeverity, filterRules, SEVERITY_ORDER, LEVEL_HIERARCHY } from './a11y/rules.js';
+export type { StaticAnalysisOptions } from './a11y/static.js';
+export { runStaticAnalysis } from './a11y/static.js';
+export type { TestabilityFinding, RouteTestabilityResult, TestabilityReport } from './discovery/testability.js';
+export { buildTestabilityReport, summarizeReport } from './discovery/testability.js';
+export type { TagMaturityLevel, TagMaturityLabel, TagMaturityReasonCode, TagMaturityReason, TagMaturityChange, TagMaturityResult, TagMaturityInput, TmlInventoryEntry } from './tml/schema.js';
+export { assessTagMaturity, deriveTestIdSuggestion } from './tml/score.js';
+export { TML_LABELS } from './tml/schema.js';
+export { enrichTmlWithInventory, buildTmlInventoryEntry, buildDuplicateSet, isValidTmlNaming } from './tml/inventory.js';
+export type { RuntimeMap } from './tml/runtime.js';
+export { enrichTmlWithRuntime, loadRuntimeMap } from './tml/runtime.js';
+export type { FindingsParseResult } from './a11y/findings.js';
+export { parseFindings, loadFindings, saveFindings, mergeFindings, emptyInventory } from './a11y/findings.js';
+export type { AuditCounts, AuditResult as A11yAuditResult, AuditOptions, SeverityCounts } from './a11y/audit.js';
+export { runAudit } from './a11y/audit.js';

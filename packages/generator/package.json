@@ -4,8 +4,12 @@
   "description": "Sends component analysis to an LLM (Anthropic/OpenAI/Google/Groq/DeepSeek/Ollama) and receives Playwright test code",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./dist/index.js"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",

@@ -141,3 +141,6 @@ export async function report(
 }
 
 export default report;
+
+export type { TmlReportOptions, TmlFinding, TmlReportSummary } from './tml/report.js';
+export { reportTml } from './tml/report.js';
