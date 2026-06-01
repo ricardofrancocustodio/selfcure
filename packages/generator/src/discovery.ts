@@ -1,7 +1,15 @@
 import { generateText } from 'ai';
 import { getModel, type AIConfig } from './ai.js';
 import type { ProjectMap, RouteCandidate } from '@selfcure/crawler';
-import type { RuntimeDiscoveryResult } from '@selfcure/runner';
+
+// Minimal structural type — avoids build-order dependency on @selfcure/runner
+interface RuntimeDiscoveryResult {
+  routes: Array<{
+    route:               string;
+    status:              string;
+    interactiveElements: Array<{ score: number }>;
+  }>;
+}
 
 // ---------------------------------------------------------------------------
 // Structured types — the LLM speaks only JSON using these schemas
