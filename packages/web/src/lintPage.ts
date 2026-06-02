@@ -87,8 +87,11 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     html, body { margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
 
+    /* ── Site header wrapper ──────────────────────────────────────────────── */
+    #site-header { position: sticky; top: 0; z-index: 200; background: var(--bg); }
+
     /* ── Nav ─────────────────────────────────────────────────────────────── */
-    nav { position: sticky; top: 0; z-index: 200; display: flex; align-items: center; gap: 4px; padding: 0 16px; background: var(--canvas); border-bottom: 1px solid var(--border); height: var(--nav-h); }
+    nav { display: flex; align-items: center; gap: 4px; padding: 0 16px; background: var(--canvas); border-bottom: 1px solid var(--border); height: var(--nav-h); }
     .nav-brand { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; margin-right: 8px; }
     .nav-sep { color: var(--border-hi); margin: 0 2px; }
     .nav-link { font-size: 13px; padding: 4px 10px; border-radius: 6px; color: var(--muted); text-decoration: none; transition: background 100ms, color 100ms; }
@@ -128,9 +131,9 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .page-wrap { display: flex; align-items: flex-start; }
 
     /* ── File sidebar ────────────────────────────────────────────────────── */
-    .file-sidebar { width: 256px; flex-shrink: 0; border-right: 1px solid var(--border); position: sticky; top: var(--nav-h); max-height: calc(100vh - var(--nav-h)); overflow-y: auto; background: var(--bg); }
+    .file-sidebar { width: 256px; flex-shrink: 0; border-right: 1px solid var(--border); position: sticky; top: var(--header-h, var(--nav-h)); max-height: calc(100vh - var(--header-h, var(--nav-h))); overflow-y: auto; background: var(--bg); }
     .sb-head { padding: 10px 12px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
-    .sb-filter { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    .sb-filter { position: sticky; top: 0; z-index: 10; background: var(--bg); padding: 8px 10px; border-bottom: 1px solid var(--border); }
     .sb-filter input { width: 100%; font-size: 12px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); }
     .sb-filter input:focus { outline: none; border-color: var(--accent); }
     .fn-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; text-decoration: none; border-left: 3px solid transparent; transition: background 80ms; }
@@ -236,7 +239,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .state-body  { font-size: 13px; color: var(--muted); max-width: 380px; }
     .state-ok .state-title { color: var(--success); }
     /* PR action bar — primary CTA after lint runs */
-    .pr-action { position: sticky; top: var(--nav-h); z-index: 150; display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--success-bg); border-bottom: 1px solid rgba(26,127,55,0.35); }
+    .pr-action { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: var(--success-bg); border-bottom: 1px solid rgba(26,127,55,0.35); }
     .pr-action-info { flex: 1; min-width: 0; }
     .pr-action-title { font-size: 13px; font-weight: 600; color: var(--text); }
     .pr-action-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -267,6 +270,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 </head>
 <body>
 
+<div id="site-header">
 <nav>
   <a class="nav-brand" href="/">selfcure</a>
   <span class="nav-sep">/</span>
@@ -341,6 +345,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
   <div id="sqRow" class="sq-row"></div>
   <button id="toggleAll" class="btn-ghost">Collapse all</button>
 </div>
+</div><!-- /#site-header -->
 
 <div class="page-wrap">
   <aside id="sidebar" class="file-sidebar" hidden>
@@ -409,6 +414,15 @@ function esc(s) {
   const selected  = new Set();
   const allKeys   = new Set();
   let prInFlight  = null;
+
+  // Keep sidebar top/height in sync with the sticky header height
+  (function trackHeaderHeight() {
+    const hdr = document.getElementById('site-header');
+    if (!hdr) return;
+    const update = () => document.documentElement.style.setProperty('--header-h', hdr.offsetHeight + 'px');
+    new ResizeObserver(update).observe(hdr);
+    update();
+  })();
 
   function issueKey(fp, tid) { return fp + '|' + tid; }
   function cssEsc(s) { return String(s).replace(/(["\\\\])/g, '\\\\$1'); }
