@@ -4,12 +4,6 @@
 > não plano de obra. Sempre que um pacote, comando ou módulo nascer/morrer/mudar de
 > papel, **atualize este arquivo primeiro**.
 >
-> Documentos relacionados (cada um com escopo próprio — não duplicar):
-> - [`CLAUDE.md`](../CLAUDE.md) — instruções para o agente IA + posicionamento estratégico
-> - [`SKILLHUB.md`](../SKILLHUB.md) — mapa de manutenção da documentação (qual doc cobre qual código)
-> - [`docs/architecture.md`](architecture.md) — diagrama detalhado do pipeline + decisões de design
-> - [`docs/SELFCURE_BUILD.md`](SELFCURE_BUILD.md) — **roadmap histórico** (Fases 0–22), não estado atual
->
 > _Última atualização: 2026-06-04._
 
 ---
@@ -72,9 +66,14 @@ Monorepo npm workspaces (`packages/*`). ESM-only, TypeScript, build via `tsup`.
 > o produto principal — o produto é visibilidade e maturidade via crawler + analyzer +
 > módulos de governança.
 
-**Grafo de dependências:** ver [`docs/architecture.md`](architecture.md). _(Nota: a
-`architecture.md` ainda descreve 7 pacotes / pipeline antigo — precisa de revisão para
-incluir `web`, `mcp` e os módulos da §4.)_
+**Grafo de dependências** (headline):
+
+```
+crawler ──► analyzer ──► lint pipeline ──► PR
+                │              │
+                ▼              │
+               mcp ◄───────────┘
+```
 
 ---
 
@@ -106,17 +105,16 @@ selfcure report      # relatório HTML do último run
 
 ## 4. Módulos de governança (entregues 2026-06-01)
 
-Quatro módulos novos. Cada um tem um plano de implementação em `docs/*-plan.md`.
 **Estes módulos são o coração do produto, junto com crawler + analyzer.** O fallback
 BYOK (generator/runner/selfcure/reporter) é mantido por compatibilidade, mas não é o
 foco comercial.
 
-| Módulo | Comando | O que faz | Plano |
-|--------|---------|-----------|-------|
-| **Agentic Discovery** | `discover` | Descobre estrutura do projeto, framework e candidatos a rota via análise estática; simplifica o `init` | [agentic-discovery-init-plan.md](agentic-discovery-init-plan.md) |
-| **Accessibility (WCAG)** | `a11y scan/audit` | Escaneia o source por issues WCAG, mantém inventário de findings, gate de CI. **Feature paga.** | [accessibility-wcag-module-plan.md](accessibility-wcag-module-plan.md) |
-| **Tag Maturity Level (TML)** | `tml report/scan/audit` | Modelo de maturidade por tag que explica testabilidade e mudanças necessárias; report HTML+JSON | [tag-maturity-level-plan.md](tag-maturity-level-plan.md) |
-| **Test ID Inventory** | `testids scan/audit` | Contrato governado de `data-testid`: escaneia uso real e audita contra o contrato | [testid-inventory-plan.md](testid-inventory-plan.md) |
+| Módulo | Comando | O que faz |
+|--------|---------|-----------|
+| **Agentic Discovery** | `discover` | Descobre estrutura do projeto, framework e candidatos a rota via análise estática; simplifica o `init` |
+| **Accessibility (WCAG)** | `a11y scan/audit` | Escaneia o source por issues WCAG, mantém inventário de findings, gate de CI. **Feature paga.** |
+| **Tag Maturity Level (TML)** | `tml report/scan/audit` | Modelo de maturidade por tag que explica testabilidade e mudanças necessárias; report HTML+JSON |
+| **Test ID Inventory** | `testids scan/audit` | Contrato governado de `data-testid`: escaneia uso real e audita contra o contrato |
 
 ---
 
@@ -129,8 +127,7 @@ foco comercial.
 - **`@modelcontextprotocol/sdk`** — servidor MCP.
 - **Vercel AI SDK** — só no fallback legado (provider-agnóstico: Anthropic, OpenAI,
   Google, Groq, DeepSeek, Ollama). Defaults em `PROVIDERS` (`packages/generator/src/ai.ts`).
-- **BYOK** — nunca embarca credenciais. `.env` no projeto-alvo. Tabela provider→env var
-  em [`CLAUDE.md`](../CLAUDE.md).
+- **BYOK** — nunca embarca credenciais. `.env` no projeto-alvo. Providers: `anthropic → ANTHROPIC_API_KEY`, `openai → OPENAI_API_KEY`, `google → GOOGLE_GENERATIVE_AI_API_KEY`, `groq → GROQ_API_KEY`, `deepseek → DEEPSEEK_API_KEY`, `ollama → (sem chave)`.
 - **`gh` CLI** — fluxo de PR (GitHub). `glab` (GitLab) implementado na Fase 13.
 
 ```bash
@@ -159,7 +156,7 @@ npm run lint    # tsc --noEmit
 | Fase 16 — Integração Playwright Test Agents | ⏳ futuro, atrás de feature flag |
 | Publicação npm | parcial — pacotes prontos, não publicados |
 
-Histórico completo das fases e specs: [`docs/SELFCURE_BUILD.md`](SELFCURE_BUILD.md).
+Histórico completo das fases: ver git log.
 
 ---
 
@@ -182,10 +179,9 @@ Histórico completo das fases e specs: [`docs/SELFCURE_BUILD.md`](SELFCURE_BUILD
   Windsurf), sem barreira de instalação.
 - **Landing pages por ferramenta de automação** — SEO por silos (`/cypress`,
   `/playwright`, `/selenium`, `/testcafe`, `/webdriverio`), mesmo produto contado
-  com a linguagem de cada tribo. Ver Fase 22 no SELFCURE_BUILD.md.
-- **Integração SonarQube via Generic Issue Format** — sem plugin Java, sem manter
-  artefato em outra linguagem. Chega no arquiteto e tech lead no painel que ele já usa.
-  Ver Fase 21 no SELFCURE_BUILD.md.
+    com a linguagem de cada tribo.
+  - **Integração SonarQube via Generic Issue Format** — sem plugin Java, sem manter
+    artefato em outra linguagem. Chega no arquiteto e tech lead no painel que ele já usa.
 - **Comunidades-alvo:** Discord do Playwright, Friends of Figma, dev.to, LinkedIn
   por persona (QA, FE, tech lead).
 
