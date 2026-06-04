@@ -644,6 +644,14 @@
           <h3><span data-i18n="features.8.title">SonarQube export</span> <span class="badge" data-i18n="features.badge_sonar">generic format</span></h3>
           <p data-i18n="features.8.desc">Export testability and a11y findings as a SonarQube Generic Issue Import file — no Java plugin, no build pipeline change. Surfaces ambiguity in the dashboard your architect already uses.</p>
         </div>
+        <div class="feature">
+          <h3><span data-i18n="features.9.title">No API key needed</span> <span class="tag tag-free" data-i18n="features.badge_nokey">free</span></h3>
+          <p data-i18n="features.9.desc">On a corporate Copilot or Cursor seat with no API key? selfcure never asks for one. Hit <strong>Copy prompt to IDE</strong> (or <code>selfcure lint --prompt</code>) and paste the ready-made fix prompt into the agent you already run — it has the key, selfcure doesn't need it.</p>
+        </div>
+        <div class="feature">
+          <h3><span data-i18n="features.10.title">Maturity over time</span> <span class="badge" data-i18n="features.badge_unique">unique to selfcure</span></h3>
+          <p data-i18n="features.10.desc">Every scan records a snapshot, so the <code>/evolution</code> screen charts your testability score and governed-tag count over time — proof to a tech lead that the frontend is getting more testable, not just a number for today. Local and free.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -925,6 +933,11 @@ selfcure mcp
   "features.8.title": "SonarQube export",
   "features.badge_sonar": "generic format",
   "features.8.desc": "Export testability and a11y findings as a SonarQube Generic Issue Import file — no Java plugin, no build pipeline change. Surfaces ambiguity in the dashboard your architect already uses.",
+  "features.badge_nokey": "free",
+  "features.9.title": "No API key needed",
+  "features.9.desc": "On a corporate Copilot or Cursor seat with no API key? selfcure never asks for one. Hit <strong>Copy prompt to IDE</strong> (or <code>selfcure lint --prompt</code>) and paste the ready-made fix prompt into the agent you already run — it has the key, selfcure doesn't need it.",
+  "features.10.title": "Maturity over time",
+  "features.10.desc": "Every scan records a snapshot, so the <code>/evolution</code> screen charts your testability score and governed-tag count over time — proof to a tech lead that the frontend is getting more testable, not just a number for today. Local and free.",
   "providers.eyebrow": "Legacy BYOK fallback",
   "providers.h2": "Bring your own LLM key",
   "providers.lede": "If you haven't moved to Playwright Test Agents yet, <code>selfcure run</code> still generates + executes + heals tests using the LLM of your choice. Swap providers in one config line — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.",
@@ -1046,6 +1059,11 @@ selfcure mcp
   "features.8.title": "Export SonarQube",
   "features.badge_sonar": "generic format",
   "features.8.desc": "Exporte achados de testabilidade e a11y como um arquivo SonarQube Generic Issue Import — sem plugin Java, sem mudança no pipeline de build. Aparece no dashboard que o arquiteto já usa.",
+  "features.badge_nokey": "grátis",
+  "features.9.title": "Sem API key",
+  "features.9.desc": "Usa Copilot ou Cursor corporativo e não tem acesso à API key? O selfcure nunca pede. Clique em <strong>Copy prompt to IDE</strong> (ou <code>selfcure lint --prompt</code>) e cole o prompt de correção pronto no agente que você já usa — ele tem a chave, o selfcure não precisa.",
+  "features.10.title": "Maturidade ao longo do tempo",
+  "features.10.desc": "Cada scan grava um snapshot, então a tela <code>/evolution</code> mostra a evolução do seu score de testabilidade e das tags governadas no tempo — prova pro tech lead de que o frontend está ficando mais testável, não só um número de hoje. Local e grátis.",
   "providers.eyebrow": "Fallback BYOK legacy",
   "providers.h2": "Use sua própria chave LLM",
   "providers.lede": "Se você ainda não migrou pros Playwright Test Agents, <code>selfcure run</code> ainda gera + executa + cura testes com o LLM da sua escolha.",
