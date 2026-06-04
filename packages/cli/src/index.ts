@@ -14,6 +14,7 @@ import { registerTmlCommands, tmlBadge } from './tml.js';
 import { registerExportCommand }    from './export.js';
 import { startWebServer } from '@selfcure/web';
 import { crawl } from '@selfcure/crawler';
+import { buildIdePrompt, type IdePromptIssue } from '@selfcure/analyzer';
 import type { AIConfig, ProviderId } from '@selfcure/generator';
 
 // Re-export AI configuration types so selfcure.config.mjs can use them via JSDoc
@@ -340,6 +341,7 @@ program
   .option('--pr',           '[Pro] create a GitHub PR with the applied fixes (requires --fix)')
   .option('--a11y',         '[Pro] also run WCAG accessibility lint alongside testability')
   .option('--wcag <level>', 'WCAG target level when using --a11y: A, AA, or AAA', 'AA')
+  .option('--prompt',       'print a paste-ready prompt for your IDE AI agent (Copilot/Cursor) instead of the report — no API key needed')
   .action(async (opts) => {
     const spinner = ora('Analysing source files…').start();
     try {
@@ -369,6 +371,26 @@ program
       spinner.stop();
 
       const { issues, totalFiles, fixedCount, skippedCount, prUrl, a11yFindings } = summary;
+
+      // ── --prompt: emit a paste-ready IDE prompt and exit (pipeable) ───────
+      if (opts.prompt) {
+        if (issues.length === 0) {
+          console.error(chalk.green(`No issues — nothing to fix (${totalFiles} file(s) scanned).`));
+          return;
+        }
+        const promptIssues: IdePromptIssue[] = issues.map((i) => ({
+          filePath:        i.filePath,
+          componentName:   i.componentName,
+          elementType:     i.element.type,
+          selector:        i.element.selector,
+          kind:            i.kind,
+          ambiguityReason: i.ambiguityReason,
+          suggestedTestId: i.suggestedTestId,
+        }));
+        // Only the prompt goes to stdout, so `selfcure lint --prompt | clip` works.
+        console.log(buildIdePrompt(promptIssues, { baseDir: process.cwd() }));
+        return;
+      }
 
       // ── Report header ────────────────────────────────────────────────────
       console.log('');

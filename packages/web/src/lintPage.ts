@@ -250,6 +250,13 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     .pr-success { display: flex; align-items: center; gap: 10px; background: var(--success-bg); border: 1px solid var(--success); border-radius: 6px; padding: 12px 16px; margin: 16px 16px 0; font-size: 13px; }
     .pr-success a { color: var(--accent); font-weight: 600; }
     .pr-error { font-size: 12px; color: var(--error); background: var(--error-bg); border: 1px solid var(--error); border-radius: 6px; padding: 6px 12px; }
+    /* Copy-prompt-to-IDE output */
+    .prompt-out { margin: 12px 16px 0; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .prompt-out-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--success-bg); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--success); }
+    .prompt-out-head .btn-ghost { margin-left: 0; }
+    .prompt-out-text { width: 100%; box-sizing: border-box; border: none; resize: vertical; padding: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.5; color: var(--text); background: var(--bg); }
+    .prompt-out-text:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .prompt-out-sub { padding: 8px 12px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--border); }
     /* checkboxes — issue / file / global */
     .issue-pick { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; margin-right: 8px; }
     .issue-pick input { cursor: pointer; accent-color: var(--success); width: 14px; height: 14px; }
@@ -324,10 +331,21 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     <div class="pr-action-sub" id="prSubInfo">Pick which fixes go into the PR. We branch, commit, push and open it on GitHub in one shot.</div>
   </div>
   <span id="prInlineError" class="pr-error" role="alert" hidden></span>
+  <button id="copyPromptBtn" class="btn-ghost" title="No API key? Copy a ready-to-paste prompt for your IDE agent (Copilot, Cursor, Claude Code).">
+    &#9112; Copy prompt to IDE
+  </button>
   <button id="openPrBtn" class="btn-open-pr">
     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
     Open pull request
   </button>
+</div>
+<div id="promptOut" class="prompt-out" hidden>
+  <div class="prompt-out-head">
+    <span id="promptOutInfo">Prompt copied to clipboard</span>
+    <button id="promptOutClose" class="btn-ghost" type="button">Close</button>
+  </div>
+  <textarea id="promptOutText" class="prompt-out-text" readonly rows="10" aria-label="IDE prompt"></textarea>
+  <div class="prompt-out-sub">Paste this into your editor's AI agent (Copilot, Cursor, Claude Code). It has the company API key — selfcure doesn't need it.</div>
 </div>
 <div id="prSuccess" hidden></div>
 
@@ -407,6 +425,11 @@ function esc(s) {
   const prSuccess      = $('prSuccess');
   const globalPick     = $('globalPick');
   const globalLabel    = $('globalLabel');
+  const copyPromptBtn  = $('copyPromptBtn');
+  const promptOut      = $('promptOut');
+  const promptOutText  = $('promptOutText');
+  const promptOutInfo  = $('promptOutInfo');
+  const promptOutClose = $('promptOutClose');
 
   let allExpanded = true;
   let lastResult  = null;
@@ -896,6 +919,46 @@ function esc(s) {
       prInFlight            = null;
       openPrBtn.textContent = ' Open pull request';
       updateSelInfo();
+    }
+  });
+
+  // Copy-prompt-to-IDE — the no-API-key path. Builds a paste-ready prompt for
+  // the selected issues (or all of them) and copies it to the clipboard.
+  promptOutClose.addEventListener('click', function () { promptOut.hidden = true; });
+
+  copyPromptBtn.addEventListener('click', async function () {
+    if (!lastResult || (lastResult.issues || []).length === 0) return;
+    const orig = copyPromptBtn.innerHTML;
+    copyPromptBtn.disabled  = true;
+    copyPromptBtn.textContent = 'Building…';
+    try {
+      const resp = await fetch('/api/prompt', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          configPath:   cfgInput.value.trim() || 'selfcure.config.mjs',
+          threshold:    Number(thrInput.value) || 65,
+          // empty selection ⇒ all issues
+          selectedKeys: Array.from(selected),
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to build prompt');
+
+      promptOutText.value = data.prompt;
+      let copied = false;
+      try { await navigator.clipboard.writeText(data.prompt); copied = true; } catch (_) { /* clipboard blocked */ }
+      promptOutInfo.textContent = (copied ? '✓ Prompt copied to clipboard' : 'Prompt ready — select all & copy below') +
+        ' · ' + data.count + ' element(s)';
+      promptOut.hidden = false;
+      if (!copied) { promptOutText.focus(); promptOutText.select(); }
+    } catch (err) {
+      promptOutText.value = '';
+      promptOutInfo.textContent = 'Error: ' + String(err.message || err);
+      promptOut.hidden = false;
+    } finally {
+      copyPromptBtn.innerHTML = orig;
+      copyPromptBtn.disabled  = false;
     }
   });
 

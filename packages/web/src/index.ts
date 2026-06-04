@@ -5,7 +5,7 @@ import os from 'node:os';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { analyze, type InteractiveElement } from '@selfcure/analyzer';
+import { analyze, buildIdePrompt, type InteractiveElement, type IdePromptIssue } from '@selfcure/analyzer';
 import { crawl } from '@selfcure/crawler';
 import { PROVIDERS, type ProviderId } from '@selfcure/generator';
 import { generateConfig, type InitOptions, loadSession, clearSession, envKeyIsSet } from './generator.js';
@@ -468,6 +468,47 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
     skippedCount,
     pro: isPro,
   };
+}
+
+// ---------------------------------------------------------------------------
+// IDE prompt flow — for users without an LLM API key (corporate Copilot, etc.)
+//
+// Instead of asking for a key, we hand them a paste-ready prompt that lists the
+// flagged elements and their suggested data-testid. They paste it into the AI
+// agent they already run in their editor. selfcure never touches the key.
+// ---------------------------------------------------------------------------
+
+interface IdePromptRequestBody {
+  configPath?: string;
+  threshold?:  number;
+  /** Optional subset (`filePath|suggestedTestId`) — empty/absent means all issues. */
+  selectedKeys?: string[];
+}
+
+async function runIdePrompt(cwd: string, body: IdePromptRequestBody) {
+  const { issues } = await runLintAnalysis(cwd, {
+    configPath: body.configPath,
+    threshold:  body.threshold,
+    fix:        false,
+  });
+
+  const selected = body.selectedKeys && body.selectedKeys.length > 0
+    ? new Set(body.selectedKeys)
+    : null;
+
+  const promptIssues: IdePromptIssue[] = issues
+    .filter((i) => !selected || selected.has(issueKey(i.filePath, i.suggestedTestId)))
+    .map((i) => ({
+      filePath:        i.filePath,
+      componentName:   i.componentName,
+      elementType:     i.element.type,
+      selector:        i.element.selector,
+      kind:            i.kind,
+      ambiguityReason: i.ambiguityReason,
+      suggestedTestId: i.suggestedTestId,
+    }));
+
+  return { prompt: buildIdePrompt(promptIssues, { baseDir: cwd }), count: promptIssues.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -1333,6 +1374,20 @@ export function startWebServer(
         .catch((err) => {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: String(err) }));
+        });
+      return;
+    }
+
+    if (req.method === 'POST' && pathname === '/api/prompt') {
+      readJsonBody(req)
+        .then((rawBody) => runIdePrompt(cwd, rawBody as IdePromptRequestBody))
+        .then((result) => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(result));
+        })
+        .catch((err) => {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
         });
       return;
     }

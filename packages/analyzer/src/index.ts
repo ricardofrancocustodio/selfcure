@@ -469,3 +469,7 @@ export type { FindingsParseResult } from './a11y/findings.js';
 export { parseFindings, loadFindings, saveFindings, mergeFindings, emptyInventory } from './a11y/findings.js';
 export type { AuditCounts, AuditResult as A11yAuditResult, AuditOptions, SeverityCounts } from './a11y/audit.js';
 export { runAudit } from './a11y/audit.js';
+
+// IDE prompt builder — for users without an LLM API key (paste into Copilot/Cursor).
+export type { IdePromptIssue, IdePromptOptions } from './ide-prompt.js';
+export { buildIdePrompt } from './ide-prompt.js';
