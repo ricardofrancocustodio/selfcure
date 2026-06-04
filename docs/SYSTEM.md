@@ -24,8 +24,8 @@ flag de selectors ambíguos / fracos      →    consomem o data-testid que self
 inventário de data-testid governado           garantiu que existe e é estável
 suite de relatórios (TML, a11y, testids)
 ship do fix como PR (FE é o dono)
-mapa visual por tela com screenshot           ← Fase 23 (planejado)
-gráfico de evolução temporal                  ← Fase 23 (planejado)
+gráfico de evolução temporal (histórico local) ← Fase 23 ✅
+mapa visual por tela com screenshot           ← Fase 23.5 (planejado)
 ```
 
 **Pitch:** "selfcure mostra se sua aplicação está pronta para ser automatizada — e
@@ -56,7 +56,7 @@ Monorepo npm workspaces (`packages/*`). ESM-only, TypeScript, build via `tsup`.
 |--------|-------|--------|-----------|
 | `@selfcure/crawler` | ★ moat | ativo | Crawler estático via `@typescript-eslint/parser` — extrai AST + metadados de cada componente |
 | `@selfcure/analyzer` | ★ moat | ativo | Score de testabilidade 0–100 + **detecção de ambiguidade** (selectors compartilhados entre siblings) |
-| `@selfcure/web` | ★ moat | ativo | UI local: wizard de `init`, página `/lint` (checkboxes + fluxo de PR), `/crawl`, `/integrations` (OAuth SCM) · _`/map` e `/evolution`: Fase 23 (planejado)_ |
+| `@selfcure/web` | ★ moat | ativo | UI local zero-config: dashboard `/` (= `/lint`: PR + Copy prompt to IDE), `/evolution` (histórico local), `/crawl`, `/integrations` (OAuth SCM) · _`/map`: wireframe, Fase 23.5_ |
 | `@selfcure/mcp` | ★ entrada comercial | ativo | Servidor Model Context Protocol (stdio) expondo crawl + analyze + lint a qualquer cliente IA |
 | `@selfcure/screenshot` | ★ Fase 23 | planejado | Camada de captura de screenshot com providers (Playwright/Cypress/Selenium/TestCafe) + fallback próprio (pago) |
 | `@selfcure/cli` | infra | ativo | Entry-point Commander que orquestra todos os comandos |
@@ -103,8 +103,9 @@ selfcure a11y scan|audit     # WCAG: escaneia, mantém inventário, gate de CI
 selfcure tml report|scan|audit   # Tag Maturity Level
 selfcure testids scan|audit  # inventário governado de data-testid
 
-# Snapshot e histórico (Fase 23)
-selfcure snapshot    # captura screenshots e grava ponto no histórico
+# Snapshot e histórico (Fase 23 — ❌ planejado, ainda não existe)
+# selfcure snapshot  # gravaria ponto de histórico fora da web (CI/cron)
+#                    # hoje o histórico é gravado automaticamente pela web a cada scan
 
 # Fallback BYOK legado (somente para quem não migrou ainda)
 selfcure run         # gera testes, roda e auto-cura falhas
@@ -129,24 +130,27 @@ Quatro módulos que compõem o coração do produto, junto com crawler + analyze
 
 ---
 
-## 5. Telas web _(Fase 23 — planejado, não entregue ainda)_
+## 5. Telas web (Fase 23 — em curso)
 
-> As telas abaixo fazem parte do roadmap Fase 23 e **ainda não estão implementadas**.
-> Hoje `selfcure web` abre o wizard de init, `/lint`, `/crawl` e `/integrations`.
+`selfcure web` é zero-config: detecta o framework e roda sem `selfcure init` nem
+perguntas. Estado por tela (ver detalhe em [`onboarding-flow.md`](onboarding-flow.md)):
 
-Três telas planejadas para materializar o conceito de plataforma de maturidade:
+| Tela | Rota | Status | O que faz / falta |
+|------|------|--------|-------------------|
+| **Dashboard** | `/` | ✅ implementada | Página `/lint` evoluída: score geral + por componente, issues por categoria, PR de cura, Copy prompt to IDE, filtros |
+| **Mapa Visual** | `/map` | ⚠️ wireframe | Layout/mockup pronto; screenshot real + sobreposição dependem de `@selfcure/screenshot` (Fase 23.5) |
+| **Evolução Temporal** | `/evolution` | ✅ implementada (local) | Gráfico SVG de maturidade ao longo do tempo, lido de `.selfcure/history.json`; comparação entre branches / modo compartilhado = pago (pendente) |
 
-| Tela | Rota | Audiência | O que mostrará |
-|------|------|-----------|----------------|
-| **Dashboard** | `/` | Todos | Resumo: score geral, top issues, atalhos para as outras telas |
-| **Mapa Visual** | `/map` | QA, FE, tech lead | Screenshot de cada página com elementos destacados por score, código referente, acessibilidade e mudanças sugeridas |
-| **Evolução Temporal** | `/evolution` | Tech lead, arquiteto, gestor | Gráfico de maturidade ao longo do tempo, tags governadas vs nativas, comparação entre componentes |
+**Caminho sem API key:** ✅ botão "Copy prompt to IDE" no `/lint` (`POST /api/prompt`)
+e `selfcure lint --prompt` na CLI — geram prompt pronto p/ o agente do editor.
 
-**Screenshots** (planejado) via `@selfcure/screenshot`:
-- **Free:** usa motor da ferramenta já instalada (Playwright, Cypress, Selenium, TestCafe).
+**Histórico:** ✅ snapshot por scan em `.selfcure/history.json` (score, elementos,
+issues, governados, componentes). Comando `selfcure snapshot` (gravação manual fora
+da web) = ❌ pendente.
+
+**Screenshots** (❌ pendente — `@selfcure/screenshot`, Fase 23.5):
+- **Free:** usaria o motor da ferramenta já instalada (Playwright, Cypress, Selenium, TestCafe, WebdriverIO).
 - **Pago:** Chromium headless on-demand para projetos sem ferramenta de automação.
-
-**Cache planejado:** `.selfcure/cache/screenshots/` · **Histórico planejado:** `.selfcure/history/` via `selfcure snapshot`.
 
 ---
 
@@ -183,7 +187,7 @@ npm run lint    # tsc --noEmit
 | Fase 14 — Dogfood pago (1º PR mergeado fora do qnexytest) | ⏳ pendente |
 | Fase 21 — Integração SonarQube via Generic Issue Format | ✅ código (2026-06-04) — falta só publicar em sonarplugins.com |
 | Fase 22 — Silos de landing page por ferramenta de automação | ✅ código (2026-06-04) — falta só SEO/ranqueamento |
-| **Fase 23 — Onboarding zero-config + 3 telas + screenshot agnóstico** | 🔄 **em curso** — slice "Copy prompt to IDE" (sem API key) entregue 2026-06-04 |
+| **Fase 23 — Onboarding zero-config + 3 telas + screenshot agnóstico** | 🔄 **em curso** — ✅ zero-config, dashboard `/`, `/evolution` (histórico local), histórico `.selfcure/history.json`, Copy prompt to IDE · ⚠️ `/map` wireframe · ❌ `@selfcure/screenshot`, `selfcure snapshot`, histórico pago |
 | Fase 15 — Plugin Figma | ⏳ somente se demanda orgânica aparecer de clientes |
 | Fase 16 — Integração Playwright Test Agents | ⏳ futuro, atrás de feature flag |
 | Publicação npm | parcial — pacotes prontos, não publicados |
