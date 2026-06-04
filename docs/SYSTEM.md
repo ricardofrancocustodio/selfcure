@@ -10,7 +10,7 @@
 
 ## 1. O que o selfcure é
 
-selfcure é a **plataforma de maturidade de testabilidade** para frontends. Mede, mostra
+selfcure é a **plataforma de maturidade de testabilidade do frontend**. Mede, mostra
 e acompanha o quão pronto um frontend está para ser automatizado — independente da
 ferramenta de automação que o time usa (Cypress, Playwright, Selenium, TestCafe,
 WebdriverIO, qualquer uma).
@@ -24,6 +24,8 @@ flag de selectors ambíguos / fracos      →    consomem o data-testid que self
 inventário de data-testid governado           garantiu que existe e é estável
 suite de relatórios (TML, a11y, testids)
 ship do fix como PR (FE é o dono)
+mapa visual por tela com screenshot           ← Fase 23 (planejado)
+gráfico de evolução temporal                  ← Fase 23 (planejado)
 ```
 
 **Pitch:** "selfcure mostra se sua aplicação está pronta para ser automatizada — e
@@ -36,16 +38,17 @@ correção é commodity; **o produto é a medição, o histórico e o argumento 
 
 **Diferencial defensável (moat):** análise estática do source FE + detecção de
 ambiguidade intra-componente + inventário governado de tags + score histórico
-comparável. Nenhum healer reativo enxerga isso, e nenhuma IA generalista de IDE
-mantém esse histórico ao longo do tempo.
+comparável + mapa visual por tela com screenshot. Nenhum healer reativo enxerga
+isso, e nenhuma IA generalista de IDE mantém esse histórico ao longo do tempo.
 
 **Entrada comercial:** `@selfcure/mcp` — servidor MCP gratuito e open-source que qualquer
 cliente IA instala em uma linha. Pro features (auto-fix, abertura de PR, dashboards,
-módulo de acessibilidade, integração SonarQube) ficam por cima.
+módulo de acessibilidade, integração SonarQube, motor próprio de screenshot) ficam
+por cima.
 
 ---
 
-## 2. Pacotes (9)
+## 2. Pacotes (10)
 
 Monorepo npm workspaces (`packages/*`). ESM-only, TypeScript, build via `tsup`.
 
@@ -53,8 +56,9 @@ Monorepo npm workspaces (`packages/*`). ESM-only, TypeScript, build via `tsup`.
 |--------|-------|--------|-----------|
 | `@selfcure/crawler` | ★ moat | ativo | Crawler estático via `@typescript-eslint/parser` — extrai AST + metadados de cada componente |
 | `@selfcure/analyzer` | ★ moat | ativo | Score de testabilidade 0–100 + **detecção de ambiguidade** (selectors compartilhados entre siblings) |
-| `@selfcure/web` | ★ moat | ativo | UI local: wizard de `init`, página `/lint` (checkboxes + fluxo de PR), `/crawl`, `/integrations` (OAuth SCM) |
+| `@selfcure/web` | ★ moat | ativo | UI local: wizard de `init`, página `/lint` (checkboxes + fluxo de PR), `/crawl`, `/integrations` (OAuth SCM) · _`/map` e `/evolution`: Fase 23 (planejado)_ |
 | `@selfcure/mcp` | ★ entrada comercial | ativo | Servidor Model Context Protocol (stdio) expondo crawl + analyze + lint a qualquer cliente IA |
+| `@selfcure/screenshot` | ★ Fase 23 | planejado | Camada de captura de screenshot com providers (Playwright/Cypress/Selenium/TestCafe) + fallback próprio (pago) |
 | `@selfcure/cli` | infra | ativo | Entry-point Commander que orquestra todos os comandos |
 | `@selfcure/generator` | fallback BYOK legado | ativo | Análise do componente → LLM (Vercel AI SDK) → spec Playwright |
 | `@selfcure/runner` | fallback BYOK legado | ativo | Wrapper de `playwright test` — captura status/erro/trace |
@@ -64,9 +68,9 @@ Monorepo npm workspaces (`packages/*`). ESM-only, TypeScript, build via `tsup`.
 > **Nunca delete** `generator` / `runner` / `selfcure` / `reporter` — são o fallback BYOK
 > para quem ainda não migrou para os Playwright Test Agents. Funcionam hoje, mas não são
 > o produto principal — o produto é visibilidade e maturidade via crawler + analyzer +
-> módulos de governança.
+> módulos de governança + telas visuais.
 
-**Grafo de dependências** (headline):
+**Grafo de dependências (headline):**
 
 ```
 crawler ──► analyzer ──► lint pipeline ──► PR
@@ -80,20 +84,27 @@ crawler ──► analyzer ──► lint pipeline ──► PR
 ## 3. Comandos CLI
 
 ```bash
-# Headline — visibilidade e maturidade
-selfcure init        # gera selfcure.config.mjs (auto-detecta framework/rootDir)
+# Headline — UI local
+selfcure web         # abre a UI: wizard de init, /lint, /crawl, /integrations
+                     # zero-config orquestrado (Fase 23 — planejado)
+selfcure stop        # mata o web server numa porta
+
+# Comandos individuais
+selfcure init        # gera selfcure.config.mjs
 selfcure crawl       # crawl do source → metadados de componentes
 selfcure lint        # [Pro] lint de selectors instáveis + patches data-testid + PR
-selfcure mcp         # sobe o servidor MCP em stdio
-selfcure web         # abre a UI (wizard + /lint + /crawl + /integrations)
-selfcure stop        # mata o web server numa porta
+selfcure lint --prompt  # gera prompt pronto p/ agent do IDE (Copilot/Cursor) — sem API key
 selfcure export      # exporta findings p/ ferramenta externa (SonarQube Generic Issue Format)
+selfcure mcp         # sobe o servidor MCP em stdio
 
 # Módulos de governança (ver §4)
 selfcure discover            # descobre estrutura, framework e rotas (estático)
 selfcure a11y scan|audit     # WCAG: escaneia, mantém inventário, gate de CI
 selfcure tml report|scan|audit   # Tag Maturity Level
 selfcure testids scan|audit  # inventário governado de data-testid
+
+# Snapshot e histórico (Fase 23)
+selfcure snapshot    # captura screenshots e grava ponto no histórico
 
 # Fallback BYOK legado (somente para quem não migrou ainda)
 selfcure run         # gera testes, roda e auto-cura falhas
@@ -105,12 +116,12 @@ selfcure report      # relatório HTML do último run
 
 ## 4. Módulos de governança (entregues 2026-06-01)
 
-**Estes módulos são o coração do produto, junto com crawler + analyzer.** O fallback
-BYOK (generator/runner/selfcure/reporter) é mantido por compatibilidade, mas não é o
-foco comercial.
+Quatro módulos que compõem o coração do produto, junto com crawler + analyzer.
+**Estes módulos são o foco comercial.** O fallback BYOK
+(generator/runner/selfcure/reporter) é mantido por compatibilidade.
 
 | Módulo | Comando | O que faz |
-|--------|---------|-----------|
+|--------|---------|----------|
 | **Agentic Discovery** | `discover` | Descobre estrutura do projeto, framework e candidatos a rota via análise estática; simplifica o `init` |
 | **Accessibility (WCAG)** | `a11y scan/audit` | Escaneia o source por issues WCAG, mantém inventário de findings, gate de CI. **Feature paga.** |
 | **Tag Maturity Level (TML)** | `tml report/scan/audit` | Modelo de maturidade por tag que explica testabilidade e mudanças necessárias; report HTML+JSON |
@@ -118,16 +129,36 @@ foco comercial.
 
 ---
 
-## 5. Stack & ambiente
+## 5. Telas web _(Fase 23 — planejado, não entregue ainda)_
+
+> As telas abaixo fazem parte do roadmap Fase 23 e **ainda não estão implementadas**.
+> Hoje `selfcure web` abre o wizard de init, `/lint`, `/crawl` e `/integrations`.
+
+Três telas planejadas para materializar o conceito de plataforma de maturidade:
+
+| Tela | Rota | Audiência | O que mostrará |
+|------|------|-----------|----------------|
+| **Dashboard** | `/` | Todos | Resumo: score geral, top issues, atalhos para as outras telas |
+| **Mapa Visual** | `/map` | QA, FE, tech lead | Screenshot de cada página com elementos destacados por score, código referente, acessibilidade e mudanças sugeridas |
+| **Evolução Temporal** | `/evolution` | Tech lead, arquiteto, gestor | Gráfico de maturidade ao longo do tempo, tags governadas vs nativas, comparação entre componentes |
+
+**Screenshots** (planejado) via `@selfcure/screenshot`:
+- **Free:** usa motor da ferramenta já instalada (Playwright, Cypress, Selenium, TestCafe).
+- **Pago:** Chromium headless on-demand para projetos sem ferramenta de automação.
+
+**Cache planejado:** `.selfcure/cache/screenshots/` · **Histórico planejado:** `.selfcure/history/` via `selfcure snapshot`.
+
+---
+
+## 6. Stack & ambiente
 
 - **Node.js 20+**, TypeScript, ESM-only, build via `tsup`, testes via Vitest.
-- **Playwright 1.60+** — só como runtime de teste no fallback BYOK legado. O produto
-  principal **não depende de Playwright** e funciona com qualquer ferramenta de
-  automação que o cliente já use.
+- **Playwright 1.60+** — opcional. Usado apenas se o cliente já tem instalado, como
+  um dos providers de screenshot. O produto principal **não depende de Playwright**.
 - **`@modelcontextprotocol/sdk`** — servidor MCP.
 - **Vercel AI SDK** — só no fallback legado (provider-agnóstico: Anthropic, OpenAI,
   Google, Groq, DeepSeek, Ollama). Defaults em `PROVIDERS` (`packages/generator/src/ai.ts`).
-- **BYOK** — nunca embarca credenciais. `.env` no projeto-alvo. Providers: `anthropic → ANTHROPIC_API_KEY`, `openai → OPENAI_API_KEY`, `google → GOOGLE_GENERATIVE_AI_API_KEY`, `groq → GROQ_API_KEY`, `deepseek → DEEPSEEK_API_KEY`, `ollama → (sem chave)`.
+- **BYOK** — nunca embarca credenciais. `.env` no projeto-alvo. Providers: `anthropic → ANTHROPIC_API_KEY` · `openai → OPENAI_API_KEY` · `google → GOOGLE_GENERATIVE_AI_API_KEY` · `groq → GROQ_API_KEY` · `deepseek → DEEPSEEK_API_KEY` · `ollama → (sem chave)`.
 - **`gh` CLI** — fluxo de PR (GitHub). `glab` (GitLab) implementado na Fase 13.
 
 ```bash
@@ -139,7 +170,7 @@ npm run lint    # tsc --noEmit
 
 ---
 
-## 6. Status atual
+## 7. Status atual
 
 | Bloco | Estado |
 |-------|--------|
@@ -152,6 +183,7 @@ npm run lint    # tsc --noEmit
 | Fase 14 — Dogfood pago (1º PR mergeado fora do qnexytest) | ⏳ pendente |
 | Fase 21 — Integração SonarQube via Generic Issue Format | ✅ código (2026-06-04) — falta só publicar em sonarplugins.com |
 | Fase 22 — Silos de landing page por ferramenta de automação | ✅ código (2026-06-04) — falta só SEO/ranqueamento |
+| **Fase 23 — Onboarding zero-config + 3 telas + screenshot agnóstico** | 🔄 **em curso** — slice "Copy prompt to IDE" (sem API key) entregue 2026-06-04 |
 | Fase 15 — Plugin Figma | ⏳ somente se demanda orgânica aparecer de clientes |
 | Fase 16 — Integração Playwright Test Agents | ⏳ futuro, atrás de feature flag |
 | Publicação npm | parcial — pacotes prontos, não publicados |
@@ -160,7 +192,7 @@ Histórico completo das fases: ver git log.
 
 ---
 
-## 7. Posicionamento de mercado
+## 8. Posicionamento de mercado
 
 **Público-alvo (na ordem de prioridade comercial):**
 
@@ -187,14 +219,24 @@ Histórico completo das fases: ver git log.
 
 **Modelo de monetização:**
 
-- **Community (grátis):** CLI completa, crawl, analyze, score local, MCP server,
-  BYOM/BYOK.
-- **Team (~USD 199/mês):** dashboard web com histórico, PR comments automáticos,
-  comparação entre branches.
-- **Business (~USD 599/mês):** SSO, multi-repo, alertas Slack/Teams, relatórios
-  executivos, módulo a11y.
-- **Enterprise (~USD 2-5k/mês):** on-premise, custom prompts, SLA, prioridade no
-  roadmap, integração SonarQube com suporte.
+- **Community (grátis):**
+  - CLI completa, crawl, analyze, score local
+  - MCP server, BYOM/BYOK
+  - Copy prompt to IDE (para quem não tem API key)
+  - _Mapa visual, evolução temporal e screenshot agnóstico: planejado para Fase 23_
+- **Team (~USD 199/mês):**
+  - Dashboard web com histórico compartilhado entre membros do time
+  - PR comments automáticos, comparação entre branches
+  - Módulo a11y
+- **Business (~USD 599/mês):**
+  - SSO, multi-repo, alertas Slack/Teams
+  - Relatórios executivos
+  - **Motor próprio de screenshot** (Chromium headless on-demand para projetos
+    que não têm ferramenta de automação instalada)
+- **Enterprise (~USD 2-5k/mês):**
+  - On-premise, custom prompts, SLA
+  - Prioridade no roadmap
+  - Integração SonarQube com suporte
 
 ---
 
