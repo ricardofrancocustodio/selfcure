@@ -126,19 +126,7 @@ cli ──► crawler ──► analyzer ──► generator ──► [LLM prov
          reporter
 ```
 
-LLM provider is configurable: Anthropic, OpenAI, Google Gemini, Groq,
-DeepSeek, or local Ollama. See [`docs/configuration.md`](docs/configuration.md#§4-ai-provider).
-
-## Documentation
-
-| Doc | Description |
-|-----|-------------|
-| [Getting started](docs/getting-started.md) | Install, configure, first run |
-| [Configuration reference](docs/configuration.md) | All `selfcure.config.mjs` options |
-| [Architecture](docs/architecture.md) | Package graph, data flow, design decisions |
-| [Build roadmap](docs/SELFCURE_BUILD.md) | Module-by-module build order + strategic positioning |
-| [Self-healing loop](docs/self-healing.md) | How patch/revert/retry works (legacy fallback path) |
-| [Packages](docs/packages/) | Per-package API reference (incl. [`@selfcure/mcp`](docs/packages/mcp.md)) |
+LLM provider is configurable: Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama.
 
 ## Opening pull requests (Pro)
 
@@ -165,7 +153,7 @@ pro: true,
 lint: { prBaseBranch: 'main' },   // optional — defaults to repo's default branch
 ```
 
-See [docs/configuration.md §9](docs/configuration.md#§9-linter-pro) for the full reference and CI setup.
+See `selfcure.config.mjs` for the full reference and CI setup.
 
 ## Environment
 
