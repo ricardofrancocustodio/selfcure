@@ -1,6 +1,8 @@
 # selfcure
 
-> **The preventive testability layer for frontend codebases.** Playwright Healer cures tests that break. selfcure *evites* that they break — by analyzing the component before it becomes a test, and handing the fix back to the frontend team.
+> **Testability maturity & visibility for frontend teams.** selfcure scores every interactive element in your React, Vue, Angular, or HTML source, flags ambiguous locators and missing stable identifiers, and opens a Pull Request with the fix — before Cypress, Playwright, Selenium, TestCafe, or WebdriverIO ever run.
+
+> Correction is commodity — visibility over time is the product.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Playwright](https://img.shields.io/badge/@playwright%2Ftest-1.60.0-45ba4b)](https://playwright.dev)
@@ -9,16 +11,16 @@
 
 ## Why selfcure exists
 
-The market is saturated with **reactive** test healing tools (Playwright Test Agents, Shiplight, BrowserStack Self-Heal, …). They all wait for a test to fail, then patch.
+Automation tools — Cypress, Playwright, Selenium, TestCafe, WebdriverIO — can only test what the source makes testable. When selectors are ambiguous or identifiers are missing, tests fail silently or bind to the wrong element. The fix belongs to the frontend team, not the QA pipeline.
 
-selfcure does the opposite: it reads your React/Vue/Angular/HTML source **before any test exists**, scores every interactive element on a 0–100 testability scale, and flags two things nobody else catches at source level:
+selfcure reads your React / Vue / Angular / HTML source **before any test runs**, scores every interactive element on a 0–100 testability scale, and flags:
 
-- **Low-score elements** — buttons / inputs / links with no `data-testid`, `id`, `aria-label`, or `name`. The fix belongs to the frontend, not the QA pipeline.
-- **Ambiguous locators** — the best selector for an element also matches one of its siblings. Playwright would resolve to multiple nodes; the test would silently bind to the wrong one.
+- **Low-score elements** — buttons, inputs, links with no `data-testid`, `id`, `aria-label`, or `name`.
+- **Ambiguous locators** — when the best selector for an element also matches a sibling. Any automation runtime would silently bind to the wrong node.
 
-Then it opens a Pull Request with the suggested patches. The frontend team owns the fix.
+Then it opens a Pull Request with the fix and tracks maturity over time — per component, per package, per team.
 
-Dogfooded on a real legacy HTML app (qnexytest): **500 issues across 27 files — 477 of them ambiguous**, the exact failure mode runtime healers can't prevent.
+Dogfooded on a real legacy HTML app: **500 issues across 27 files — 477 of them ambiguous locators**, avg score 43/100. Exported directly to SonarQube.
 
 ## What it does, end-to-end
 
@@ -28,21 +30,20 @@ Dogfooded on a real legacy HTML app (qnexytest): **500 issues across 27 files �
 4. **Opens a Pull Request** — the `/lint` web page lets you pick which fixes to include with checkboxes. One click → branch + commit + push + PR against the base branch you configured (or the repo's default branch, auto-detected via `gh`). Redirects to GitHub.
 5. **Exposes everything via MCP** — `@selfcure/mcp` lets any MCP client (Claude Desktop, Cursor, VS Code, Claude Code, Windsurf) ask selfcure which components are blocking test generation.
 
-## Where Playwright Test Agents fit in
+## What selfcure is not
 
-selfcure does NOT generate or heal tests. That's the job of:
+selfcure does **not** generate or heal tests at runtime — that's the job of your test framework (Cypress, Playwright, Selenium, TestCafe, WebdriverIO) and any AI agent you pair with it.
 
-- **`@playwright/mcp`** + Playwright Test Agents — Planner, Generator, Healer. The official Microsoft pipeline, free, open-source.
-- An MCP client of your choice (Claude Desktop, Cursor, VS Code Copilot, etc.) brings the LLM.
-
-The intended workflow:
+selfcure is the **source-level maturity layer** that runs before those tools:
 
 ```
-selfcure lint  →  apply patches via PR  →  npx playwright init-agents  →  generate + run + heal
-   (prevention)        (frontend owns)         (Microsoft Test Agents take over)
+selfcure lint  →  apply patches via PR  →  run Cypress / Playwright / Selenium / …
+  (maturity score)     (frontend owns)          (stable, unambiguous selectors)
 ```
 
-Selfcure also ships a **legacy BYOK pipeline** (`@selfcure/generator` + `@selfcure/selfcure`) for teams that haven't moved to Playwright Test Agents yet. Same provider matrix: Anthropic, OpenAI, Google, Groq, DeepSeek, Ollama.
+For teams using MCP-capable AI clients (Claude Desktop, Cursor, VS Code, Windsurf), `@selfcure/mcp` publishes crawler + analyzer findings directly to the agent — no extra tooling needed.
+
+selfcure also ships a **legacy BYOK pipeline** (`@selfcure/generator` + `@selfcure/selfcure`) for LLM-powered test generation and healing. Provider matrix: Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, Ollama.
 
 ---
 
@@ -102,7 +103,7 @@ packages/
 └── reporter      (legacy fallback) HTML report + summary.json
 ```
 
-Dependency flow — preventive path (the headline):
+Dependency flow — maturity path (the headline):
 
 ```
                     crawler ──► analyzer ──► lint pipeline ──► PR
