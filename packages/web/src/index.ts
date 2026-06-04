@@ -19,10 +19,7 @@ import {
   isScmProviderId,
 } from './integrations.js';
 import { integrationsPageHtml } from './integrationsPage.js';
-import { initPageHtml } from './initPage.js';
 import { lintPageHtml }  from './lintPage.js';
-import { a11yPageHtml }      from './a11yPage.js';
-import { discoveryPageHtml } from './discoveryPage.js';
 import { tmlPageHtml }       from './tmlPage.js';
 import { mapPageHtml }       from './mapPage.js';
 import { evolutionPageHtml } from './evolutionPage.js';
@@ -940,13 +937,6 @@ export function startWebServer(
       return;
     }
 
-    // Init wizard moved off `/`; still reachable for users that want it.
-    if (req.method === 'GET' && pathname === '/init') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(initPageHtml);
-      return;
-    }
-
     if (req.method === 'GET' && pathname === '/map') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(mapPageHtml);
@@ -968,18 +958,6 @@ export function startWebServer(
     if (req.method === 'GET' && pathname === '/integrations') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(integrationsPageHtml);
-      return;
-    }
-
-    if (req.method === 'GET' && pathname === '/a11y') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(a11yPageHtml);
-      return;
-    }
-
-    if (req.method === 'GET' && pathname === '/discovery') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(discoveryPageHtml);
       return;
     }
 
