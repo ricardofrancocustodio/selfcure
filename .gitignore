@@ -35,3 +35,6 @@ docs/business/
 
 # Local reference docs (not part of the public project)
 docs/public-tree.md
+
+# Local doc backups / archived versions
+docs/old/
