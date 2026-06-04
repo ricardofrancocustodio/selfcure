@@ -464,8 +464,8 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
     <a id="downloadLink" download="selfcure.config.mjs">Download selfcure.config.mjs</a>
   </p>
 
-  <h3>Next step</h3>
-  <p>Run the crawler on a specific component:</p>
+  <h3>Next steps</h3>
+  <p>Lint your frontend for testability issues — no API key needed:</p>
   <pre id="crawlHint"></pre>
 </section>
 
@@ -792,7 +792,7 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
       dl.href = url;
 
       document.getElementById('crawlHint').textContent =
-        'selfcure crawl ' + payload.rootDir;
+        'selfcure lint --prompt   # copy a ready-to-paste prompt for Copilot / Cursor\nselfcure lint           # full lint (flags low-score + ambiguous selectors)\nselfcure lint --fix --pr  # [Pro] apply patches + open PR on GitHub';
 
       document.getElementById('result').hidden = false;
       form.hidden = true;

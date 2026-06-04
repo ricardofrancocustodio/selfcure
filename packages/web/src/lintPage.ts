@@ -331,8 +331,9 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     <div class="pr-action-sub" id="prSubInfo">Pick which fixes go into the PR. We branch, commit, push and open it on GitHub in one shot.</div>
   </div>
   <span id="prInlineError" class="pr-error" role="alert" hidden></span>
-  <button id="copyPromptBtn" class="btn-ghost" title="No API key? Copy a ready-to-paste prompt for your IDE agent (Copilot, Cursor, Claude Code).">
-    &#9112; Copy prompt to IDE
+  <button id="copyPromptBtn" class="btn-ghost" title="No API key? Copy a ready-to-paste prompt for your IDE agent (Copilot, Cursor, Claude Code, Windsurf).">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>
+    Copy prompt to IDE
   </button>
   <button id="openPrBtn" class="btn-open-pr">
     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M1.5 3.25a2.25 2.25 0 1 1 3 2.122v5.256a2.251 2.251 0 1 1-1.5 0V5.372A2.25 2.25 0 0 1 1.5 3.25Zm5.677-.177L9.573.677A.25.25 0 0 1 10 .854V2.5h1A2.5 2.5 0 0 1 13.5 5v5.628a2.251 2.251 0 1 1-1.5 0V5a1 1 0 0 0-1-1h-1v1.646a.25.25 0 0 1-.427.177L7.177 3.427a.25.25 0 0 1 0-.354ZM3.75 2.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 9.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm8.25.75a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Z"/></svg>
@@ -345,7 +346,7 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
     <button id="promptOutClose" class="btn-ghost" type="button">Close</button>
   </div>
   <textarea id="promptOutText" class="prompt-out-text" readonly rows="10" aria-label="IDE prompt"></textarea>
-  <div class="prompt-out-sub">Paste this into your editor's AI agent (Copilot, Cursor, Claude Code). It has the company API key — selfcure doesn't need it.</div>
+  <div class="prompt-out-sub">Paste this into your editor's AI agent (Copilot, Cursor, Claude Code, Windsurf…). The agent uses the company key — selfcure never needs it.</div>
 </div>
 <div id="prSuccess" hidden></div>
 
@@ -740,7 +741,7 @@ function esc(s) {
     if (!lastIsPro) {
       openPrBtn.disabled  = true;
       openPrBtn.title     = 'Open pull request requires Pro. Set pro: true in selfcure.config.mjs or SELFCURE_PRO=1.';
-      prSubInfo.innerHTML = '<strong>Pro feature.</strong> Enable with <code>pro: true</code> in selfcure.config.mjs or <code>SELFCURE_PRO=1</code>.';
+      prSubInfo.innerHTML = '<strong>Pro feature.</strong> Enable with <code>pro: true</code> in selfcure.config.mjs or <code>SELFCURE_PRO=1</code>. &nbsp;&middot;&nbsp; No API key? Use <strong>Copy prompt to IDE</strong> (free, works with Copilot, Cursor, Claude Code).';
     } else {
       openPrBtn.disabled  = false;
       openPrBtn.title     = '';
