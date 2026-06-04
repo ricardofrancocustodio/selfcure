@@ -281,11 +281,10 @@ export const lintPageHtml = /* html */ `<!DOCTYPE html>
 <nav>
   <a class="nav-brand" href="/">selfcure</a>
   <span class="nav-sep">/</span>
-  <a class="nav-link" href="/">init</a>
+  <a class="nav-link active" href="/">dashboard</a>
+  <a class="nav-link" href="/map">map</a>
+  <a class="nav-link" href="/evolution">evolution</a>
   <a class="nav-link" href="/crawl">crawl</a>
-  <a class="nav-link active" href="/lint">lint</a>
-  <a class="nav-link" href="/a11y">a11y</a>
-  <a class="nav-link" href="/discovery">discovery</a>
   <a class="nav-link" href="/tml">TML</a>
   <a class="nav-link" href="/integrations">integrations</a>
 </nav>
@@ -1007,6 +1006,15 @@ function esc(s) {
       window.scrollTo({ top: _top, behavior: 'smooth' });
     }
   };
+
+  /* Auto-run on page load: zero-config UX — selfcure web should already
+     show results without a manual click. The submit handler bails early
+     if the API can't load (e.g. no source files), surfacing a real error. */
+  if (form && typeof form.requestSubmit === 'function') {
+    form.requestSubmit();
+  } else if (form) {
+    form.dispatchEvent(new Event('submit', { cancelable: true }));
+  }
 
 })();
 

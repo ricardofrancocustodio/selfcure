@@ -164,11 +164,10 @@ export const integrationsPageHtml = /* html */ `<!DOCTYPE html>
 <nav>
   <a class="nav-brand" href="/">selfcure</a>
   <span class="nav-sep">/</span>
-  <a class="nav-link" href="/">init</a>
+  <a class="nav-link" href="/">dashboard</a>
+  <a class="nav-link" href="/map">map</a>
+  <a class="nav-link" href="/evolution">evolution</a>
   <a class="nav-link" href="/crawl">crawl</a>
-  <a class="nav-link" href="/lint">lint</a>
-  <a class="nav-link" href="/a11y">a11y</a>
-  <a class="nav-link" href="/discovery">discovery</a>
   <a class="nav-link" href="/tml">TML</a>
   <a class="nav-link active" href="/integrations">integrations</a>
 </nav>

@@ -482,11 +482,12 @@ program
 
 program
   .command('web')
-  .description('Open the selfcure init wizard in the browser')
+  .description('Open the selfcure dashboard in the browser (zero-config: discover, crawl, lint, TML — all from the UI)')
   .option('-p, --port <number>', 'port to listen on', '3333')
+  .option('--no-open', "don't auto-open the browser")
   .action((opts) => {
     const port = Number(opts.port);
-    startWebServer(port, process.cwd());
+    startWebServer(port, process.cwd(), { openBrowser: opts.open !== false });
   });
 
 program

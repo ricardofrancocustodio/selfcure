@@ -2,7 +2,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import { readFile, writeFile, mkdtemp, rm, readdir } from 'node:fs/promises';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
+import { execSync, spawn } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { analyze, buildIdePrompt, type InteractiveElement, type IdePromptIssue } from '@selfcure/analyzer';
@@ -24,6 +24,9 @@ import { lintPageHtml }  from './lintPage.js';
 import { a11yPageHtml }      from './a11yPage.js';
 import { discoveryPageHtml } from './discoveryPage.js';
 import { tmlPageHtml }       from './tmlPage.js';
+import { mapPageHtml }       from './mapPage.js';
+import { evolutionPageHtml } from './evolutionPage.js';
+import { appendHistory, readHistory, type HistorySnapshot } from './history.js';
 import { detectProvider } from './git-providers.js';
 
 // Directories that should never appear in the source-folder picker
@@ -109,8 +112,49 @@ function resolveConfigPath(cwd: string, provided?: string): string {
   return path.resolve(cwd, 'selfcure.config.js');
 }
 
+/**
+ * Detect the most likely framework for a project by inspecting package.json.
+ * Falls back to 'auto' (HTML scanning) when nothing matches.
+ */
+function detectFramework(cwd: string): 'react' | 'vue' | 'angular' | 'auto' {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf-8'));
+    const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+    if (deps['@angular/core']) return 'angular';
+    if (deps['vue']) return 'vue';
+    if (deps['react'] || deps['next']) return 'react';
+  } catch { /* no package.json or unreadable */ }
+  return 'auto';
+}
+
+/**
+ * Build a default in-memory config for zero-config `selfcure web`. Used when
+ * the user hasn't run `selfcure init` yet — sensible defaults so the wizard
+ * isn't strictly required.
+ */
+function buildDefaultConfig(cwd: string): WebCrawlConfig {
+  const framework = detectFramework(cwd);
+  const include =
+    framework === 'react'   ? ['**/*.tsx', '**/*.jsx', '**/*.html']
+    : framework === 'vue'   ? ['**/*.vue', '**/*.html']
+    : framework === 'angular' ? ['**/*.component.ts', '**/*.component.html', '**/*.html']
+    : ['**/*.html', '**/*.tsx', '**/*.jsx', '**/*.vue'];
+  const rootDir = fs.existsSync(path.join(cwd, 'src')) ? './src' : '.';
+  return {
+    rootDir,
+    include,
+    exclude: ['**/node_modules/**', '**/dist/**', '**/build/**', '**/coverage/**'],
+    framework,
+  };
+}
+
 async function loadCrawlConfig(cwd: string, configPath?: string): Promise<WebCrawlConfig> {
   const resolved = resolveConfigPath(cwd, configPath);
+  if (!fs.existsSync(resolved)) {
+    // Zero-config mode: no selfcure.config.{mjs,js} in the project. Auto-detect
+    // and proceed so `selfcure web` works on the first run, before `init`.
+    return buildDefaultConfig(cwd);
+  }
   const { default: config } = await import(`${pathToFileURL(resolved).href}?t=${Date.now()}`);
   return config as WebCrawlConfig;
 }
@@ -460,6 +504,31 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
 
   // Pro is a UI hint — the actual gate lives on /api/pr where it matters.
   const isPro = config.pro === true || process.env['SELFCURE_PRO'] === '1';
+
+  // ── Append a snapshot to .selfcure/history.json (free local history) ───
+  // Skip on --fix so we record the state *before* mutations are committed.
+  if (!body.fix) {
+    let totalElements = 0;
+    let governedElements = 0;
+    let scoreSum = 0;
+    for (const r of results) {
+      for (const el of r.interactiveElements) {
+        totalElements += 1;
+        scoreSum += el.testabilityScore;
+        if (el.selectors?.dataTestId) governedElements += 1;
+      }
+    }
+    const snapshot: HistorySnapshot = {
+      ts: new Date().toISOString(),
+      overallScore: totalElements > 0 ? scoreSum / totalElements : 0,
+      totalElements,
+      totalIssues: issues.length,
+      governedElements,
+      totalComponents: results.length,
+    };
+    // Best-effort: don't fail the lint run if the disk is read-only.
+    try { await appendHistory(cwd, snapshot); } catch { /* ignore */ }
+  }
 
   return {
     issues,
@@ -830,29 +899,69 @@ export { buildConfigContent, generateConfig, FRAMEWORK_EXTENSIONS } from './gene
  * @param port - Port to listen on (default: 3333)
  * @param cwd  - Working directory where config + .env are written (default: process.cwd())
  */
+export interface StartWebServerOptions {
+  /** Open the URL in the system browser as soon as the server is listening. */
+  openBrowser?: boolean;
+}
+
+/**
+ * Best-effort cross-platform `xdg-open` / `start` / `open`. Detached so a
+ * Ctrl+C on the server doesn't kill the browser.
+ */
+function openInBrowser(url: string): void {
+  const platform = process.platform;
+  try {
+    if (platform === 'win32') {
+      // The empty title arg before the URL is required by cmd's `start`.
+      spawn('cmd', ['/c', 'start', '""', url], { detached: true, stdio: 'ignore' }).unref();
+    } else if (platform === 'darwin') {
+      spawn('open', [url], { detached: true, stdio: 'ignore' }).unref();
+    } else {
+      spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
+    }
+  } catch {
+    // Failing to open the browser is non-fatal — we already printed the URL.
+  }
+}
+
 export function startWebServer(
   port = 3333,
   cwd = process.cwd(),
+  options: StartWebServerOptions = {},
 ): http.Server {
   const server = http.createServer((req, res) => {
     const parsed = new URL(req.url ?? '/', `http://127.0.0.1:${port}`);
     const pathname = parsed.pathname;
 
-    if (req.method === 'GET' && pathname === '/') {
+    // Dashboard (was /lint) — primary entry post-onboarding flow rework.
+    if (req.method === 'GET' && (pathname === '/' || pathname === '/lint')) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(lintPageHtml);
+      return;
+    }
+
+    // Init wizard moved off `/`; still reachable for users that want it.
+    if (req.method === 'GET' && pathname === '/init') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(initPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/map') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(mapPageHtml);
+      return;
+    }
+
+    if (req.method === 'GET' && pathname === '/evolution') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(evolutionPageHtml);
       return;
     }
 
     if (req.method === 'GET' && pathname === '/crawl') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(crawlPageHtml);
-      return;
-    }
-
-    if (req.method === 'GET' && pathname === '/lint') {
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(lintPageHtml);
       return;
     }
 
@@ -877,6 +986,20 @@ export function startWebServer(
     if (req.method === 'GET' && pathname === '/tml') {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(tmlPageHtml);
+      return;
+    }
+
+    // History feed for the /evolution screen.
+    if (req.method === 'GET' && pathname === '/api/history') {
+      readHistory(cwd)
+        .then((rows) => {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(rows));
+        })
+        .catch((err) => {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: err instanceof Error ? err.message : String(err) }));
+        });
       return;
     }
 
@@ -1432,8 +1555,13 @@ export function startWebServer(
   });
 
   server.listen(port, '127.0.0.1', () => {
-    console.log(`selfcure web  →  http://localhost:${port}`);
+    const url = `http://localhost:${port}`;
+    console.log(`selfcure web  →  ${url}`);
+    console.log('  dashboard  →  /          (testability score + issues)');
+    console.log('  map        →  /map       (risk view — Phase 23.5)');
+    console.log('  evolution  →  /evolution (maturity over time)');
     console.log('Press Ctrl+C to stop.');
+    if (options.openBrowser) openInBrowser(url);
   });
 
   const shutdown = () => {
