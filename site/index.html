@@ -16,11 +16,6 @@
 
   <link rel="alternate" hreflang="en" href="https://ricardofrancocustodio.github.io/selfcure/">
   <link rel="alternate" hreflang="pt" href="https://ricardofrancocustodio.github.io/selfcure/?lang=pt">
-  <link rel="alternate" hreflang="es" href="https://ricardofrancocustodio.github.io/selfcure/?lang=es">
-  <link rel="alternate" hreflang="fr" href="https://ricardofrancocustodio.github.io/selfcure/?lang=fr">
-  <link rel="alternate" hreflang="de" href="https://ricardofrancocustodio.github.io/selfcure/?lang=de">
-  <link rel="alternate" hreflang="zh" href="https://ricardofrancocustodio.github.io/selfcure/?lang=zh">
-  <link rel="alternate" hreflang="ja" href="https://ricardofrancocustodio.github.io/selfcure/?lang=ja">
   <link rel="alternate" hreflang="x-default" href="https://ricardofrancocustodio.github.io/selfcure/">
 
   <style>
@@ -493,11 +488,6 @@
       <select class="lang-select" aria-label="Language">
         <option value="en">EN</option>
         <option value="pt">PT</option>
-        <option value="es">ES</option>
-        <option value="fr">FR</option>
-        <option value="de">DE</option>
-        <option value="zh">中文</option>
-        <option value="ja">日本語</option>
       </select>
     </nav>
   </div>
@@ -524,7 +514,7 @@
       <p class="lede" data-i18n="hero.lede">
         selfcure shows if your application is ready to be automated — and proves it's improving.
         It reads your React/Vue/Angular/HTML source, scores testability, audits accessibility,
-        and identifies ambiguities that break tools like Cypress and Playwright.
+        and identifies ambiguities that break tools like Cypress, Playwright, and Selenium.
       </p>
 
       <div class="ctas">
@@ -1041,12 +1031,10 @@ selfcure mcp
   "features.4.desc": "Publica os achados de crawl + score + a11y via Model Context Protocol. Qualquer cliente MCP — Claude Desktop, Cursor, VS Code, Windsurf, Claude Code — consegue consultar.",
   "features.5.title": "Acessibilidade WCAG",
   "features.5.desc": "Análise estática para 10+ regras WCAG: labels ausentes, nomes acessíveis, ordem de cabeçalhos e texto alt em imagens. Pronto para CI com thresholds de severidade.",
-  "features.6.title": "Agentic Discovery",
-  "features.6.desc": "Descobre automaticamente a estrutura do projeto, framework e rotas via análise estática. Simplifica a inicialização e provê um mapa instantâneo do seu frontend.",
-  "features.7.title": "Tag Maturity Level (TML)",
-  "features.7.desc": "Um modelo de maturidade para cada tag. Explica por que um elemento é difícil de testar e o que exatamente precisa mudar para atingir padrões profissionais.",
-  "features.8.title": "Test ID Inventory",
-  "features.8.desc": "Governe seu contrato de data-testid. Escaneie o uso real e audite-o contra as convenções de nomenclatura e requisitos de estabilidade do projeto.",
+  "features.6.title": "Maturidade agnóstica",
+  "features.6.desc": "Cypress, Playwright, Selenium, TestCafe, WebdriverIO e agents de teste se beneficiam da mesma coisa: selectors estáveis, tags governadas e um frontend cuja testabilidade é medida no tempo.",
+  "features.7.title": "Pipeline legacy BYOK",
+  "features.7.desc": "Ainda não está nos Playwright Test Agents? <code>selfcure run</code> ainda gera + executa + cura testes usando o provedor LLM da sua escolha. Disponível, mas não é o destaque.",
   "providers.eyebrow": "Fallback BYOK legacy",
   "providers.h2": "Use sua própria chave LLM",
   "providers.lede": "Se você ainda não migrou pros Playwright Test Agents, <code>selfcure run</code> ainda gera + executa + cura testes com o LLM da sua escolha.",
@@ -1069,7 +1057,7 @@ selfcure mcp
   "qs.docs_cta": "Leia o guia completo de início rápido →",
   "status.eyebrow": "Status",
   "status.h2": "Onde a gente está",
-  "status.p1": "selfcure está em <code>v0.1.0</code>. A plataforma de visibilidade — crawl, score, a11y, TML, discovery, inventory, página <code>/lint</code>, PR no GitHub em um clique, servidor MCP — está entregue e sendo dogfooded (<strong>500 issues em 27 arquivos</strong>).",
+  "status.p1": "selfcure está em <code>v0.1.0</code>. A plataforma de maturidade — crawl, score, discovery, TML, inventário de testids, módulo a11y, detecção de ambiguidade, página <code>/lint</code>, PR no GitHub em um clique e servidor MCP — está conectada ponta-a-ponta e sendo dogfooded em um app HTML legado real (<strong>500 issues em 27 arquivos — 477 ambíguos</strong>). Export SonarQube e landings por ferramenta de automação são os próximos.",
   "status.p2": "O melhor lugar pra acompanhar progresso, abrir issues, ou contribuir é o repo no GitHub. Estrelas ajudam; PRs ajudam mais.",
   "status.cta_primary": "Dar estrela no GitHub",
   "status.cta_secondary": "Abrir uma issue",
@@ -1608,7 +1596,7 @@ selfcure mcp
   // dictionary embedded above. Single source of truth: this HTML file.
   // ─────────────────────────────────────────────────────────────────────
   (function() {
-    const LANGS = ['en', 'pt', 'es', 'fr', 'de', 'zh', 'ja'];
+    const LANGS = ['en', 'pt'];
 
     function pickLang() {
       const params = new URLSearchParams(location.search);
