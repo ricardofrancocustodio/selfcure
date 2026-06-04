@@ -11,6 +11,7 @@ import { printA11ySection, registerA11yCommands } from './a11y.js';
 import { registerTestIdsCommands } from './testids.js';
 import { registerDiscoverCommand }  from './discover.js';
 import { registerTmlCommands, tmlBadge } from './tml.js';
+import { registerExportCommand }    from './export.js';
 import { startWebServer } from '@selfcure/web';
 import { crawl } from '@selfcure/crawler';
 import type { AIConfig, ProviderId } from '@selfcure/generator';
@@ -495,5 +496,6 @@ registerDiscoverCommand(program);
 registerTmlCommands(program);
 registerTestIdsCommands(program);
 registerA11yCommands(program);
+registerExportCommand(program);
 
 program.parse();

@@ -47,6 +47,7 @@ packages/<name>/
 | `npx selfcure lint --fix --pr` | [Pro] Auto-patch + open a GitHub PR with the changes |
 | `npx selfcure web` | Open the browser init wizard at http://localhost:3333 |
 | `npx selfcure mcp` | Start the MCP stdio server (equivalent to `npx @selfcure/mcp`) — consumable by Claude Desktop, Cursor, VS Code, Windsurf, Claude Code |
+| `npx selfcure export --format sonarqube` | Export testability + a11y findings as a SonarQube Generic Issue Import file |
 
 ## Documentation maintenance
 Before creating, updating, or deleting any doc or related file, read **`SKILLHUB.md`**.

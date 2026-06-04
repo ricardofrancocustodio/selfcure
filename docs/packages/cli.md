@@ -16,6 +16,7 @@ Commands:
   lint              [Pro] Lint selectors and suggest data-testid patches
   lint --fix        [Pro] Apply data-testid patches to source files
   lint --fix --pr   [Pro] Apply patches and open a GitHub PR
+  export            Export findings to an external tool format (SonarQube)
   web               Start the browser init wizard (default port 3333)
   stop              Kill a web server running on the given port
 
@@ -26,6 +27,18 @@ Options:
   -V, --version         Print version
   -h, --help            Show help
 ```
+
+## `selfcure export`
+
+Exports testability + accessibility findings in an external tool's format.
+Currently supports **SonarQube** (Generic Issue Import Format):
+
+```
+selfcure export --format sonarqube [--out .selfcure/sonar-issues.json] [--a11y] [--inventory <path>]
+```
+
+Full reference — flags, issue→severity mapping, and CI recipe — in
+[docs/integrations/sonarqube.md](../integrations/sonarqube.md).
 
 ## `selfcure lint` (Pro)
 

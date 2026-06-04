@@ -144,3 +144,16 @@ export default report;
 
 export type { TmlReportOptions, TmlFinding, TmlReportSummary } from './tml/report.js';
 export { reportTml } from './tml/report.js';
+
+// SonarQube Generic Issue Import Format exporter
+export type {
+  WcagLevel,
+  SonarIssueKind,
+  SelfcureSonarIssue,
+  SonarSeverity,
+  SonarType,
+  SonarIssue,
+  SonarQubeReport,
+  SonarExportOptions,
+} from './sonarqube.js';
+export { toSonarQubeReport, exportSonarQube } from './sonarqube.js';
