@@ -28,6 +28,8 @@ create / update / delete each one.
 
 | File | Covers |
 |------|--------|
+| `docs/SYSTEM.md` | **Master documentation** — single source of truth for the current system state: packages, CLI commands, governance modules, stack, status. Update this first on any structural change |
+| `docs/SELFCURE_BUILD.md` | Historical build roadmap (Phases 0–16) — retrospective plan, not current state |
 | `docs/getting-started.md` | Prerequisites, install, API key, `selfcure run` walkthrough, CI recipe |
 | `docs/configuration.md` | Every `selfcure.config.mjs` option — types, defaults, examples |
 | `docs/architecture.md` | Full pipeline diagram, per-stage descriptions, package dependency graph, design decisions |
@@ -46,6 +48,12 @@ create / update / delete each one.
 | `docs/packages/reporter.md` | `@selfcure/reporter` — `report()` API, output files, HTML columns |
 | `docs/packages/web.md` | `@selfcure/web` — `startWebServer()` API, HTTP routes, init page, generator |
 | `docs/packages/mcp.md` | `@selfcure/mcp` — Model Context Protocol server exposing crawler/analyzer/lint to AI clients |
+
+### `docs/integrations/` — external-tool integration guides
+
+| File | Covers |
+|------|--------|
+| `docs/integrations/sonarqube.md` | `selfcure export --format sonarqube` — Generic Issue Import Format exporter, issue→type/severity mapping, CLI flags, CI recipe |
 
 ### `docs/implementations/` — incremental implementation notes
 

@@ -1,28 +1,45 @@
 # Selfcure — Build Roadmap
 
-> **Para o agente IA:** Este documento é o plano de construção do Selfcure. As Fases 0–9 originais já foram entregues e o produto pivotou para uma camada preventiva sobre o Playwright. Leia "Reposicionamento" antes de continuar e respeite o que está marcado como "fallback legado" vs o que é "headline".
+> ⚠️ **Este é o roadmap histórico (plano de obra), NÃO o estado atual do sistema.**
+> Para a fonte única de verdade sobre o que o selfcure é hoje — pacotes, comandos,
+> módulos e status — veja a **[documentação-mestre: `docs/SYSTEM.md`](SYSTEM.md)**.
+
+> **Para o agente IA:** Este documento é o plano de construção do Selfcure. As Fases 0–9 originais já foram entregues e o produto pivotou para uma camada de visibilidade e maturidade de testabilidade. Leia "Reposicionamento" antes de continuar e respeite o que está marcado como "fallback legado" vs o que é "headline".
 
 ---
 
-## 🎯 Reposicionamento (2026-05) — leia primeiro
+## 🎯 Reposicionamento (2026-06) — leia primeiro
 
-O mercado de healing pós-falha está **saturado**: Playwright Test Agents (oficial Microsoft — Planner, Generator, Healer), Shiplight, BrowserStack Self-Heal, LambdaTest AutoHeal, ZeroStep, Octomind, etc. Reimplementar healing competindo com a Microsoft é guerra perdida.
+O mercado tem duas commodities resolvidas que o selfcure **não tenta competir**:
 
-**Selfcure pivotou para a camada PREVENTIVA** — o que ninguém mais faz a partir do source FE:
+1. **Healing pós-falha** — Playwright Test Agents (Microsoft, oficial), Shiplight,
+   BrowserStack Self-Heal, LambdaTest AutoHeal, ZeroStep, Octomind. Reimplementar
+   isso é guerra perdida.
+2. **Correção de código por IA** — qualquer dev com Cursor, Claude Code ou Copilot
+   pede "insere data-testid e abre PR" e pronto. É commodity de IDE em 2026.
+
+**Selfcure é a plataforma de VISIBILIDADE E MATURIDADE** — o que ninguém entrega:
 
 ```
-selfcure (preventive)                       Playwright Test Agents (reactive)
-─────────────────────                       ────────────────────────────────
-crawl FE source (AST)                       run app, observe DOM
-score testability per component       →     Planner: explore + Markdown plan
-flag ambiguous / weak selectors             Generator: plan → .spec.ts
-suggest data-testid patches                 Healer: re-run + repair failures
-ship the fix as a PR (FE owns)
+selfcure (medir, mostrar, acompanhar)         IA generalista de IDE (consertar)
+─────────────────────────────────────         ─────────────────────────────────
+crawl do source FE (AST)                      conserta arquivo a arquivo sob demanda
+score histórico por componente            →   não mantém histórico
+inventário governado de testids               não conhece contrato do projeto
+detecção de ambiguidade intra-componente      não vê o todo do sistema
+relatórios pra QA / tech lead / gestor        responde só ao dev no momento
 ```
 
-**Pitch oficial:** "Playwright Healer cures tests that break. Selfcure prevents them from breaking — by analyzing the component before it becomes a test and shipping the fix back to the frontend team."
+**Pitch oficial:** "selfcure mostra se sua aplicação está pronta para ser
+automatizada — e prova que está melhorando. A correção qualquer IA faz; a visibilidade
+ao longo do tempo é o produto."
 
-**Entrada comercial:** `@selfcure/mcp` — servidor Model Context Protocol gratuito que qualquer cliente IA (Claude Desktop, Cursor, VS Code, Claude Code, Windsurf) instala em uma linha. A partir daí o agente do usuário consome `selfcure_lint`, `selfcure_analyze_component`, etc. Pro features (auto-fix, PR opening, Figma plugin) ficam em cima.
+**Agnóstico de ferramenta de automação:** o produto principal não depende de
+Playwright. Funciona com Cypress, Playwright, Selenium, TestCafe, WebdriverIO,
+qualquer ferramenta. O fallback BYOK (Fases 5–8) usa Playwright internamente, mas
+é legado e não é o foco comercial.
+
+**Entrada comercial:** `@selfcure/mcp` — servidor Model Context Protocol gratuito que qualquer cliente IA (Claude Desktop, Cursor, VS Code, Claude Code, Windsurf) instala em uma linha. Pro features (auto-fix, PR opening, dashboards) ficam em cima.
 
 **Validação real (qnexytest dogfood, 2026-05-28):**
 - 82 componentes analisados, score médio 43/100.
@@ -33,16 +50,19 @@ ship the fix as a PR (FE owns)
 
 ## 🎯 Visão do produto
 
-**O que selfcure é hoje:** um *lint de testabilidade + pipeline de PR* para frontends. Lê código React/Vue/Angular/HTML, marca componentes que não estão prontos pra teste, e abre PR com a correção via `gh` CLI.
+**O que selfcure é hoje:** uma *plataforma de maturidade de testabilidade* para frontends. Lê código React/Vue/Angular/HTML, calcula score por componente, mantém inventário governado de data-testids, detecta ambiguidade que healers reativos não veem, e abre PR com correção quando solicitado via `gh` ou `glab` CLI.
 
-**O que selfcure NÃO é (e nunca mais será):** um competidor direto do Playwright Healer Agent. A geração/cura de testes vira commodity gerenciada por Playwright Test Agents quando o cliente migra; nosso `@selfcure/generator` + `@selfcure/selfcure` ficam como **fallback BYOK** para times que ainda não migraram.
+**O que selfcure NÃO é (e nunca mais será):**
+- Competidor direto do Playwright Healer Agent.
+- Ferramenta de correção pontual de código (commodity de IDE).
+- Amarrada a uma ferramenta de automação específica.
 
 **Público-alvo:**
-1. **Frontend devs** que querem aplicações testáveis sem pedir favor pro time de QA.
-2. **Tech leads** que querem score de testabilidade quantificável por componente.
-3. **QA engineers** usando Playwright Test Agents que precisam de um pré-filtro de componentes prontos pra teste.
+1. **Tech leads e arquitetos** — score quantificável para argumentar qualidade.
+2. **QA engineers** — dados concretos pra mostrar que o problema é o componente.
+3. **Frontend devs** — recebem o PR, veem o score subir, ciclo virtuoso.
 
-**Diferencial defensável:** análise estática do source FE + detecção de ambiguidade intra-componente. Nenhum healer reativo enxerga isso.
+**Diferencial defensável:** análise estática do source FE + detecção de ambiguidade intra-componente + inventário governado de tags + score histórico comparável. Nenhum healer reativo enxerga isso, e nenhuma IA generalista de IDE mantém esse histórico ao longo do tempo.
 
 ---
 
@@ -51,10 +71,11 @@ ship the fix as a PR (FE owns)
 ```
 selfcure/
 ├── packages/
-│   ├── cli/           # entry point (commander) — init / crawl / lint / mcp / web / [legacy: run/heal/report]
+│   ├── cli/           # entry point (commander) — init / crawl / lint / mcp / web / discover / a11y / tml / testids / [legacy: run/heal/report]
+│   │   └── src/       #   git-providers.ts (GitHub gh + GitLab glab) · discover.ts · a11y.ts · tml.ts · testids.ts
 │   ├── crawler/       # AST estática via @typescript-eslint/parser           ★ moat
 │   ├── analyzer/      # score 0-100 + detecção de ambiguidade                ★ moat
-│   ├── web/           # /lint page com checkboxes + PR flow                  ★ moat
+│   ├── web/           # /lint + /crawl + /integrations (OAuth) + PR flow     ★ moat
 │   ├── mcp/           # Model Context Protocol stdio server                  ★ entrada comercial
 │   │
 │   ├── generator/     # (fallback BYOK) source → LLM → Playwright spec
@@ -62,6 +83,8 @@ selfcure/
 │   ├── selfcure/      # (fallback BYOK) heal loop
 │   └── reporter/      # (fallback BYOK) HTML report
 ├── docs/
+│   ├── SYSTEM.md      # ★ documentação-mestre (estado atual do sistema)
+│   └── *-plan.md      # planos dos módulos de governança (discovery/a11y/tml/testids)
 ├── selfcure.config.mjs # template
 └── package.json
 ```
@@ -69,356 +92,110 @@ selfcure/
 **Stack:**
 - Node.js 20+
 - TypeScript
-- Playwright 1.60+ (apenas como runtime de teste — não como agent)
+- Playwright 1.60+ (apenas como runtime de teste no fallback legado — produto principal é agnóstico)
 - `@modelcontextprotocol/sdk` (servidor MCP)
 - Vercel AI SDK (apenas no fallback legado)
 - Commander (CLI)
-- Vitest (testes internos — ainda sem cobertura, dogfood é o teste atual)
+- Vitest (testes internos)
 
 **Dependências externas críticas:**
-- `gh` CLI — usado pelo PR flow. Selfcure delega autenticação; nunca armazenamos token.
-- `glab` CLI — análogo ao gh para GitLab (suporte previsto na próxima onda).
+- `gh` CLI — usado pelo PR flow no GitHub. Selfcure delega autenticação; nunca armazenamos token.
+- `glab` CLI — análogo ao gh para GitLab (implementado na Fase 13).
 
 ---
 
 ## 📋 Ordem de implementação
 
-### Fases 0–9 (CONCLUÍDAS — pipeline BYOK original)
+### Fases 0–9 (CONCLUÍDAS — pipeline BYOK original, rebaixado a fallback legado)
 - Fase 0 — Setup do monorepo ✅
 - Fase 1 — CLI esqueleto + `selfcure init` ✅
 - Fase 2 — Crawler estático ✅
-- Fase 3 — ~Crawler dinâmico + Codegen~ (despriorizado após reposicionamento — Playwright Test Agents cobre isso)
+- Fase 3 — ~Crawler dinâmico + Codegen~ (despriorizado após reposicionamento)
 - Fase 4 — Analyzer + score de testabilidade ✅
-- Fase 5 — Generator (BYOK Playwright) ✅ — agora classificado como fallback legado
-- Fase 6 — Runner ✅ — agora classificado como fallback legado
-- Fase 7 — Selfcure heal loop ✅ — agora classificado como fallback legado
+- Fase 5 — Generator (BYOK Playwright) ✅ — fallback legado
+- Fase 6 — Runner ✅ — fallback legado
+- Fase 7 — Selfcure heal loop ✅ — fallback legado
 - Fase 8 — Reporter HTML ✅
 - Fase 9 — Publicação npm (parcial — pacotes prontos, ainda não publicados)
 
-### Fases 10+ (PÓS-REPOSICIONAMENTO — em curso)
+### Fases 10+ (PÓS-REPOSICIONAMENTO)
 
 - **Fase 10 — Ambiguidade ✅** (2026-05) — analyzer detecta selectors compartilhados entre siblings na mesma component; penalidade ×0.4 no score; replace mode no patcher.
-- **Fase 11 — Lint web + PR flow ✅** (2026-05) — `/lint` page com checkboxes por issue, botão "Open pull request" único, branch + push + `gh pr create` em um clique, redirect pra GitHub. Base branch via `lint.prBaseBranch` ou auto-detect via `gh repo view`.
-- **Fase 12 — MCP server ✅** (2026-05-28) — `@selfcure/mcp` stdio server com 4 tools (lint/list/analyze/suggest), 3 resources (config/lint-summary/reports-placeholder), 2 prompts (prepare/handoff). Licença MIT. Smoke test em qnexytest passou.
-- **Fase 13 — Provider abstraction (em curso)** — refatorar PR flow atrás de uma interface `GitProvider`. Implementações: GitHub via `gh` (já existe, vai ser movida); GitLab via `glab`. Auto-detecção via `git remote get-url origin`. Linguagem dinâmica "pull/merge request" na UI.
-- **Fase 14 — Dogfood pago** — primeiro repo real (não-qnexytest) abrindo um PR mergeado via selfcure. Critério: 1 FE dev fora do ricardo aplicando um patch que selfcure abriu.
-- **Fase 15 — Figma plugin** — plugin que roda lint conceitual sobre o design antes de virar código. Mover trabalho de testabilidade pra esquerda do pipeline. Spike de prazo: começa quando Fases 13+14 estiverem fechadas.
-- **Fase 16 — Integração profunda com Playwright Test Agents** — consumir `@playwright/mcp` server pra healing dinâmico atrás de feature flag. Spike só quando alguém pedir.
+- **Fase 11 — Lint web + PR flow ✅** (2026-05) — `/lint` page com checkboxes por issue, botão "Open pull request" único, branch + push + `gh pr create` em um clique, redirect pra GitHub.
+- **Fase 12 — MCP server ✅** (2026-05-28) — `@selfcure/mcp` stdio server com 4 tools (lint/list/analyze/suggest), 3 resources, 2 prompts. Licença MIT. Smoke test em qnexytest passou.
+- **Fase 13 — Provider abstraction ✅** (2026-06) — PR flow atrás da interface `GitProvider`. Implementações: GitHub via `gh` e GitLab via `glab`. Auto-detecção via URL do remote.
+- **Fase 17 — Agentic Discovery ✅** (2026-06-01) — `selfcure discover`. Plano: `docs/agentic-discovery-init-plan.md`.
+- **Fase 18 — Accessibility WCAG ✅** (2026-06-01) — `selfcure a11y scan|audit`. **Feature paga.** Plano: `docs/accessibility-wcag-module-plan.md`.
+- **Fase 19 — Tag Maturity Level (TML) ✅** (2026-06-01) — `selfcure tml report|scan|audit`. Plano: `docs/tag-maturity-level-plan.md`.
+- **Fase 20 — Test ID Inventory ✅** (2026-06-01) — `selfcure testids scan|audit`. Plano: `docs/testid-inventory-plan.md`.
+- **Fase 14 — Dogfood pago** (pendente) — primeiro repo real (não-qnexytest) abrindo um PR mergeado via selfcure.
+- **Fase 21 — Integração SonarQube via Generic Issue Format ✅ (código)** (2026-06-04) — exporter `@selfcure/reporter` (`sonarqube.ts`), comando `selfcure export --format sonarqube`, doc `docs/integrations/sonarqube.md`, testes Vitest. Pendente apenas o item externo: publicar entrada em sonarplugins.com.
+- **Fase 22 — Silos de landing page por ferramenta de automação ✅ (código)** (2026-06-04) — 5 landings (`site/{cypress,playwright,selenium,testcafe,webdriverio}/index.html`) + `site/silo.css` + interlink no `site/index.html`. Cada uma com meta tags, schema.org (SoftwareApplication + FAQPage) e exemplos na ferramenta da audiência. Pendente apenas o resultado externo: SEO/ranqueamento e conteúdo de blog.
+- **Fase 15 — Figma plugin** (somente se demanda orgânica aparecer de clientes — ver justificativa abaixo).
+- **Fase 16 — Integração profunda com Playwright Test Agents** (futuro) — consumir `@playwright/mcp` server pra healing dinâmico atrás de feature flag. Spike só quando alguém pedir.
 
 ---
 
-## Fase 0 — Setup do monorepo
+## Fase 21 — Integração SonarQube via Generic Issue Format
 
-**Objetivo:** estrutura base funcionando, lint, build, tipos.
+**Objetivo:** chegar no público enterprise Java (arquitetos e tech leads) que já usa SonarQube, sem precisar manter plugin nativo em Java.
+
+**Motivação estratégica:** o público que mais decide compra em enterprise — arquiteto e tech lead — já tem o SonarQube no painel deles. Aparecer ali com score de testabilidade ao lado de debt técnico e cobertura é argumento de reunião de diretoria, não só de QA. Plugin Java teria custo de manter artefato em outra linguagem; Generic Issue Format resolve sem isso.
 
 **Tarefas:**
-1. Inicializar monorepo com workspaces npm (ou pnpm)
-2. Configurar TypeScript com `tsconfig.base.json`
-3. Configurar ESLint + Prettier
-4. Adicionar Vitest na raiz
-5. Configurar `tsup` para build dos pacotes
-6. Criar README inicial do repo
+1. Exporter no `@selfcure/reporter` que gera arquivo no formato Generic Issue Import Format do SonarQube.
+2. Mapear issues do selfcure para o schema do SonarQube:
+   - `ambiguous` → `BUG` severidade `MAJOR`
+   - `low-score` → `CODE_SMELL` severidade `MAJOR`
+   - `missing-testid` → `CODE_SMELL` severidade `MINOR`
+   - `a11y-violation` → `BUG` severidade conforme nível WCAG
+3. Comando `selfcure export --format sonarqube --out .selfcure/sonar-issues.json`.
+4. Documentação `docs/integrations/sonarqube.md` com exemplo de configuração no `sonar-project.properties`.
+5. Publicar no sonarplugins.com como entrada de documentação (PR no repo do site).
 
 **Definition of Done:**
-- `npm install` na raiz instala todos os workspaces
-- `npm run build` compila todos os pacotes
-- `npm run test` roda Vitest
+- Arquivo gerado é validado pelo SonarQube sem erros.
+- Issues aparecem no painel do SonarQube com link de volta pro arquivo/linha.
+- Documentação testada em SonarQube Server 10+ e SonarQube Cloud.
+- Página em sonarplugins.com aprovada.
 
 ---
 
-## Fase 1 — CLI esqueleto + `selfcure init`
+## Fase 22 — Silos de landing page por ferramenta de automação
 
-**Objetivo:** comando instalável globalmente, com `init` funcional.
+**Objetivo:** chegar em cada tribo de QA na linguagem dela, sem mudar o produto. Mesma análise, posicionamento diferente por ferramenta.
+
+**Motivação estratégica:** o problema que o selfcure resolve existe igual em Cypress, Playwright, Selenium, TestCafe e WebdriverIO. Mas cada comunidade pesquisa no Google com a linguagem dela. Uma landing genérica perde SEO e conversão; landings específicas ganham tráfego qualificado e convertem melhor porque falam a dor exata da tribo.
 
 **Tarefas:**
-1. Criar `packages/cli` com bin apontando para `dist/index.js`
-2. Implementar `selfcure init`:
-   - Perguntas interativas (inquirer ou prompts)
-   - Gera `selfcure.config.mjs` na raiz do projeto alvo
-   - Cria pasta `.selfcure/` para cache e estado
-3. Implementar comandos placeholder:
-   - `selfcure crawl`
-   - `selfcure record`
-   - `selfcure run`
-   - `selfcure report`
-4. Adicionar `--help`, `--version`, `--verbose`
-
-**Estrutura do `selfcure.config.mjs` gerado:**
-```js
-module.exports = {
-  source: './src',
-  framework: 'react',
-  extensions: ['.tsx', '.jsx'],
-  testsOutput: './selfcure-tests',
-   baseUrl: 'http://localhost:5000',
-  criticalFlows: [],
-  selfcure: {
-    maxRetries: 3,
-    strategies: ['data-testid', 'id', 'name', 'aria-label', 'css', 'xpath']
-  }
-};
-```
+1. Estrutura no site `selfcure.dev`:
+   - `/cypress` — "Seus testes Cypress ficam flaky? O problema pode não ser o teste."
+   - `/playwright` — "Locators frágeis no Playwright? Veja o score de testabilidade do seu frontend."
+   - `/selenium` — "Migrando de Selenium? Descubra se seu frontend está pronto antes de reescrever os testes."
+   - `/testcafe` — "Testes TestCafe travando em selectors? Mapeie a maturidade do seu frontend primeiro."
+   - `/webdriverio` — "WebdriverIO + frontend bagunçado? Veja a saúde dos seus selectors."
+2. Cada landing tem exemplos de código na ferramenta da audiência (não em Playwright).
+3. Mesmo CTA: instalação via npx, MCP server, e tier Team.
+4. SEO técnico: meta tags, schema.org, conteúdo de 1500+ palavras por landing.
+5. Conteúdo de blog interlinkado: 2-3 artigos técnicos por silo nos primeiros 60 dias.
 
 **Definition of Done:**
-- `npm link` no `packages/cli` permite usar `selfcure` global
-- `selfcure init` em pasta vazia gera config válido
-- `selfcure --help` lista todos os comandos placeholder
+- 5 landings publicadas.
+- Cada landing ranqueia top 20 no Google para sua keyword principal em 90 dias.
+- Tráfego orgânico medido por landing, conversão medida (instalação npm).
 
 ---
 
-## Fase 2 — Crawler estático
+## Fase 15 — Figma plugin (DESPRIORIZADO)
 
-**Objetivo:** ler fonte React/Vue, extrair elementos interativos, classificar locators.
+**Status:** somente se demanda orgânica aparecer de clientes enterprise pedindo especificamente.
 
-**Tarefas:**
-1. Implementar leitor de AST (usar `@typescript-eslint/parser` para TSX, `@vue/compiler-sfc` para Vue)
-2. Identificar elementos interativos:
-   - `input`, `select`, `textarea`, `button`, `a`
-   - Elementos com `role=button|dialog|combobox|menuitem|tab|...`
-   - Componentes customizados (heurística: começa com maiúscula)
-3. Extrair atributos relevantes: `id`, `data-testid`, `name`, `aria-label`, `class`, `type`
-4. Detectar renderização condicional (`&&`, ternários, `v-if`)
-5. Output: JSON estruturado em `.selfcure/static-map.json`
+**Justificativa do desprioritizar:** o agente IA já consegue raciocinar sobre o repositório inteiro renderizando telas reais, então o momento de intervenção mais valioso é no código, não no design. O PR automático com data-testid no código já atinge o FE no ambiente dele sem precisar do Figma. Manter plugin Figma tem custo de lidar com a API deles que muda, criar UX de plugin de qualidade, e atingir público que pode não adotar. Não justifica como v2 ou v3.
 
-**Formato do output:**
-```json
-{
-  "files": [
-    {
-      "path": "src/pages/Checkout.tsx",
-      "components": [
-        {
-          "name": "PaymentModal",
-          "isConditional": true,
-          "elements": [
-            {
-              "type": "select",
-              "line": 42,
-              "attributes": {
-                "data-testid": null,
-                "id": null,
-                "name": "card-brand",
-                "class": "css-x7k2m"
-              },
-              "locatorCandidates": ["name=card-brand", ".css-x7k2m"],
-              "reliability": "low"
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Comando:**
-```bash
-selfcure crawl --static ./src/pages/Checkout.tsx
-selfcure crawl --static ./src/pages/
-```
-
-**Definition of Done:**
-- Detecta corretamente elementos em arquivos `.tsx` e `.vue`
-- Identifica ausência de `data-testid`
-- Diferencia elementos sempre renderizados vs condicionais
-- Output válido em `.selfcure/static-map.json`
-- Tem testes Vitest cobrindo 5+ casos (componente simples, com modal, com select customizado, com condicional, com componente externo)
-
----
-
-## Fase 3 — Crawler dinâmico + integração com Codegen
-
-**Objetivo:** capturar DOM em runtime através de receitas de navegação gravadas pelo Codegen.
-
-**Tarefas:**
-1. Implementar `selfcure record`:
-   - Inicia o Playwright Codegen
-   - Captura o script gerado
-   - Salva como "flow" no `selfcure.config.mjs`
-2. Implementar execução de flow:
-   - Lê o flow do config
-   - Executa via Playwright (launch browser, navegar, interagir)
-   - Em cada parada, captura DOM completo
-3. Extrair elementos do DOM capturado (mesma lógica de classificação do estático)
-4. Output: `.selfcure/dynamic-map.json`
-
-**Comando:**
-```bash
-selfcure record --name "checkout-payment-modal"
-selfcure crawl --dynamic --flow "checkout-payment-modal"
-```
-
-**Definition of Done:**
-- `selfcure record` abre o Codegen e salva o flow no config
-- `selfcure crawl --dynamic` executa o flow e captura DOM
-- DOM capturado é classificado igual ao estático
-- Funciona com modais, drawers, steps de wizard
-
----
-
-## Fase 4 — Analyzer + score de testabilidade
-
-**Objetivo:** cruzar mapas estático e dinâmico, gerar score e relatório de problemas.
-
-**Tarefas:**
-1. Carregar `static-map.json` + `dynamic-map.json`
-2. Detectar discrepâncias:
-   - Elementos no fonte que não aparecem no DOM
-   - Elementos no DOM que não aparecem no fonte (HTML gerado por libs)
-   - `data-testid` no fonte que some no DOM
-3. Calcular score de testabilidade por componente/página (0-100)
-4. Classificar problemas:
-   - 🔴 Crítico: elemento sem nenhum identificador estável
-   - 🟡 Atenção: elemento com locator frágil
-   - 🟢 OK: elemento com `data-testid` ou `id` estável
-5. Gerar output `.selfcure/analysis.json`
-
-**Comando:**
-```bash
-selfcure analyze
-selfcure analyze --threshold 70   # falha se score < 70
-```
-
-**Definition of Done:**
-- Score calculado corretamente para casos de teste
-- Cruzamento estático/dinâmico funciona
-- Output em JSON + texto colorido no terminal
-- Suporta `--threshold` para usar em CI
-
----
-
-## Fase 5 — Generator (testes Playwright)
-
-**Objetivo:** gerar arquivos `.spec.ts` Playwright baseado nos mapas + flow.
-
-**Tarefas:**
-1. Carregar análise da Fase 4
-2. Usar Claude API para gerar testes:
-   - Prompt inclui mapa de elementos + flow do Codegen
-   - Pede output em formato Playwright Test
-   - Usa estratégia de locator mais confiável disponível
-3. Escrever arquivos em `./selfcure-tests/`
-4. Suportar regeneração incremental (não regerar testes já existentes a menos que `--force`)
-
-**Comando:**
-```bash
-selfcure generate --flow "checkout-payment-modal"
-selfcure generate --all
-```
-
-**Definition of Done:**
-- Testes gerados rodam sem erro de sintaxe
-- Usam `data-testid` quando disponível, fallback hierárquico quando não
-- Cada teste tem comentário no topo: "Generated by Selfcure — review locator strategy"
-
----
-
-## Fase 6 — Runner
-
-**Objetivo:** executar os testes gerados e capturar resultados estruturados.
-
-**Tarefas:**
-1. Executar `playwright test` programaticamente
-2. Capturar para cada teste:
-   - Status (pass/fail)
-   - Erro específico (locator não encontrado, timeout, asserção, etc)
-   - Screenshot
-   - Trace
-3. Classificar tipo de falha:
-   - Locator (elemento não encontrado)
-   - Timing (timeout esperando elemento)
-   - Assertion (lógica do teste)
-   - Setup (erro antes de chegar no teste)
-4. Output: `.selfcure/run-results.json`
-
-**Comando:**
-```bash
-selfcure run
-selfcure run --flow "checkout-payment-modal"
-```
-
-**Definition of Done:**
-- Executa todos os testes em `./selfcure-tests/`
-- Classifica corretamente os tipos de falha
-- Salva trace + screenshot por teste falho
-
----
-
-## Fase 7 — Selfcure (loop de autocura)
-
-**Objetivo:** o coração do produto — corrigir testes que falharam por motivos curáveis.
-
-**Tarefas:**
-1. Ler resultados da Fase 6
-2. Para cada falha tipo "locator":
-   - Re-ler mapa dinâmico atual
-   - Pedir ao Claude para sugerir locator alternativo
-   - Reescrever o step no teste
-   - Re-executar
-3. Para falha tipo "timing":
-   - Adicionar wait estratégico
-   - Re-executar
-4. Para falha tipo "assertion" ou "setup":
-   - **Não tenta curar** — marca como "needs human review"
-5. Limite de 3 tentativas por teste
-6. Se esgotar tentativas e ainda for locator: marca como "componente sem identificador estável — devolver ao FE"
-
-**Comando:**
-```bash
-selfcure heal
-selfcure heal --max-retries 5
-```
-
-**Definition of Done:**
-- Corrige automaticamente locators trocados (ex: `#btn-1` → `[data-testid="submit"]`)
-- Não tenta curar lógica de teste
-- Para no limite de retries
-- Distingue "teste ruim" de "componente ruim" no output
-
----
-
-## Fase 8 — Reporter HTML
-
-**Objetivo:** relatório final visual com evidências.
-
-**Tarefas:**
-1. Gerar HTML estático em `.selfcure/report/`
-2. Conteúdo:
-   - Score geral de testabilidade
-   - Lista de páginas/componentes com scores
-   - Testes executados (pass/fail/healed)
-   - Para cada falha: screenshot, trace, motivo, sugestão
-   - Seção "Componentes que precisam de intervenção FE" (destaque)
-3. Servir local com `selfcure report --serve`
-
-**Comando:**
-```bash
-selfcure report
-selfcure report --serve --port 4000
-```
-
-**Definition of Done:**
-- HTML responsivo, sem dependências externas
-- Mostra evidências visuais (screenshots inline)
-- Tem CTA claro: "X componentes precisam de data-testid"
-
----
-
-## Fase 9 — Publicação npm
-
-**Objetivo:** disponibilizar como `npm install -g selfcure`.
-
-**Tarefas:**
-1. Verificar nome `selfcure` disponível no npm
-2. Configurar `package.json` da CLI com bin, files, keywords
-3. Build limpo (`npm run build`)
-4. Publicar com `npm publish --access public`
-5. Atualizar README com badge npm + instruções de instalação
-
-**Definition of Done:**
-- `npm install -g selfcure` funciona em máquina limpa
-- `selfcure --version` retorna versão correta
-- README do GitHub com exemplo end-to-end
+Reabrir essa fase apenas se:
+- Cliente enterprise pagar explicitamente pelo plugin.
+- Demanda repetida de design systems aparecer no funil de vendas.
+- Estratégia de produto pivotar para "shift-left total" no design.
 
 ---
 
@@ -428,21 +205,25 @@ selfcure report --serve --port 4000
 2. **Teste cada módulo isoladamente** com Vitest antes de avançar.
 3. **Commits pequenos e frequentes.** Um commit por tarefa concluída.
 4. **Use exemplos reais.** Crie `examples/legacy-app/` — app legada em React sem `data-testid` — para validar cada fase.
-5. **Não invente abstrações prematuras.** Cada módulo expõe uma função pura: `crawl(config) → map.json`. Sem classes desnecessárias.
-6. **Logs estruturados.** Use `pino` ou similar — facilita debug e captura no CI.
-7. **Mensagens de erro úteis.** "Element not found" é ruim. "Element with name=card-brand not found in PaymentModal — try recording flow again" é bom.
+5. **Não invente abstrações prematuras.** Cada módulo expõe uma função pura: `crawl(config) → map.json`.
+6. **Logs estruturados.** Use `pino` ou similar.
+7. **Mensagens de erro úteis.** "Element with name=card-brand not found in PaymentModal — try recording flow again" em vez de "Element not found".
 8. **Quando travado, documente a dúvida** em `docs/decisions/` (ADR pattern) antes de prosseguir.
+9. **Nunca trate o fallback BYOK como produto principal.** O produto é visibilidade e maturidade via crawler + analyzer + módulos de governança.
+10. **Nunca acople o produto principal ao Playwright.** Agnóstico de ferramenta de automação é decisão arquitetural inegociável.
 
 ---
 
-## 📦 Próximo passo concreto
+## 📦 Próximos passos concretos
 
-Começar pela **Fase 0**: criar estrutura de monorepo e validar build.
+Em ordem de prioridade:
 
-Depois, **Fase 1**: CLI com `init` funcionando.
-
-Só então **Fase 2**: o Crawler de verdade.
+1. **Fase 14 — Dogfood pago** (1º PR mergeado fora do qnexytest).
+2. **Fase 21 — Integração SonarQube** (chega no público enterprise Java).
+3. **Fase 22 — Landing pages por silo** (SEO e conversão por tribo).
+4. **Publicação npm definitiva** (Fase 9 finalizada).
+5. **Fase 16 — Integração Playwright Test Agents** (quando alguém pedir).
 
 ---
 
-**Mantra do projeto:** *Selfcure cures tests, not components. When the component is broken, it tells you.*
+**Mantra do projeto:** _selfcure mede a maturidade de testabilidade do seu frontend e prova que está melhorando. A correção é commodity — a visibilidade ao longo do tempo é o produto._

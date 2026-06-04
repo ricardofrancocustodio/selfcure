@@ -2,6 +2,10 @@
 
 ## Strategic positioning (read first)
 
+> **Master documentation:** the single source of truth for the current system state
+> (packages, CLI commands, governance modules, status) is [`docs/SYSTEM.md`](docs/SYSTEM.md).
+> Keep it current on any structural change.
+
 selfcure is the **preventive testability layer** for frontend codebases. It is not a competitor to Playwright Test Agents (Planner / Generator / Healer) — it is the step that runs *before* them.
 
 Mental model:
