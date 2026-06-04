@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fragile Playwright locators? Score your frontend's testability — selfcure</title>
+  <meta name="description" content="Fragile Playwright locators come from a frontend with no stable hooks. selfcure scores your frontend's testability, detects ambiguous locators that resolve to multiple nodes, and ships data-testid fixes as a PR — the preventive step before Playwright Test Agents.">
+  <link rel="canonical" href="https://ricardofrancocustodio.github.io/selfcure/playwright/">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta property="og:title" content="Fragile Playwright locators? See your frontend's testability score.">
+  <meta property="og:description" content="selfcure measures whether your frontend is ready for automation and ships the data-testid fixes — the preventive layer that feeds Playwright Test Agents.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../silo.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "selfcure",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Node.js 20+",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Frontend testability maturity platform. Scores components, detects ambiguous locators, and ships data-testid fixes as a PR. The preventive layer that feeds Playwright Test Agents."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "Why are my Playwright locators fragile?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Fragile locators usually mean the frontend exposes no stable hook, so the locator targets a CSS class or DOM position that a refactor breaks. selfcure scores selector stability at the source and flags locators that resolve to more than one node." } },
+          { "@type": "Question", "name": "Does selfcure compete with Playwright Test Agents?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. selfcure is the preventive layer that runs before Playwright Test Agents (Planner, Generator, Healer). It hands them a frontend with stable, unique selectors so generation and healing have something reliable to target." } },
+          { "@type": "Question", "name": "Is selfcure free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes — the CLI, testability score, and MCP server are free and open source. Auto-fix, PR opening, and history dashboards are paid tiers." } }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <a href="../" class="brand"><span class="brand-glyph" aria-hidden="true">›</span><span>selfcure</span></a>
+    <nav class="top-nav">
+      <a href="#problem">Why fragile</a>
+      <a href="#fix">The fix</a>
+      <a href="#start">Quick start</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <span class="pill">selfcure × Playwright</span>
+      <h1>Fragile locators in Playwright?<br>See your frontend's testability score.</h1>
+      <p class="lede">
+        A <code>page.locator()</code> that worked yesterday throws <em>strict mode violation: resolved to 2 elements</em> today.
+        The locator isn't the problem — the frontend never gave it a unique hook. selfcure reads your source,
+        scores every component for testability, flags locators that resolve to multiple nodes, and ships
+        <code>data-testid</code> fixes as a Pull Request — the preventive step <strong>before</strong> Playwright Test Agents take over.
+      </p>
+      <div class="ctas">
+        <a class="button button-primary" href="#start">Score my frontend →</a>
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure">View on GitHub</a>
+      </div>
+      <nav class="toolnav" aria-label="Automation tools">
+        <a href="../cypress/">Cypress</a>
+        <a href="../playwright/" aria-current="page">Playwright</a>
+        <a href="../selenium/">Selenium</a>
+        <a href="../testcafe/">TestCafe</a>
+        <a href="../webdriverio/">WebdriverIO</a>
+      </nav>
+    </div>
+  </section>
+
+  <section id="problem">
+    <div class="container">
+      <p class="eyebrow">Root cause</p>
+      <h2>"Resolved to 2 elements" is a frontend bug</h2>
+      <p class="small">Playwright's strict mode is doing you a favor: it refuses to guess which of two matching nodes you meant. But the fix belongs in the frontend, not in a longer CSS chain. Two patterns cause most of it:</p>
+      <div class="cols">
+        <div class="card">
+          <h3>Weak locator</h3>
+          <p class="small">No <code>data-testid</code>, <code>id</code>, or role-accessible name, so you fall back to <code>.locator('.btn')</code> — which breaks the moment styling changes.</p>
+        </div>
+        <div class="card">
+          <h3>Ambiguous locator</h3>
+          <p class="small">The best available locator matches a sibling too. Strict mode throws; non-strict silently picks the wrong node. selfcure catches this at the AST level.</p>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">selfcure scores and fixes both before your suite — or the Planner / Generator / Healer agents — ever run.</p>
+    </div>
+  </section>
+
+  <section id="fix">
+    <div class="container">
+      <p class="eyebrow">Before / after</p>
+      <h2>From CSS guesswork to <code>getByTestId</code></h2>
+      <div class="cols">
+        <div class="card bad">
+          <h3><span class="lbl-bad">✗ Fragile</span> — strict mode violation waiting to happen</h3>
+<pre><code><span class="token-comment">// resolves to 2 elements → throws, or picks wrong node</span>
+<span class="token-keyword">await</span> page.locator(<span class="token-bad">'.btn-primary'</span>).click()
+<span class="token-keyword">await</span> page.locator(<span class="token-bad">'form input'</span>).first().fill(<span class="token-string">'a@b.com'</span>)</code></pre>
+        </div>
+        <div class="card good">
+          <h3><span class="lbl-good">✓ Stable</span> — unique by contract</h3>
+<pre><code><span class="token-comment">// data-testid added by a selfcure PR</span>
+<span class="token-keyword">await</span> page.getByTestId(<span class="token-string">'submit'</span>).click()
+<span class="token-keyword">await</span> page.getByTestId(<span class="token-string">'email'</span>).fill(<span class="token-string">'a@b.com'</span>)</code></pre>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">selfcure suggests the values, dedupes collisions across siblings, and opens the PR on GitHub or GitLab.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">How it works</p>
+      <h2>Preventive, then hand off to the agents</h2>
+      <div class="steps">
+        <div class="step"><div class="num">01 · SCORE</div><h3>Measure testability</h3><p class="small">Every interactive element gets a 0–100 score on selector stability — a quantifiable metric for your tech lead.</p></div>
+        <div class="step"><div class="num">02 · FLAG</div><h3>Find ambiguity</h3><p class="small">selfcure detects locators that resolve to multiple nodes and proposes a unique <code>data-testid</code> — the strict-mode failure, prevented.</p></div>
+        <div class="step"><div class="num">03 · HAND OFF</div><h3>Feed the agents</h3><p class="small">Once the PR lands, <code>@playwright/mcp</code> + Planner / Generator / Healer work against a frontend they can actually target.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="container">
+      <p class="eyebrow">Get going</p>
+      <h2>Score your frontend in two commands</h2>
+<pre><code><span class="token-comment"># From your app's root — Node 20+</span>
+npx @selfcure/cli init
+npx @selfcure/cli lint   <span class="token-comment"># score + flag ambiguous locators</span></code></pre>
+      <h3 style="margin-top:24px">Connect it to your AI editor (free)</h3>
+<pre><code><span class="token-comment"># MCP server — Cursor, Claude Code, VS Code, Windsurf</span>
+npx @selfcure/cli mcp</code></pre>
+      <p class="small">Your AI assistant can query the testability score and ambiguity findings directly — the same data the Playwright agents benefit from.</p>
+      <h3 style="margin-top:24px">Team tier</h3>
+      <p class="small">The <strong>Team</strong> plan adds a web dashboard with score history, automatic PR comments, and branch comparison — proof that your frontend is getting more testable over time.</p>
+      <p style="margin-top:20px">
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">Read the getting-started guide →</a>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">FAQ</p>
+      <h2>Playwright + selfcure</h2>
+      <div class="faq">
+        <details><summary>Does selfcure replace Playwright Test Agents?</summary><p>No — it feeds them. selfcure is preventive: it makes the frontend testable so the Planner, Generator, and Healer have stable selectors to work with.</p></details>
+        <details><summary>Does it work with my React / Vue / Angular app?</summary><p>Yes. The crawler parses <code>.tsx</code>, <code>.jsx</code>, <code>.vue</code>, Angular <code>.component.ts</code>, and plain <code>.html</code>.</p></details>
+        <details><summary>How is this different from a longer CSS locator?</summary><p>A longer locator is more brittle, not less. selfcure adds a stable <code>data-testid</code> at the source so the locator stays short and unique.</p></details>
+        <details><summary>Is it really free?</summary><p>The CLI, testability score, and MCP server are free and open source. Auto-fix, PR opening, and the history dashboard are paid.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <span>selfcure — testability maturity for frontends. <a href="../">Home</a></span>
+    <span class="toolnav">
+      <a href="../cypress/">Cypress</a><a href="../selenium/">Selenium</a><a href="../testcafe/">TestCafe</a><a href="../webdriverio/">WebdriverIO</a>
+    </span>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migrating from Selenium? Check if your frontend is ready first — selfcure</title>
+  <meta name="description" content="Before you rewrite a Selenium suite, find out if your frontend is even testable. selfcure scores testability, finds XPath/CSS selectors that match multiple elements, and ships data-testid fixes as a PR — so the rewrite targets stable hooks.">
+  <link rel="canonical" href="https://ricardofrancocustodio.github.io/selfcure/selenium/">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta property="og:title" content="Migrating from Selenium? Check if your frontend is ready first.">
+  <meta property="og:description" content="selfcure measures whether your frontend is ready to be automated and ships the data-testid fixes — before you invest in rewriting tests.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../silo.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "selfcure",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Node.js 20+",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Frontend testability maturity platform. Scores components, detects ambiguous selectors, and ships data-testid fixes as a PR. Tool-agnostic — works with Selenium, Cypress, Playwright, TestCafe, WebdriverIO."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "Should I fix my frontend before migrating off Selenium?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes. If your Selenium suite leans on brittle XPath because the frontend has no stable hooks, the same brittleness carries into any new framework. selfcure scores testability and adds data-testid first, so the migration targets stable selectors." } },
+          { "@type": "Question", "name": "Does selfcure work with Java or Python Selenium?",
+            "acceptedAnswer": { "@type": "Answer", "text": "selfcure analyzes the frontend source, not your test language. Whether your Selenium tests are in Java, Python, C#, or JavaScript, they all benefit from stable data-testid selectors in the app." } },
+          { "@type": "Question", "name": "Is selfcure free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes — the CLI, testability score, and MCP server are free and open source. Auto-fix, PR opening, and history dashboards are paid tiers." } }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <a href="../" class="brand"><span class="brand-glyph" aria-hidden="true">›</span><span>selfcure</span></a>
+    <nav class="top-nav">
+      <a href="#problem">Before you migrate</a>
+      <a href="#fix">The fix</a>
+      <a href="#start">Quick start</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <span class="pill">selfcure × Selenium</span>
+      <h1>Migrating off Selenium?<br>Check if your frontend is ready first.</h1>
+      <p class="lede">
+        Your Selenium suite is a wall of <code>By.xpath("//div[3]/button[2]")</code> because the frontend never gave it
+        anything better. Rewriting it in a modern framework <em>without fixing the frontend</em> just moves the brittleness.
+        selfcure scores your frontend's testability, finds the XPath/CSS selectors that match multiple elements,
+        and ships <code>data-testid</code> fixes as a Pull Request — so the migration targets stable hooks from day one.
+      </p>
+      <div class="ctas">
+        <a class="button button-primary" href="#start">Assess my frontend →</a>
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure">View on GitHub</a>
+      </div>
+      <nav class="toolnav" aria-label="Automation tools">
+        <a href="../cypress/">Cypress</a>
+        <a href="../playwright/">Playwright</a>
+        <a href="../selenium/" aria-current="page">Selenium</a>
+        <a href="../testcafe/">TestCafe</a>
+        <a href="../webdriverio/">WebdriverIO</a>
+      </nav>
+    </div>
+  </section>
+
+  <section id="problem">
+    <div class="container">
+      <p class="eyebrow">Root cause</p>
+      <h2>Brittle XPath is a frontend symptom</h2>
+      <p class="small">Positional XPath is the last resort when there's no stable hook. The migration question isn't "which framework" — it's "is the frontend even testable yet?" Two patterns decide that:</p>
+      <div class="cols">
+        <div class="card">
+          <h3>No stable hook</h3>
+          <p class="small">No <code>data-testid</code>, <code>id</code>, or accessible name forces positional XPath like <code>//button[2]</code> that any markup change breaks.</p>
+        </div>
+        <div class="card">
+          <h3>Ambiguous selector</h3>
+          <p class="small">A selector matches several elements; the test relies on document order. selfcure detects this at the source and proposes a unique <code>data-testid</code>.</p>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">Fix the frontend once, and every framework — old or new — benefits.</p>
+    </div>
+  </section>
+
+  <section id="fix">
+    <div class="container">
+      <p class="eyebrow">Before / after</p>
+      <h2>From positional XPath to a stable contract</h2>
+      <div class="cols">
+        <div class="card bad">
+          <h3><span class="lbl-bad">✗ Brittle</span> — positional, order-dependent</h3>
+<pre><code><span class="token-comment">// Java — breaks when the DOM shifts</span>
+driver.findElement(By.xpath(<span class="token-bad">"//form/div[2]/button[2]"</span>)).click();
+driver.findElement(By.cssSelector(<span class="token-bad">".btn-primary"</span>)).click();</code></pre>
+        </div>
+        <div class="card good">
+          <h3><span class="lbl-good">✓ Stable</span> — unique by contract</h3>
+<pre><code><span class="token-comment">// data-testid added by a selfcure PR</span>
+driver.findElement(By.cssSelector(<span class="token-string">"[data-testid='submit']"</span>)).click();
+driver.findElement(By.cssSelector(<span class="token-string">"[data-testid='email']"</span>)).sendKeys(<span class="token-string">"a@b.com"</span>);</code></pre>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">Same idea in Python, C#, or JavaScript Selenium — selfcure fixes the app, not your test language.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">How it works</p>
+      <h2>De-risk the migration in three steps</h2>
+      <div class="steps">
+        <div class="step"><div class="num">01 · SCORE</div><h3>Measure readiness</h3><p class="small">A 0–100 testability score per component tells you, with a number, whether the frontend is ready to be automated.</p></div>
+        <div class="step"><div class="num">02 · FLAG</div><h3>Find the brittle spots</h3><p class="small">selfcure lists every element forcing positional XPath and every ambiguous selector — your migration backlog, prioritized.</p></div>
+        <div class="step"><div class="num">03 · SHIP</div><h3>Open a PR</h3><p class="small">Pick the fixes, click once. selfcure adds the <code>data-testid</code>s and opens a Pull Request on GitHub or GitLab.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="container">
+      <p class="eyebrow">Get going</p>
+      <h2>Assess your frontend in two commands</h2>
+<pre><code><span class="token-comment"># From your app's root — Node 20+</span>
+npx @selfcure/cli init
+npx @selfcure/cli lint   <span class="token-comment"># score + flag ambiguous selectors</span></code></pre>
+      <h3 style="margin-top:24px">Connect it to your AI editor (free)</h3>
+<pre><code><span class="token-comment"># MCP server — Cursor, Claude Code, VS Code, Windsurf</span>
+npx @selfcure/cli mcp</code></pre>
+      <p class="small">Your AI assistant can query the testability score and ambiguity findings while you plan the migration.</p>
+      <h3 style="margin-top:24px">Team tier</h3>
+      <p class="small">The <strong>Team</strong> plan adds a web dashboard with score history, automatic PR comments, and branch comparison — so you can show the frontend getting more testable as the migration progresses.</p>
+      <p style="margin-top:20px">
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">Read the getting-started guide →</a>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">FAQ</p>
+      <h2>Selenium + selfcure</h2>
+      <div class="faq">
+        <details><summary>Does selfcure run my Selenium tests?</summary><p>No. It analyzes the frontend source so your Selenium suite — in any language — has stable <code>data-testid</code> selectors to target.</p></details>
+        <details><summary>Should I run this before or after migrating?</summary><p>Before. Fixing the frontend first means the migration targets stable hooks instead of porting brittle XPath into a new framework.</p></details>
+        <details><summary>Which frontends are supported?</summary><p>React (<code>.tsx</code>/<code>.jsx</code>), Vue (<code>.vue</code>), Angular (<code>.component.ts</code>), and plain <code>.html</code>.</p></details>
+        <details><summary>Is it really free?</summary><p>The CLI, testability score, and MCP server are free and open source. Auto-fix, PR opening, and the history dashboard are paid.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <span>selfcure — testability maturity for frontends. <a href="../">Home</a></span>
+    <span class="toolnav">
+      <a href="../cypress/">Cypress</a><a href="../playwright/">Playwright</a><a href="../testcafe/">TestCafe</a><a href="../webdriverio/">WebdriverIO</a>
+    </span>
+  </div>
+</footer>
+</body>
+</html>

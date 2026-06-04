@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cypress tests flaky? The problem may not be the test — selfcure</title>
+  <meta name="description" content="Flaky Cypress tests usually fail because the frontend has no stable selectors — not because the test is wrong. selfcure scores your frontend's testability, finds ambiguous selectors, and ships data-testid fixes as a Pull Request.">
+  <link rel="canonical" href="https://ricardofrancocustodio.github.io/selfcure/cypress/">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta property="og:title" content="Cypress tests flaky? The problem may not be the test.">
+  <meta property="og:description" content="selfcure measures whether your frontend is ready to be automated — and proves it's improving. Works with Cypress out of the box.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../silo.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "selfcure",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Node.js 20+",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Frontend testability maturity platform. Scores components, detects ambiguous selectors, and ships data-testid fixes as a PR. Tool-agnostic — works with Cypress, Playwright, Selenium, TestCafe, WebdriverIO."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "Why are my Cypress tests flaky?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Most Cypress flakiness comes from selectors that bind to CSS classes or DOM position. When the markup shifts or a sibling matches the same selector, the test grabs the wrong element. selfcure detects these unstable and ambiguous selectors in your frontend source before they break a test." } },
+          { "@type": "Question", "name": "Does selfcure replace Cypress?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. selfcure does not run or generate Cypress tests. It analyzes your frontend source so your existing Cypress suite has stable data-testid selectors to target." } },
+          { "@type": "Question", "name": "Is selfcure free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes — the CLI, crawl, testability score, and MCP server are free and open source. Auto-fix, PR opening, and historical dashboards are paid tiers." } }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <a href="../" class="brand"><span class="brand-glyph" aria-hidden="true">›</span><span>selfcure</span></a>
+    <nav class="top-nav">
+      <a href="#problem">Why flaky</a>
+      <a href="#fix">The fix</a>
+      <a href="#start">Quick start</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <span class="pill">selfcure × Cypress</span>
+      <h1>Your Cypress tests are flaky?<br>The problem may not be the test.</h1>
+      <p class="lede">
+        You rewrite the same <code>cy.get()</code> for the third time this sprint. The test isn't wrong —
+        your frontend has no stable hook to grab. selfcure reads your React/Vue/Angular source,
+        scores every component for testability, finds the selectors that resolve to the wrong element,
+        and ships <code>data-testid</code> fixes as a Pull Request — so your Cypress suite stops guessing.
+      </p>
+      <div class="ctas">
+        <a class="button button-primary" href="#start">Scan my frontend →</a>
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure">View on GitHub</a>
+      </div>
+      <nav class="toolnav" aria-label="Automation tools">
+        <a href="../cypress/" aria-current="page">Cypress</a>
+        <a href="../playwright/">Playwright</a>
+        <a href="../selenium/">Selenium</a>
+        <a href="../testcafe/">TestCafe</a>
+        <a href="../webdriverio/">WebdriverIO</a>
+      </nav>
+    </div>
+  </section>
+
+  <section id="problem">
+    <div class="container">
+      <p class="eyebrow">Root cause</p>
+      <h2>Flaky isn't random — it's an unstable frontend</h2>
+      <p class="small">When a Cypress test fails intermittently, the instinct is to add a <code>cy.wait()</code> or a retry. But the recurring cause is the <strong>selector</strong>: it points at a class, an index, or text that the frontend never promised to keep stable. Two failure modes dominate:</p>
+      <div class="cols">
+        <div class="card">
+          <h3>Weak selector</h3>
+          <p class="small">The element has no <code>data-testid</code>, <code>id</code>, or <code>aria-label</code>. Cypress falls back to a CSS class like <code>.btn-primary</code> that a refactor or a styling change silently breaks.</p>
+        </div>
+        <div class="card">
+          <h3>Ambiguous selector</h3>
+          <p class="small">The selector matches <em>more than one</em> element in the same view. Cypress grabs the first match — until the order changes and it grabs the wrong one. This is the failure runtime retries can't fix.</p>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">selfcure catches both at the source — before they reach your Cypress run.</p>
+    </div>
+  </section>
+
+  <section id="fix">
+    <div class="container">
+      <p class="eyebrow">Before / after</p>
+      <h2>From brittle CSS to a stable contract</h2>
+      <div class="cols">
+        <div class="card bad">
+          <h3><span class="lbl-bad">✗ Brittle</span> — selector breaks on refactor</h3>
+<pre><code><span class="token-comment">// matches .btn-primary AND the sibling toolbar button</span>
+cy.get(<span class="token-bad">'.btn-primary'</span>).click()
+cy.get(<span class="token-bad">'form > div:nth-child(2) input'</span>).type(<span class="token-string">'a@b.com'</span>)</code></pre>
+        </div>
+        <div class="card good">
+          <h3><span class="lbl-good">✓ Stable</span> — selector survives change</h3>
+<pre><code><span class="token-comment">// data-testid added by a selfcure PR</span>
+cy.get(<span class="token-string">'[data-testid="submit"]'</span>).click()
+cy.get(<span class="token-string">'[data-testid="email"]'</span>).type(<span class="token-string">'a@b.com'</span>)</code></pre>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">selfcure proposes the <code>data-testid</code> values, dedupes collisions across siblings, and opens the PR. Your frontend team reviews and merges — the fix lives where the bug is.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">How it works</p>
+      <h2>Three steps, zero new test framework</h2>
+      <div class="steps">
+        <div class="step"><div class="num">01 · SCORE</div><h3>Measure testability</h3><p class="small">Static AST analysis scores every interactive element 0–100 on selector stability. You get a number you can show a tech lead.</p></div>
+        <div class="step"><div class="num">02 · FLAG</div><h3>Find ambiguity</h3><p class="small">selfcure detects selectors that resolve to multiple siblings — the exact thing that makes Cypress flaky — and suggests a unique <code>data-testid</code>.</p></div>
+        <div class="step"><div class="num">03 · SHIP</div><h3>Open a PR</h3><p class="small">Pick the fixes in the web UI, click once. selfcure branches, commits, pushes, and opens a Pull Request on GitHub or GitLab.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="container">
+      <p class="eyebrow">Get going</p>
+      <h2>Scan your frontend in two commands</h2>
+<pre><code><span class="token-comment"># From your app's root — Node 20+</span>
+npx @selfcure/cli init
+npx @selfcure/cli lint   <span class="token-comment"># score + flag ambiguous selectors</span></code></pre>
+      <h3 style="margin-top:24px">Connect it to your AI editor (free)</h3>
+<pre><code><span class="token-comment"># MCP server — Cursor, Claude Code, VS Code, Windsurf</span>
+npx @selfcure/cli mcp</code></pre>
+      <p class="small">Your AI assistant can now query the testability score and the ambiguous-selector findings directly.</p>
+      <h3 style="margin-top:24px">Team tier</h3>
+      <p class="small">The <strong>Team</strong> plan adds a web dashboard with score history, automatic PR comments, and branch-to-branch comparison — so you can prove your frontend is getting more testable over time, not just today.</p>
+      <p style="margin-top:20px">
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">Read the getting-started guide →</a>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">FAQ</p>
+      <h2>Cypress + selfcure</h2>
+      <div class="faq">
+        <details><summary>Does selfcure run or generate my Cypress tests?</summary><p>No. selfcure analyzes your frontend source. Your Cypress suite stays exactly as it is — it just gets stable <code>data-testid</code> selectors to target.</p></details>
+        <details><summary>Will it work with my React / Vue / Angular app?</summary><p>Yes. The crawler parses <code>.tsx</code>, <code>.jsx</code>, <code>.vue</code>, Angular <code>.component.ts</code>, and plain <code>.html</code>.</p></details>
+        <details><summary>How is this different from Cypress retries or <code>cy.wait()</code>?</summary><p>Retries paper over the symptom. selfcure removes the cause — the unstable or ambiguous selector — at the frontend source, so the test doesn't need to retry.</p></details>
+        <details><summary>Is it really free?</summary><p>The CLI, testability score, and MCP server are free and open source. Auto-fix, PR opening, and the history dashboard are paid.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <span>selfcure — testability maturity for frontends. <a href="../">Home</a></span>
+    <span class="toolnav">
+      <a href="../playwright/">Playwright</a><a href="../selenium/">Selenium</a><a href="../testcafe/">TestCafe</a><a href="../webdriverio/">WebdriverIO</a>
+    </span>
+  </div>
+</footer>
+</body>
+</html>

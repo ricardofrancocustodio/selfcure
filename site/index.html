@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>selfcure — the preventive testability layer for frontend codebases</title>
-  <meta name="description" content="selfcure scores your frontend for testability before any test exists, flags ambiguous locators, and ships data-testid fixes as a Pull Request via one-click GitHub OAuth. The preventive layer that feeds Playwright Test Agents.">
+  <title>selfcure — testability maturity for frontend codebases</title>
+  <meta name="description" content="selfcure measures frontend testability maturity, tracks scores over time, governs data-testid inventory, audits WCAG accessibility, and surfaces ambiguity before any automation tool becomes flaky.">
   <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 
-  <meta property="og:title" content="selfcure — preventive testability for frontend codebases">
-  <meta property="og:description" content="Score, lint, and PR-patch your frontend for testability before any Playwright test exists. One-click GitHub OAuth.">
+  <meta property="og:title" content="selfcure — frontend testability maturity">
+  <meta property="og:description" content="Measure, prove, and improve frontend testability across Cypress, Playwright, Selenium, TestCafe, WebdriverIO, and any automation stack.">
   <meta property="og:type" content="website">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -486,7 +486,7 @@
     <nav class="top-nav">
       <a href="#how" data-i18n="nav.how">How it works</a>
       <a href="#integrations" data-i18n="nav.integrations">Integrations</a>
-      <a href="#figma" data-i18n="nav.figma">Figma</a>
+      <a href="#governance" data-i18n="nav.governance">Governance</a>
       <a href="#providers" data-i18n="nav.providers">Providers</a>
       <a href="#quickstart" data-i18n="nav.quickstart">Quick start</a>
       <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
@@ -516,16 +516,15 @@
         └────┬────┘
        ╰────┴────╯</pre>
 
-      <p class="eyebrow" data-i18n="hero.eyebrow">Preventive testability · WCAG Accessibility · Open source</p>
+      <p class="eyebrow" data-i18n="hero.eyebrow">Visibility & Maturity platform · WCAG Accessibility · Open source</p>
       <h1>
-        <span data-i18n="hero.headline_l1">Selfcure cures tests,</span><br>
-        <span data-i18n="hero.headline_l2">not components.</span>
+        <span data-i18n="hero.headline_l1">Visibility and maturity</span><br>
+        <span data-i18n="hero.headline_l2">for frontend testability.</span>
       </h1>
       <p class="lede" data-i18n="hero.lede">
-        Reactive healers wait for a test to break. selfcure reads your React/Vue/Angular/HTML
-        source <em>before any test exists</em>, scores testability, audits WCAG accessibility,
-        flags ambiguous locators, and ships <code>data-testid</code> fixes as a Pull Request — via
-        one-click GitHub OAuth.
+        selfcure shows if your application is ready to be automated — and proves it's improving.
+        It reads your React/Vue/Angular/HTML source, scores testability, audits accessibility,
+        and identifies ambiguities that break tools like Cypress and Playwright.
       </p>
 
       <div class="ctas">
@@ -540,12 +539,13 @@
           <span class="terminal-bot">[•_•]</span>
           <span class="terminal-title">selfcure</span>
         </div>
-<div class="terminal-body"><span class="term-prompt">$</span> selfcure lint --a11y
-<span class="term-comment">crawl    →  27 source files scanned</span>
+<div class="terminal-body"><span class="term-prompt">$</span> selfcure tml report
+<span class="term-comment">discover →  React app · 27 source files · 14 routes</span>
 <span class="term-comment">score    →  avg testability 64/100</span>
+<span class="term-comment">tml      →  31 tags at risk · 8 blocked flows</span>
 <span class="term-comment">ambiguous→  477 locators resolve to siblings</span>
 <span class="term-comment">a11y     →  12 critical WCAG violations</span>
-<span class="term-comment">suggest  →  500 data-testid patches ready</span>
+<span class="term-comment">testids  →  500 governed patches ready</span>
 <span class="term-ok">────────────────────────────────────────
   ✓ open http://localhost:3333/lint
   → pick fixes · one click · PR opened on GitHub</span></div>
@@ -556,9 +556,8 @@
   <div class="mantra">
     <div class="container">
       <blockquote>
-        <span data-i18n="mantra.quote">Selfcure distinguishes a bad test from a bad component.
-        It patches the test when the locator drifts. When the component has no stable
-        identifier or violates WCAG, it tells you — and refuses to paper over a frontend bug.</span>
+        <span data-i18n="mantra.quote">selfcure measures the testability maturity of your frontend and proves it's improving.
+        Correction is commodity — visibility over time is the product.</span>
         <cite data-i18n="mantra.cite">— design principle, since v0.1</cite>
       </blockquote>
     </div>
@@ -568,13 +567,13 @@
     <div class="container">
       <p class="eyebrow" data-i18n="how.eyebrow">Pipeline</p>
       <h2 data-i18n="how.h2">How it works</h2>
-      <p class="small" data-i18n="how.lede">selfcure is the <strong>preventive</strong> half of the test loop. It runs before Playwright Test Agents and hands them a frontend they can actually test and access.</p>
+      <p class="small" data-i18n="how.lede">selfcure is the <strong>visibility</strong> layer of the test loop. It runs before any automation tool and proves your frontend is ready to be tested and accessed.</p>
 
       <div class="pipeline">
         <div class="pipeline-step">
-          <div class="step-num" data-i18n="how.step1.label">01 · CRAWL, SCORE &amp; A11Y</div>
-          <h3 data-i18n="how.step1.title">Score testability and WCAG compliance</h3>
-          <p class="small" data-i18n="how.step1.desc">Static AST analysis across <code>.tsx</code>, <code>.vue</code>, <code>.component.ts</code>, <code>.html</code>. Each element gets a 0–100 testability score and is audited for 10+ WCAG rules: labels, names, and focus order.</p>
+          <div class="step-num" data-i18n="how.step1.label">01 · DISCOVER &amp; SCORE</div>
+          <h3 data-i18n="how.step1.title">Agentic discovery and testability score</h3>
+          <p class="small" data-i18n="how.step1.desc">Automatically discover project structure, framework, and routes. Every component gets a 0–100 score and is audited for WCAG compliance: labels, names, and focus order.</p>
         </div>
         <div class="pipeline-step">
           <div class="step-num" data-i18n="how.step2.label">02 · LINT</div>
@@ -588,7 +587,7 @@
         </div>
       </div>
 
-      <p class="small" style="margin-top:24px" data-i18n="how.handoff">After the PR lands, <code>@playwright/mcp</code> + Playwright Test Agents (Planner / Generator / Healer) take over. selfcure does not compete with them — it feeds them.</p>
+      <p class="small" style="margin-top:24px" data-i18n="how.handoff">After the PR lands, Cypress, Playwright, Selenium, TestCafe, WebdriverIO, or your agentic test stack gets stable frontend hooks. selfcure is not the runner — it is the maturity layer that proves the frontend is ready.</p>
     </div>
   </section>
 
@@ -625,7 +624,7 @@
       <div class="features">
         <div class="feature">
           <h3><span data-i18n="features.1.title">Ambiguity detection</span> <span class="badge" data-i18n="features.badge_unique">unique to selfcure</span></h3>
-          <p data-i18n="features.1.desc">When the best selector for a button also matches one of its siblings, Playwright silently binds to the wrong node. selfcure catches this at the AST level — the failure mode runtime healers can’t prevent.</p>
+          <p data-i18n="features.1.desc">When the best selector for a button also matches one of its siblings, automation silently binds to the wrong node. selfcure catches this at the AST level — the failure mode runtime healers can’t prevent.</p>
         </div>
         <div class="feature">
           <h3 data-i18n="features.2.title">Testability score</h3>
@@ -644,8 +643,8 @@
           <p data-i18n="features.5.desc">Static analysis for 10+ WCAG rules: missing labels, accessible names, heading order, and image alt text. CI-ready with configurable severity gates.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="features.6.title">Feeds Playwright Test Agents</h3>
-          <p data-i18n="features.6.desc">selfcure is the preventive layer. <code>@playwright/mcp</code> + Planner / Generator / Healer is the reactive layer. We don’t compete — we hand them a frontend they can actually test.</p>
+          <h3 data-i18n="features.6.title">Tool-agnostic maturity</h3>
+          <p data-i18n="features.6.desc">Cypress, Playwright, Selenium, TestCafe, WebdriverIO, and AI test agents all benefit from the same thing: stable selectors, governed tags, and a frontend whose testability is measured over time.</p>
         </div>
         <div class="feature">
           <h3><span data-i18n="features.7.title">Legacy BYOK pipeline</span> <span class="tag tag-free" data-i18n="features.badge_fallback">fallback</span></h3>
@@ -655,28 +654,28 @@
     </div>
   </section>
 
-  <section id="figma">
+  <section id="governance">
     <div class="container">
-      <p class="eyebrow" data-i18n="figma.eyebrow">Design input</p>
-      <h2 data-i18n="figma.h2">Figma is where prevention starts</h2>
-      <p class="small" data-i18n="figma.lede">The product direction is not to out-heal Playwright. It is to move testability left: source lint today, design lint next, then Playwright Test Agents receive cleaner flows.</p>
+      <p class="eyebrow" data-i18n="governance.eyebrow">Governance modules</p>
+      <h2 data-i18n="governance.h2">Visibility your team can keep</h2>
+      <p class="small" data-i18n="governance.lede">The product is not a one-off code fix. selfcure maintains the testability argument: what exists, what is ambiguous, what regressed, and what changed after each PR.</p>
 
       <div class="features" style="margin-top:16px">
         <div class="feature">
-          <h3><span data-i18n="figma.1.title">Testability before code</span> <span class="tag tag-free" data-i18n="figma.badge_next">planned</span></h3>
-          <p data-i18n="figma.1.desc">A Figma plugin can flag unnamed controls, duplicate button labels, missing semantic intent, and unstable interaction targets before a developer writes the component.</p>
+          <h3><span data-i18n="governance.1.title">Agentic Discovery</span> <span class="badge" data-i18n="governance.badge_live">live</span></h3>
+          <p data-i18n="governance.1.desc"><code>selfcure discover</code> maps framework, structure, source roots, and candidate routes so init starts from evidence instead of guesses.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="figma.2.title">Shared responsibility</h3>
-          <p data-i18n="figma.2.desc">Designers, frontend developers, and QA get the same language: stable names, unique interactions, and components that are ready for Playwright instead of repaired after failure.</p>
+          <h3 data-i18n="governance.2.title">Tag Maturity Level</h3>
+          <p data-i18n="governance.2.desc"><code>selfcure tml report</code> explains which tags are stable, risky, or blocking automation, with HTML and JSON outputs for teams and CI.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="figma.3.title">Commercial wedge</h3>
-          <p data-i18n="figma.3.desc">The free MCP server gets selfcure into the user's AI workflow. Auto-fix, PR opening, team scorecards, and the Figma plugin become the paid layer.</p>
+          <h3 data-i18n="governance.3.title">Test ID Inventory</h3>
+          <p data-i18n="governance.3.desc"><code>selfcure testids scan</code> turns <code>data-testid</code> into a governed contract instead of scattered strings that drift across the app.</p>
         </div>
         <div class="feature">
-          <h3 data-i18n="figma.4.title">Agent handoff</h3>
-          <p data-i18n="figma.4.desc">selfcure prepares the component and design surface; <code>@playwright/mcp</code> plus Planner, Generator, and Healer handle runtime generation and repair.</p>
+          <h3 data-i18n="governance.4.title">Accessibility gates</h3>
+          <p data-i18n="governance.4.desc"><code>selfcure a11y audit</code> keeps WCAG findings in the same quality conversation as selector maturity, with severity gates for CI.</p>
         </div>
       </div>
     </div>
@@ -768,9 +767,11 @@ selfcure lint       <span class="token-comment"># score + flag ambiguous locator
 
       <p class="small" data-i18n="qs.wizard_note">No client secrets to manage. The selfcure cloud connector handles the OAuth dance; your project only stores the user’s access token locally in <code>.selfcure/integrations.json</code> (auto-gitignored). Disconnect revokes the token remotely.</p>
 
-      <h3 data-i18n="qs.step4">4 · Hand off to Playwright Test Agents</h3>
-<pre><code><span class="token-comment"># Once your PR lands and the FE has stable data-testids:</span>
-npx playwright init-agents@latest
+      <h3 data-i18n="qs.step4">4 · Add governance reports</h3>
+<pre><code>selfcure discover
+selfcure testids scan
+selfcure tml report
+selfcure a11y audit
 </code></pre>
 
       <h3 data-i18n="qs.step5">5 · MCP Server</h3>
@@ -788,15 +789,31 @@ selfcure mcp
     </div>
   </section>
 
+  <section id="tools">
+    <div class="container">
+      <p class="eyebrow">Tool-agnostic</p>
+      <h2>Works with your automation tool</h2>
+      <p class="small">selfcure measures and improves the frontend, not your test framework. Whatever you run, your selectors get stable hooks to target:</p>
+      <div class="row" style="margin-top:16px;gap:10px">
+        <a class="button button-secondary" href="cypress/">Cypress</a>
+        <a class="button button-secondary" href="playwright/">Playwright</a>
+        <a class="button button-secondary" href="selenium/">Selenium</a>
+        <a class="button button-secondary" href="testcafe/">TestCafe</a>
+        <a class="button button-secondary" href="webdriverio/">WebdriverIO</a>
+      </div>
+    </div>
+  </section>
+
   <section>
     <div class="container">
       <p class="eyebrow" data-i18n="status.eyebrow">Status</p>
       <h2 data-i18n="status.h2">Where it stands</h2>
       <p data-i18n="status.p1">
-        selfcure is at <code>v0.1.0</code>. The preventive pipeline — crawl, score, a11y module,
-        ambiguity detection, <code>/lint</code> page, one-click GitHub PR, MCP server — is wired
-        end-to-end and dogfooded on a real legacy HTML app (<strong>500 issues across 27
-        files — 477 of them ambiguous</strong>). GitLab and Bitbucket OAuth are next.
+        selfcure is at <code>v0.1.0</code>. The maturity platform — crawl, score, discovery,
+        TML, testid inventory, a11y module, ambiguity detection, <code>/lint</code> page,
+        one-click GitHub PR, and MCP server — is wired end-to-end and dogfooded on a
+        real legacy HTML app (<strong>500 issues across 27 files — 477 of them ambiguous</strong>).
+        SonarQube export and automation-tool landing silos are next.
       </p>
       <p data-i18n="status.p2">
         Best place to follow progress, file issues, or contribute is the GitHub repo. Stars
@@ -838,34 +855,34 @@ selfcure mcp
 
 <script type="application/json" id="i18n-en">
 {
-  "meta.title": "selfcure — the preventive testability and accessibility layer for frontend codebases",
-  "meta.desc": "selfcure scores your frontend for testability and accessibility before any test exists, flags ambiguous locators, and ships data-testid fixes as a Pull Request via one-click GitHub OAuth. The preventive layer that feeds Playwright Test Agents.",
+  "meta.title": "selfcure — Visibility and maturity platform for frontend testability",
+  "meta.desc": "selfcure measures, shows and tracks how ready your frontend is for automation — regardless of the automation tool you use. Static crawl, testability score, ambiguity detection, and governed data-testid inventory.",
   "nav.how": "How it works",
   "nav.integrations": "Integrations",
-  "nav.figma": "Figma",
+  "nav.governance": "Governance",
   "nav.providers": "Providers",
   "nav.quickstart": "Quick start",
-  "hero.eyebrow": "Preventive testability · WCAG Accessibility · Open source",
-  "hero.headline_l1": "Selfcure cures tests,",
-  "hero.headline_l2": "not components.",
-  "hero.lede": "Reactive healers wait for a test to break. selfcure reads your React/Vue/Angular/HTML source <em>before any test exists</em>, scores testability, audits WCAG accessibility, flags ambiguous locators, and ships <code>data-testid</code> fixes as a Pull Request — via one-click GitHub OAuth.",
+  "hero.eyebrow": "Visibility & Maturity platform · WCAG Accessibility · Open source",
+  "hero.headline_l1": "Visibility and maturity",
+  "hero.headline_l2": "for frontend testability.",
+  "hero.lede": "selfcure shows if your application is ready to be automated — and proves it's improving. It reads your React/Vue/Angular/HTML source, scores testability, audits accessibility, and identifies ambiguities that break tools like Cypress, Playwright, and Selenium.",
   "hero.cta_primary": "View on GitHub →",
   "hero.cta_secondary": "Quick start",
-  "mantra.quote": "Selfcure distinguishes a bad test from a bad component. It patches the test when the locator drifts. When the component has no stable identifier or violates WCAG, it tells you — and refuses to paper over a frontend bug.",
+  "mantra.quote": "selfcure measures the testability maturity of your frontend and proves it's improving. Correction is commodity — visibility over time is the product.",
   "mantra.cite": "— design principle, since v0.1",
   "how.eyebrow": "Pipeline",
   "how.h2": "How it works",
-  "how.lede": "selfcure is the <strong>preventive</strong> half of the test loop. It runs before Playwright Test Agents and hands them a frontend they can actually test and access.",
-  "how.step1.label": "01 · CRAWL, SCORE & A11Y",
-  "how.step1.title": "Score testability and WCAG compliance",
-  "how.step1.desc": "Static AST analysis across <code>.tsx</code>, <code>.vue</code>, <code>.component.ts</code>, <code>.html</code>. Each element gets a 0–100 testability score and is audited for 10+ WCAG rules: labels, names, and focus order.",
+  "how.lede": "selfcure is the <strong>visibility</strong> layer of the test loop. It runs before any automation tool and proves your frontend is ready to be tested and accessed.",
+  "how.step1.label": "01 · DISCOVER & SCORE",
+  "how.step1.title": "Agentic discovery and testability score",
+  "how.step1.desc": "Automatically discover project structure, framework, and routes. Every component gets a 0–100 score and is audited for WCAG compliance: labels, names, and focus order.",
   "how.step2.label": "02 · LINT",
   "how.step2.title": "Flag ambiguity nobody else catches",
   "how.step2.desc": "When the best selector for an element also matches a sibling, runtime tests silently bind to the wrong node. selfcure detects it at source level and suggests a dedup-aware <code>data-testid</code> patch.",
   "how.step3.label": "03 · PR",
   "how.step3.title": "Ship the fix to the frontend team",
   "how.step3.desc": "Open <code>/lint</code> in the browser, tick the patches you want, click once. selfcure branches, commits, pushes, and opens a Pull Request on GitHub. The frontend team owns the fix — not the QA pipeline.",
-  "how.handoff": "After the PR lands, <code>@playwright/mcp</code> + Playwright Test Agents (Planner / Generator / Healer) take over. selfcure does not compete with them — it feeds them.",
+  "how.handoff": "After the PR lands, Cypress, Playwright, Selenium, TestCafe, WebdriverIO, or your agentic test stack gets stable frontend hooks. selfcure is not the runner — it is the maturity layer that proves the frontend is ready.",
   "integ.eyebrow": "SCM integrations",
   "integ.h2": "One-click Git connection",
   "integ.lede": "Connect your repository in a single click via OAuth — no env vars, no client secrets, no manual app registration. selfcure ships a hosted cloud connector so end users authorize and selfcure opens the PR.",
@@ -878,18 +895,18 @@ selfcure mcp
   "integ.bitbucket.title": "Bitbucket",
   "integ.bitbucket.desc": "Workspace-level OAuth, same one-click flow. Bring Your Own OAuth App is also supported today via local env vars if you want full control.",
   "integ.byo": "Prefer no third party? Set <code>GITHUB_OAUTH_CLIENT_ID</code> / <code>SECRET</code> in your project <code>.env</code> and selfcure uses your own OAuth app. The managed connector is opt-in via <code>SELFCURE_CONNECTOR_BASE_URL</code>.",
-  "figma.eyebrow": "Design input",
-  "figma.h2": "Figma is where prevention starts",
-  "figma.lede": "The product direction is not to out-heal Playwright. It is to move testability and accessibility left: source lint today, design lint next, then Playwright Test Agents receive cleaner flows.",
-  "figma.badge_next": "planned",
-  "figma.1.title": "Testability before code",
-  "figma.1.desc": "A Figma plugin can flag unnamed controls, duplicate button labels, missing semantic intent, and unstable interaction targets before a developer writes the component.",
-  "figma.2.title": "Shared responsibility",
-  "figma.2.desc": "Designers, frontend developers, and QA get the same language: stable names, unique interactions, and components that are ready for Playwright instead of repaired after failure.",
-  "figma.3.title": "Commercial wedge",
-  "figma.3.desc": "The free MCP server gets selfcure into the user's AI workflow. Auto-fix, PR opening, team scorecards, and the Figma plugin become the paid layer.",
-  "figma.4.title": "Agent handoff",
-  "figma.4.desc": "selfcure prepares the component and design surface; <code>@playwright/mcp</code> plus Planner, Generator, and Healer handle runtime generation and repair.",
+  "governance.eyebrow": "Governance modules",
+  "governance.h2": "Visibility your team can keep",
+  "governance.lede": "The product is not a one-off code fix. selfcure maintains the testability argument: what exists, what is ambiguous, what regressed, and what changed after each PR.",
+  "governance.badge_live": "live",
+  "governance.1.title": "Agentic Discovery",
+  "governance.1.desc": "<code>selfcure discover</code> maps framework, structure, source roots, and candidate routes so init starts from evidence instead of guesses.",
+  "governance.2.title": "Tag Maturity Level",
+  "governance.2.desc": "<code>selfcure tml report</code> explains which tags are stable, risky, or blocking automation, with HTML and JSON outputs for teams and CI.",
+  "governance.3.title": "Test ID Inventory",
+  "governance.3.desc": "<code>selfcure testids scan</code> turns <code>data-testid</code> into a governed contract instead of scattered strings that drift across the app.",
+  "governance.4.title": "Accessibility gates",
+  "governance.4.desc": "<code>selfcure a11y audit</code> keeps WCAG findings in the same quality conversation as selector maturity, with severity gates for CI.",
   "features.eyebrow": "Capabilities",
   "features.h2": "What you get",
   "features.badge_unique": "unique to selfcure",
@@ -897,7 +914,7 @@ selfcure mcp
   "features.badge_mcp": "@selfcure/mcp",
   "features.badge_fallback": "fallback",
   "features.1.title": "Ambiguity detection",
-  "features.1.desc": "When the best selector for a button also matches one of its siblings, Playwright silently binds to the wrong node. selfcure catches this at the AST level — the failure mode runtime healers can't prevent.",
+  "features.1.desc": "When the best selector for a button also matches one of its siblings, automation silently binds to the wrong node. selfcure catches this at the AST level — the failure mode runtime healers can't prevent.",
   "features.2.title": "Testability score",
   "features.2.desc": "Every interactive element gets a 0–100 score based on a ranked selector list: <code>data-testid</code> → <code>id</code> → <code>aria-label</code> → <code>name</code> → CSS → XPath.",
   "features.3.title": "One-click PR",
@@ -906,8 +923,8 @@ selfcure mcp
   "features.4.desc": "Publishes the crawl + score + a11y findings over the Model Context Protocol. Any MCP client — Claude Desktop, Cursor, VS Code, Windsurf, Claude Code — can query them.",
   "features.5.title": "WCAG Accessibility",
   "features.5.desc": "Static analysis for 10+ WCAG rules: missing labels, accessible names, heading order, and image alt text. CI-ready with configurable severity gates.",
-  "features.6.title": "Feeds Playwright Test Agents",
-  "features.6.desc": "selfcure is the preventive layer. <code>@playwright/mcp</code> + Planner / Generator / Healer is the reactive layer. We don't compete — we hand them a frontend they can actually test.",
+  "features.6.title": "Tool-agnostic maturity",
+  "features.6.desc": "Cypress, Playwright, Selenium, TestCafe, WebdriverIO, and AI test agents all benefit from the same thing: stable selectors, governed tags, and a frontend whose testability is measured over time.",
   "features.7.title": "Legacy BYOK pipeline",
   "features.7.desc": "Not on Playwright Test Agents yet? <code>selfcure run</code> still generates + executes + heals tests using the LLM provider of your choice. Available, not the headline.",
   "providers.eyebrow": "Legacy BYOK fallback",
@@ -925,17 +942,29 @@ selfcure mcp
   "qs.step1": "1 · Install the CLI",
   "qs.step2": "2 · Lint your frontend",
   "qs.step3": "3 · Connect GitHub and ship a PR",
-  "qs.step4": "4 · Hand off to Playwright Test Agents",
+  "qs.step4": "4 · Add governance reports",
   "qs.step5": "5 · MCP Server",
   "qs.step5.desc": "<code>selfcure mcp</code> — connect to Claude Desktop, Cursor, or VS Code to query testability and accessibility findings directly in your AI workflow.",
   "qs.wizard_note": "No client secrets to manage. The selfcure cloud connector handles the OAuth dance; your project only stores the user's access token locally in <code>.selfcure/integrations.json</code> (auto-gitignored). Disconnect revokes the token remotely.",
   "qs.docs_cta": "Read the full getting-started guide →",
   "status.eyebrow": "Status",
   "status.h2": "Where it stands",
-  "status.p1": "selfcure is at <code>v0.1.0</code>. The preventive pipeline — crawl, score, a11y module, ambiguity detection, <code>/lint</code> page, one-click GitHub PR, MCP server — is wired end-to-end and dogfooded on a real legacy HTML app (<strong>500 issues across 27 files — 477 of them ambiguous</strong>). GitLab and Bitbucket OAuth are next.",
+  "status.p1": "selfcure is at <code>v0.1.0</code>. The maturity platform — crawl, score, discovery, TML, testid inventory, a11y module, ambiguity detection, <code>/lint</code> page, one-click GitHub PR, and MCP server — is wired end-to-end and dogfooded on a real legacy HTML app (<strong>500 issues across 27 files — 477 of them ambiguous</strong>). SonarQube export and automation-tool landing silos are next.",
   "status.p2": "Best place to follow progress, file issues, or contribute is the GitHub repo. Stars help; PRs help more.",
   "status.cta_primary": "Star on GitHub",
   "status.cta_secondary": "Open an issue",
+  "governance.eyebrow": "Governance modules",
+  "governance.h2": "Visibility your team can keep",
+  "governance.lede": "The product is not a one-off code fix. selfcure maintains the testability argument: what exists, what is ambiguous, what regressed, and what changed after each PR.",
+  "governance.badge_live": "live",
+  "governance.1.title": "Agentic Discovery",
+  "governance.1.desc": "<code>selfcure discover</code> maps framework, structure, source roots, and candidate routes so init starts from evidence instead of guesses.",
+  "governance.2.title": "Tag Maturity Level",
+  "governance.2.desc": "<code>selfcure tml report</code> explains which tags are stable, risky, or blocking automation, with HTML and JSON outputs for teams and CI.",
+  "governance.3.title": "Test ID Inventory",
+  "governance.3.desc": "<code>selfcure testids scan</code> turns <code>data-testid</code> into a governed contract instead of scattered strings that drift across the app.",
+  "governance.4.title": "Accessibility gates",
+  "governance.4.desc": "<code>selfcure a11y audit</code> keeps WCAG findings in the same quality conversation as selector maturity, with severity gates for CI.",
   "footer.license": "MIT · © ricardofrancocustodio",
   "footer.config": "Configuration",
   "footer.arch": "Architecture"
@@ -944,34 +973,34 @@ selfcure mcp
 
 <script type="application/json" id="i18n-pt">
 {
-  "meta.title": "selfcure — a camada preventiva de testabilidade e acessibilidade para frontends",
-  "meta.desc": "selfcure pontua a testabilidade e acessibilidade do seu frontend antes de qualquer teste existir, identifica locators ambíguos e envia patches de data-testid como Pull Request via OAuth de um clique no GitHub. A camada preventiva que alimenta os Playwright Test Agents.",
+  "meta.title": "selfcure — Plataforma de visibilidade e maturidade de testabilidade para frontends",
+  "meta.desc": "selfcure mede, mostra e acompanha o quão pronto seu frontend está para ser automatizado — independente da ferramenta de automação. Crawl estático, score de testabilidade, detecção de ambiguidade e inventário governado de data-testid.",
   "nav.how": "Como funciona",
   "nav.integrations": "Integrações",
-  "nav.figma": "Figma",
+  "nav.governance": "Governança",
   "nav.providers": "Provedores",
   "nav.quickstart": "Início rápido",
-  "hero.eyebrow": "Testabilidade preventiva · Acessibilidade WCAG · Open source",
-  "hero.headline_l1": "selfcure cura testes,",
-  "hero.headline_l2": "não componentes.",
-  "hero.lede": "Healers reativos esperam o teste quebrar. O selfcure lê seu source React/Vue/Angular/HTML <em>antes de qualquer teste existir</em>, pontua a testabilidade, audita acessibilidade WCAG, sinaliza locators ambíguos e envia patches de <code>data-testid</code> como Pull Request — via OAuth de um clique no GitHub.",
+  "hero.eyebrow": "Visibilidade & Maturidade · Acessibilidade WCAG · Open source",
+  "hero.headline_l1": "Visibilidade e maturidade",
+  "hero.headline_l2": "para sua testabilidade frontend.",
+  "hero.lede": "O selfcure mostra se sua aplicação está pronta para ser automatizada — e prova que está melhorando. Ele lê seu source React/Vue/Angular/HTML, pontua a testabilidade, audita acessibilidade e identifica ambiguidades que quebram ferramentas como Cypress, Playwright e Selenium.",
   "hero.cta_primary": "Ver no GitHub →",
   "hero.cta_secondary": "Início rápido",
-  "mantra.quote": "selfcure distingue um teste ruim de um componente ruim. Ele corrige o teste quando o locator muda. Quando o componente não tem identificador estável ou viola o WCAG, ele te avisa — e se recusa a maquiar um bug de frontend.",
+  "mantra.quote": "O selfcure mede a maturidade de testabilidade do seu frontend e prova que está melhorando. A correção é commodity — a visibilidade ao longo do tempo é o produto.",
   "mantra.cite": "— princípio de design, desde v0.1",
   "how.eyebrow": "Pipeline",
   "how.h2": "Como funciona",
-  "how.lede": "O selfcure é a metade <strong>preventiva</strong> do loop de testes. Roda antes dos Playwright Test Agents e entrega a eles um frontend de fato testável e acessível.",
-  "how.step1.label": "01 · CRAWL, SCORE E A11Y",
-  "how.step1.title": "Pontua testabilidade e conformidade WCAG",
-  "how.step1.desc": "Análise estática de AST em <code>.tsx</code>, <code>.vue</code>, <code>.component.ts</code>, <code>.html</code>. Cada elemento recebe um score 0–100 de testabilidade e é auditado para 10+ regras WCAG: labels, nomes e ordem de foco.",
+  "how.lede": "O selfcure é a camada de <strong>visibilidade</strong> do loop de testes. Ele roda antes de qualquer ferramenta de automação e prova que seu frontend está pronto para ser testado e acessado.",
+  "how.step1.label": "01 · DISCOVER E SCORE",
+  "how.step1.title": "Agentic discovery e score de testabilidade",
+  "how.step1.desc": "Descobre automaticamente a estrutura do projeto, framework e rotas. Cada componente recebe um score 0–100 e é auditado para conformidade WCAG: labels, nomes e ordem de foco.",
   "how.step2.label": "02 · LINT",
   "how.step2.title": "Detecta ambiguidade que ninguém mais pega",
   "how.step2.desc": "Quando o melhor seletor de um elemento também bate em um irmão, testes em runtime se ligam silenciosamente ao nó errado. O selfcure detecta isso no nível do source e sugere um patch de <code>data-testid</code> único.",
   "how.step3.label": "03 · PR",
   "how.step3.title": "Entrega a correção pro time de frontend",
   "how.step3.desc": "Abra <code>/lint</code> no browser, marque os patches que quer, um clique. O selfcure cria branch, commit, push e abre um Pull Request no GitHub. O time de frontend é dono da correção — não o pipeline de QA.",
-  "how.handoff": "Depois que o PR entra, <code>@playwright/mcp</code> + Playwright Test Agents (Planner / Generator / Healer) assumem. O selfcure não compete com eles — alimenta eles.",
+  "how.handoff": "Depois que o PR entra, Cypress, Playwright, Selenium, TestCafe, WebdriverIO ou seu stack agentic de testes ganha hooks estáveis no frontend. O selfcure não é o runner — é a camada de maturidade que prova que o frontend está pronto.",
   "integ.eyebrow": "Integrações SCM",
   "integ.h2": "Conexão Git em um clique",
   "integ.lede": "Conecte seu repositório em um clique via OAuth — sem variáveis de ambiente, sem client secrets, sem registro manual de app. O selfcure traz um connector cloud hospedado para o usuário final só autorizar e o selfcure abrir o PR.",
@@ -984,18 +1013,18 @@ selfcure mcp
   "integ.bitbucket.title": "Bitbucket",
   "integ.bitbucket.desc": "OAuth a nível de workspace, mesmo fluxo de um clique. Trazer seu próprio OAuth App também é suportado hoje via env vars locais, se quiser controle total.",
   "integ.byo": "Prefere sem terceiros? Defina <code>GITHUB_OAUTH_CLIENT_ID</code> / <code>SECRET</code> no <code>.env</code> do projeto e o selfcure usa seu próprio OAuth App. O connector gerenciado é opt-in via <code>SELFCURE_CONNECTOR_BASE_URL</code>.",
-  "figma.eyebrow": "Entrada pelo design",
-  "figma.h2": "Figma é onde a prevenção começa",
-  "figma.lede": "A direção do produto não é curar melhor que o Playwright. É deslocar testabilidade e acessibilidade para a esquerda: lint de source hoje, lint de design depois, e então os Playwright Test Agents recebem fluxos mais limpos.",
-  "figma.badge_next": "planejado",
-  "figma.1.title": "Testabilidade antes do código",
-  "figma.1.desc": "Um plugin Figma pode sinalizar controles sem nome, labels duplicados, intenção semântica ausente e alvos de interação instáveis antes de um dev escrever o componente.",
-  "figma.2.title": "Responsabilidade compartilhada",
-  "figma.2.desc": "Designers, frontend e QA passam a usar a mesma linguagem: nomes estáveis, interações únicas e componentes prontos para Playwright em vez de remendados depois da falha.",
-  "figma.3.title": "Entrada comercial",
-  "figma.3.desc": "O servidor MCP gratuito coloca o selfcure no workflow de IA do usuário. Auto-fix, abertura de PR, scorecards de time e plugin Figma viram a camada paga.",
-  "figma.4.title": "Handoff para agents",
-  "figma.4.desc": "selfcure prepara o componente e a superfície de design; <code>@playwright/mcp</code> com Planner, Generator e Healer cuida de geração e cura em runtime.",
+  "governance.eyebrow": "Módulos de governança",
+  "governance.h2": "Visibilidade que o time consegue manter",
+  "governance.lede": "O produto não é uma correção pontual de código. O selfcure mantém o argumento de testabilidade: o que existe, o que está ambíguo, o que regrediu e o que mudou depois de cada PR.",
+  "governance.badge_live": "ativo",
+  "governance.1.title": "Agentic Discovery",
+  "governance.1.desc": "<code>selfcure discover</code> mapeia framework, estrutura, source roots e rotas candidatas para o init começar por evidência, não por chute.",
+  "governance.2.title": "Tag Maturity Level",
+  "governance.2.desc": "<code>selfcure tml report</code> explica quais tags estão estáveis, arriscadas ou bloqueando automação, com saídas HTML e JSON para times e CI.",
+  "governance.3.title": "Inventário de Test IDs",
+  "governance.3.desc": "<code>selfcure testids scan</code> transforma <code>data-testid</code> em contrato governado, não strings espalhadas que derivam pelo app.",
+  "governance.4.title": "Gates de acessibilidade",
+  "governance.4.desc": "<code>selfcure a11y audit</code> mantém achados WCAG na mesma conversa de qualidade que maturidade de selectors, com gates de severidade para CI.",
   "features.eyebrow": "Capacidades",
   "features.h2": "O que você ganha",
   "features.badge_unique": "exclusivo do selfcure",
@@ -1003,7 +1032,7 @@ selfcure mcp
   "features.badge_mcp": "@selfcure/mcp",
   "features.badge_fallback": "fallback",
   "features.1.title": "Detecção de ambiguidade",
-  "features.1.desc": "Quando o melhor seletor de um botão também bate em um irmão, o Playwright se liga silenciosamente ao nó errado. O selfcure pega isso no nível de AST — o modo de falha que healers em runtime não conseguem prevenir.",
+  "features.1.desc": "Quando o melhor seletor de um botão também bate em um irmão, ferramentas de automação se ligam silenciosamente ao nó errado. O selfcure pega isso no nível de AST.",
   "features.2.title": "Score de testabilidade",
   "features.2.desc": "Cada elemento interativo recebe um score 0–100 baseado em uma lista ranqueada de seletores: <code>data-testid</code> → <code>id</code> → <code>aria-label</code> → <code>name</code> → CSS → XPath.",
   "features.3.title": "PR em um clique",
@@ -1012,10 +1041,12 @@ selfcure mcp
   "features.4.desc": "Publica os achados de crawl + score + a11y via Model Context Protocol. Qualquer cliente MCP — Claude Desktop, Cursor, VS Code, Windsurf, Claude Code — consegue consultar.",
   "features.5.title": "Acessibilidade WCAG",
   "features.5.desc": "Análise estática para 10+ regras WCAG: labels ausentes, nomes acessíveis, ordem de cabeçalhos e texto alt em imagens. Pronto para CI com thresholds de severidade.",
-  "features.6.title": "Alimenta os Playwright Test Agents",
-  "features.6.desc": "selfcure é a camada preventiva. <code>@playwright/mcp</code> + Planner / Generator / Healer é a camada reativa. A gente não compete — entrega pra eles um frontend que dá pra testar.",
-  "features.7.title": "Pipeline legacy BYOK",
-  "features.7.desc": "Ainda não está nos Playwright Test Agents? <code>selfcure run</code> ainda gera + executa + cura testes usando o provedor LLM da sua escolha. Disponível, mas não é o destaque.",
+  "features.6.title": "Agentic Discovery",
+  "features.6.desc": "Descobre automaticamente a estrutura do projeto, framework e rotas via análise estática. Simplifica a inicialização e provê um mapa instantâneo do seu frontend.",
+  "features.7.title": "Tag Maturity Level (TML)",
+  "features.7.desc": "Um modelo de maturidade para cada tag. Explica por que um elemento é difícil de testar e o que exatamente precisa mudar para atingir padrões profissionais.",
+  "features.8.title": "Test ID Inventory",
+  "features.8.desc": "Governe seu contrato de data-testid. Escaneie o uso real e audite-o contra as convenções de nomenclatura e requisitos de estabilidade do projeto.",
   "providers.eyebrow": "Fallback BYOK legacy",
   "providers.h2": "Use sua própria chave LLM",
   "providers.lede": "Se você ainda não migrou pros Playwright Test Agents, <code>selfcure run</code> ainda gera + executa + cura testes com o LLM da sua escolha.",
@@ -1031,17 +1062,29 @@ selfcure mcp
   "qs.step1": "1 · Instale o CLI",
   "qs.step2": "2 · Lint no seu frontend",
   "qs.step3": "3 · Conecte o GitHub e abra um PR",
-  "qs.step4": "4 · Passe o bastão pros Playwright Test Agents",
+  "qs.step4": "4 · Módulos de governança",
   "qs.step5": "5 · Servidor MCP",
   "qs.step5.desc": "<code>selfcure mcp</code> — conecte os achados de testabilidade e acessibilidade diretamente ao seu workflow de IA no Claude Desktop, Cursor ou VS Code.",
-  "qs.wizard_note": "Sem client secrets pra gerenciar. O connector cloud do selfcure cuida da dança OAuth; seu projeto só guarda o access token do usuário localmente em <code>.selfcure/integrations.json</code>.",
-  "qs.docs_cta": "Lê o guia completo de início rápido →",
+  "qs.wizard_note": "Sem client secrets pra gerenciar. O connector cloud do selfcure cuida da dança OAuth; seu projeto só guarda o access token do usuário localmente em <code>.selfcure/integrations.json</code>. Desconectar revoga o token remotamente.",
+  "qs.docs_cta": "Leia o guia completo de início rápido →",
   "status.eyebrow": "Status",
   "status.h2": "Onde a gente está",
-  "status.p1": "selfcure está em <code>v0.1.0</code>. O pipeline preventivo — crawl, score, módulo a11y, detecção de ambiguidade, página <code>/lint</code>, PR no GitHub em um clique, servidor MCP — está conectado ponta-a-ponta e sendo dogfooded em um app HTML legado real (<strong>500 issues em 27 arquivos — 477 ambíguos</strong>). GitLab e Bitbucket OAuth são os próximos.",
+  "status.p1": "selfcure está em <code>v0.1.0</code>. A plataforma de visibilidade — crawl, score, a11y, TML, discovery, inventory, página <code>/lint</code>, PR no GitHub em um clique, servidor MCP — está entregue e sendo dogfooded (<strong>500 issues em 27 arquivos</strong>).",
   "status.p2": "O melhor lugar pra acompanhar progresso, abrir issues, ou contribuir é o repo no GitHub. Estrelas ajudam; PRs ajudam mais.",
   "status.cta_primary": "Dar estrela no GitHub",
   "status.cta_secondary": "Abrir uma issue",
+  "governance.eyebrow": "Módulos de governança",
+  "governance.h2": "Visibilidade que seu time mantém",
+  "governance.lede": "O produto não é uma correção pontual. O selfcure mantém o argumento de testabilidade: o que existe, o que é ambíguo, o que regrediu e o que mudou após cada PR.",
+  "governance.badge_live": "ativo",
+  "governance.1.title": "Agentic Discovery",
+  "governance.1.desc": "<code>selfcure discover</code> mapeia framework, estrutura, raízes de source e rotas candidatas para que a inicialização comece por evidências.",
+  "governance.2.title": "Tag Maturity Level",
+  "governance.2.desc": "<code>selfcure tml report</code> explica quais tags estão estáveis, arriscadas ou bloqueando a automação, com outputs HTML e JSON para times e CI.",
+  "governance.3.title": "Test ID Inventory",
+  "governance.3.desc": "<code>selfcure testids scan</code> transforma o <code>data-testid</code> em um contrato governado em vez de strings espalhadas que mudam sem aviso.",
+  "governance.4.title": "Gates de acessibilidade",
+  "governance.4.desc": "<code>selfcure a11y audit</code> mantém os achados WCAG na mesma conversa de qualidade que a maturidade de seletores, com gates de severidade para CI.",
   "footer.license": "MIT · © ricardofrancocustodio",
   "footer.config": "Configuração",
   "footer.arch": "Arquitetura"

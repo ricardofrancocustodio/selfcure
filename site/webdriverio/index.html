@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebdriverIO selectors flaky? Check your frontend's selector health — selfcure</title>
+  <meta name="description" content="Flaky WebdriverIO selectors come from a frontend with no stable hooks. selfcure scores your frontend's testability, finds selectors that match multiple elements, and ships data-testid fixes as a PR.">
+  <link rel="canonical" href="https://ricardofrancocustodio.github.io/selfcure/webdriverio/">
+  <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta property="og:title" content="WebdriverIO selectors flaky? Check your frontend's selector health.">
+  <meta property="og:description" content="selfcure measures whether your frontend is ready to be automated and ships the data-testid fixes. Works with WebdriverIO.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+  <link rel="stylesheet" href="../silo.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "selfcure",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Node.js 20+",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Frontend testability maturity platform. Scores components, detects ambiguous selectors, and ships data-testid fixes as a PR. Tool-agnostic — works with WebdriverIO, Cypress, Playwright, Selenium, TestCafe."
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          { "@type": "Question", "name": "Why are my WebdriverIO selectors flaky?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Flaky WebdriverIO selectors target CSS classes or DOM position the frontend never promised to keep stable, or they match multiple elements. selfcure detects both at the source and proposes a stable data-testid." } },
+          { "@type": "Question", "name": "Does selfcure replace WebdriverIO?",
+            "acceptedAnswer": { "@type": "Answer", "text": "No. selfcure analyzes your frontend source so your existing WebdriverIO suite has stable data-testid selectors to target." } },
+          { "@type": "Question", "name": "Is selfcure free?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Yes — the CLI, testability score, and MCP server are free and open source. Auto-fix, PR opening, and history dashboards are paid tiers." } }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<header class="top">
+  <div class="container">
+    <a href="../" class="brand"><span class="brand-glyph" aria-hidden="true">›</span><span>selfcure</span></a>
+    <nav class="top-nav">
+      <a href="#problem">Why flaky</a>
+      <a href="#fix">The fix</a>
+      <a href="#start">Quick start</a>
+      <a href="https://github.com/ricardofrancocustodio/selfcure">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="container">
+      <span class="pill">selfcure × WebdriverIO</span>
+      <h1>WebdriverIO + a messy frontend?<br>Check your selector health.</h1>
+      <p class="lede">
+        Half your spec is <code>$('.btn-primary')</code> and <code>$$('button')[1]</code> because the app never exposed a stable hook.
+        The selector isn't the problem — the frontend is. selfcure reads your source, scores every component for testability,
+        finds the selectors that resolve to multiple elements, and ships <code>data-testid</code> fixes as a Pull Request —
+        so your WebdriverIO suite stops guessing which node it grabbed.
+      </p>
+      <div class="ctas">
+        <a class="button button-primary" href="#start">Scan my frontend →</a>
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure">View on GitHub</a>
+      </div>
+      <nav class="toolnav" aria-label="Automation tools">
+        <a href="../cypress/">Cypress</a>
+        <a href="../playwright/">Playwright</a>
+        <a href="../selenium/">Selenium</a>
+        <a href="../testcafe/">TestCafe</a>
+        <a href="../webdriverio/" aria-current="page">WebdriverIO</a>
+      </nav>
+    </div>
+  </section>
+
+  <section id="problem">
+    <div class="container">
+      <p class="eyebrow">Root cause</p>
+      <h2>Flaky selectors mean an unstable frontend</h2>
+      <p class="small">WebdriverIO gives you great selector strategies — but none of them can invent a stable hook the markup doesn't have. Two patterns cause most flakiness:</p>
+      <div class="cols">
+        <div class="card">
+          <h3>Weak selector</h3>
+          <p class="small">No <code>data-testid</code>, <code>id</code>, or accessible name, so you fall back to <code>$('.btn-primary')</code> — broken by the next style change.</p>
+        </div>
+        <div class="card">
+          <h3>Ambiguous selector</h3>
+          <p class="small">The selector matches several elements; the test relies on <code>$$()</code> index order. selfcure detects this at the AST level and proposes a unique <code>data-testid</code>.</p>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">selfcure scores and fixes both before your WebdriverIO run.</p>
+    </div>
+  </section>
+
+  <section id="fix">
+    <div class="container">
+      <p class="eyebrow">Before / after</p>
+      <h2>From index juggling to a stable contract</h2>
+      <div class="cols">
+        <div class="card bad">
+          <h3><span class="lbl-bad">✗ Brittle</span> — class- and index-dependent</h3>
+<pre><code><span class="token-comment">// $$ index breaks when the DOM order shifts</span>
+<span class="token-keyword">await</span> $(<span class="token-bad">'.btn-primary'</span>).click()
+<span class="token-keyword">await</span> $$(<span class="token-bad">'form input'</span>)[<span class="token-bad">1</span>].setValue(<span class="token-string">'a@b.com'</span>)</code></pre>
+        </div>
+        <div class="card good">
+          <h3><span class="lbl-good">✓ Stable</span> — unique by contract</h3>
+<pre><code><span class="token-comment">// data-testid added by a selfcure PR</span>
+<span class="token-keyword">await</span> $(<span class="token-string">'[data-testid="submit"]'</span>).click()
+<span class="token-keyword">await</span> $(<span class="token-string">'[data-testid="email"]'</span>).setValue(<span class="token-string">'a@b.com'</span>)</code></pre>
+        </div>
+      </div>
+      <p class="small" style="margin-top:16px">selfcure suggests the values, dedupes collisions across siblings, and opens the PR.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">How it works</p>
+      <h2>Three steps, no new test framework</h2>
+      <div class="steps">
+        <div class="step"><div class="num">01 · SCORE</div><h3>Measure testability</h3><p class="small">Every interactive element gets a 0–100 stability score — a number you can show a tech lead.</p></div>
+        <div class="step"><div class="num">02 · FLAG</div><h3>Find ambiguity</h3><p class="small">selfcure detects selectors that resolve to multiple elements and proposes a unique <code>data-testid</code>.</p></div>
+        <div class="step"><div class="num">03 · SHIP</div><h3>Open a PR</h3><p class="small">Pick the fixes, click once. selfcure branches, commits, pushes, and opens a Pull Request on GitHub or GitLab.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="container">
+      <p class="eyebrow">Get going</p>
+      <h2>Scan your frontend in two commands</h2>
+<pre><code><span class="token-comment"># From your app's root — Node 20+</span>
+npx @selfcure/cli init
+npx @selfcure/cli lint   <span class="token-comment"># score + flag ambiguous selectors</span></code></pre>
+      <h3 style="margin-top:24px">Connect it to your AI editor (free)</h3>
+<pre><code><span class="token-comment"># MCP server — Cursor, Claude Code, VS Code, Windsurf</span>
+npx @selfcure/cli mcp</code></pre>
+      <p class="small">Your AI assistant can query the testability score and ambiguity findings directly.</p>
+      <h3 style="margin-top:24px">Team tier</h3>
+      <p class="small">The <strong>Team</strong> plan adds a web dashboard with score history, automatic PR comments, and branch comparison — proof your frontend is getting more testable over time.</p>
+      <p style="margin-top:20px">
+        <a class="button button-secondary" href="https://github.com/ricardofrancocustodio/selfcure/blob/main/docs/getting-started.md">Read the getting-started guide →</a>
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <p class="eyebrow">FAQ</p>
+      <h2>WebdriverIO + selfcure</h2>
+      <div class="faq">
+        <details><summary>Does selfcure run or generate my WebdriverIO tests?</summary><p>No. selfcure analyzes your frontend source. Your WebdriverIO suite stays as it is — it just gets stable <code>data-testid</code> selectors to target.</p></details>
+        <details><summary>Will it work with my React / Vue / Angular app?</summary><p>Yes. The crawler parses <code>.tsx</code>, <code>.jsx</code>, <code>.vue</code>, Angular <code>.component.ts</code>, and plain <code>.html</code>.</p></details>
+        <details><summary>How is this different from using a <code>$$()</code> index?</summary><p>An index hard-codes DOM order, which breaks on the next refactor. selfcure removes the ambiguity at the source so you target a unique <code>data-testid</code> instead.</p></details>
+        <details><summary>Is it really free?</summary><p>The CLI, testability score, and MCP server are free and open source. Auto-fix, PR opening, and the history dashboard are paid.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <span>selfcure — testability maturity for frontends. <a href="../">Home</a></span>
+    <span class="toolnav">
+      <a href="../cypress/">Cypress</a><a href="../playwright/">Playwright</a><a href="../selenium/">Selenium</a><a href="../testcafe/">TestCafe</a>
+    </span>
+  </div>
+</footer>
+</body>
+</html>
