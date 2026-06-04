@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>selfcure — testability maturity for frontend codebases</title>
-  <meta name="description" content="selfcure measures frontend testability maturity, tracks scores over time, governs data-testid inventory, audits WCAG accessibility, and surfaces ambiguity before any automation tool becomes flaky.">
+  <title>selfcure — know if your frontend is ready to be automated</title>
+  <meta name="description" content="selfcure measures, tracks, and proves frontend testability maturity. Static crawl, 0–100 component score, ambiguity detection, WCAG audit, governed data-testid inventory — works with Cypress, Playwright, Selenium, TestCafe, and WebdriverIO.">
   <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 
   <meta property="og:title" content="selfcure — frontend testability maturity">
-  <meta property="og:description" content="Measure, prove, and improve frontend testability across Cypress, Playwright, Selenium, TestCafe, WebdriverIO, and any automation stack.">
+  <meta property="og:description" content="selfcure shows if your frontend is ready to be automated — and proves it's improving. Correction is commodity; visibility over time is the product.">
   <meta property="og:type" content="website">
 
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -640,6 +640,10 @@
           <h3><span data-i18n="features.7.title">Legacy BYOK pipeline</span> <span class="tag tag-free" data-i18n="features.badge_fallback">fallback</span></h3>
           <p data-i18n="features.7.desc">Not on Playwright Test Agents yet? <code>selfcure run</code> still generates + executes + heals tests using the LLM provider of your choice. Available, not the headline.</p>
         </div>
+        <div class="feature">
+          <h3><span data-i18n="features.8.title">SonarQube export</span> <span class="badge" data-i18n="features.badge_sonar">generic format</span></h3>
+          <p data-i18n="features.8.desc">Export testability and a11y findings as a SonarQube Generic Issue Import file — no Java plugin, no build pipeline change. Surfaces ambiguity in the dashboard your architect already uses.</p>
+        </div>
       </div>
     </div>
   </section>
@@ -734,7 +738,7 @@
     <div class="container">
       <p class="eyebrow" data-i18n="qs.eyebrow">Get going</p>
       <h2 data-i18n="qs.h2">Quick start</h2>
-      <p class="small" data-i18n="qs.lede">selfcure is pre-publish — install from source while we stabilise the API.</p>
+      <p class="small" data-i18n="qs.lede">Five steps from zero to a PR full of <code>data-testid</code> patches.</p>
 
       <h3 style="margin-top:24px" data-i18n="qs.step1">1 · Install the CLI</h3>
 <pre><code><span class="token-comment"># Requires Node 20+</span>
@@ -801,9 +805,10 @@ selfcure mcp
       <p data-i18n="status.p1">
         selfcure is at <code>v0.1.0</code>. The maturity platform — crawl, score, discovery,
         TML, testid inventory, a11y module, ambiguity detection, <code>/lint</code> page,
-        one-click GitHub PR, and MCP server — is wired end-to-end and dogfooded on a
-        real legacy HTML app (<strong>500 issues across 27 files — 477 of them ambiguous</strong>).
-        SonarQube export and automation-tool landing silos are next.
+        one-click GitHub PR, MCP server, SonarQube export, and tool-specific landing pages — is
+        wired end-to-end and dogfooded on a real legacy HTML app
+        (<strong>500 issues across 27 files — 477 of them ambiguous, avg score 43/100</strong>).
+        GitLab and Bitbucket OAuth are next.
       </p>
       <p data-i18n="status.p2">
         Best place to follow progress, file issues, or contribute is the GitHub repo. Stars
@@ -917,6 +922,9 @@ selfcure mcp
   "features.6.desc": "Cypress, Playwright, Selenium, TestCafe, WebdriverIO, and AI test agents all benefit from the same thing: stable selectors, governed tags, and a frontend whose testability is measured over time.",
   "features.7.title": "Legacy BYOK pipeline",
   "features.7.desc": "Not on Playwright Test Agents yet? <code>selfcure run</code> still generates + executes + heals tests using the LLM provider of your choice. Available, not the headline.",
+  "features.8.title": "SonarQube export",
+  "features.badge_sonar": "generic format",
+  "features.8.desc": "Export testability and a11y findings as a SonarQube Generic Issue Import file — no Java plugin, no build pipeline change. Surfaces ambiguity in the dashboard your architect already uses.",
   "providers.eyebrow": "Legacy BYOK fallback",
   "providers.h2": "Bring your own LLM key",
   "providers.lede": "If you haven't moved to Playwright Test Agents yet, <code>selfcure run</code> still generates + executes + heals tests using the LLM of your choice. Swap providers in one config line — defaults below come from <code>PROVIDERS</code> in <code>packages/generator/src/ai.ts</code>.",
@@ -939,7 +947,7 @@ selfcure mcp
   "qs.docs_cta": "Read the full getting-started guide →",
   "status.eyebrow": "Status",
   "status.h2": "Where it stands",
-  "status.p1": "selfcure is at <code>v0.1.0</code>. The maturity platform — crawl, score, discovery, TML, testid inventory, a11y module, ambiguity detection, <code>/lint</code> page, one-click GitHub PR, and MCP server — is wired end-to-end and dogfooded on a real legacy HTML app (<strong>500 issues across 27 files — 477 of them ambiguous</strong>). SonarQube export and automation-tool landing silos are next.",
+  "status.p1": "selfcure is at <code>v0.1.0</code>. The maturity platform — crawl, score, discovery, TML, testid inventory, a11y module, ambiguity detection, <code>/lint</code> page, one-click GitHub PR, MCP server, SonarQube export, and tool-specific landing pages — is wired end-to-end and dogfooded on a real legacy HTML app (<strong>500 issues across 27 files — 477 of them ambiguous, avg score 43/100</strong>). GitLab and Bitbucket OAuth are next.",
   "status.p2": "Best place to follow progress, file issues, or contribute is the GitHub repo. Stars help; PRs help more.",
   "status.cta_primary": "Star on GitHub",
   "status.cta_secondary": "Open an issue",
@@ -1035,6 +1043,9 @@ selfcure mcp
   "features.6.desc": "Cypress, Playwright, Selenium, TestCafe, WebdriverIO e agents de teste se beneficiam da mesma coisa: selectors estáveis, tags governadas e um frontend cuja testabilidade é medida no tempo.",
   "features.7.title": "Pipeline legacy BYOK",
   "features.7.desc": "Ainda não está nos Playwright Test Agents? <code>selfcure run</code> ainda gera + executa + cura testes usando o provedor LLM da sua escolha. Disponível, mas não é o destaque.",
+  "features.8.title": "Export SonarQube",
+  "features.badge_sonar": "generic format",
+  "features.8.desc": "Exporte achados de testabilidade e a11y como um arquivo SonarQube Generic Issue Import — sem plugin Java, sem mudança no pipeline de build. Aparece no dashboard que o arquiteto já usa.",
   "providers.eyebrow": "Fallback BYOK legacy",
   "providers.h2": "Use sua própria chave LLM",
   "providers.lede": "Se você ainda não migrou pros Playwright Test Agents, <code>selfcure run</code> ainda gera + executa + cura testes com o LLM da sua escolha.",
@@ -1057,7 +1068,7 @@ selfcure mcp
   "qs.docs_cta": "Leia o guia completo de início rápido →",
   "status.eyebrow": "Status",
   "status.h2": "Onde a gente está",
-  "status.p1": "selfcure está em <code>v0.1.0</code>. A plataforma de maturidade — crawl, score, discovery, TML, inventário de testids, módulo a11y, detecção de ambiguidade, página <code>/lint</code>, PR no GitHub em um clique e servidor MCP — está conectada ponta-a-ponta e sendo dogfooded em um app HTML legado real (<strong>500 issues em 27 arquivos — 477 ambíguos</strong>). Export SonarQube e landings por ferramenta de automação são os próximos.",
+  "status.p1": "selfcure está em <code>v0.1.0</code>. A plataforma de maturidade — crawl, score, discovery, TML, inventário de testids, módulo a11y, detecção de ambiguidade, página <code>/lint</code>, PR no GitHub em um clique, servidor MCP, export SonarQube e landings por ferramenta de automação — está conectada ponta-a-ponta e sendo dogfooded em um app HTML legado real (<strong>500 issues em 27 arquivos — 477 ambíguos, score médio 43/100</strong>). OAuth para GitLab e Bitbucket são os próximos.",
   "status.p2": "O melhor lugar pra acompanhar progresso, abrir issues, ou contribuir é o repo no GitHub. Estrelas ajudam; PRs ajudam mais.",
   "status.cta_primary": "Dar estrela no GitHub",
   "status.cta_secondary": "Abrir uma issue",
