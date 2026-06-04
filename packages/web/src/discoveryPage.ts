@@ -185,7 +185,7 @@ export const discoveryPageHtml = /* html */`<!DOCTYPE html>
       html += '<div class="grid-2">';
       html += '<div class="card"><div class="card-title">Route Candidates</div><div class="stat-value">' + map.routeCandidates.length + '</div><div class="stat-label">detected statically</div></div>';
       if (rtResult) {
-        html += '<div class="card"><div class="card-title">Reachable Routes</div><div class="stat-value">' + reachable + ' / ' + rtResult.scannedRoutes + '</div><div class="stat-label">via Playwright runtime scan</div></div>';
+        html += '<div class="card"><div class="card-title">Reachable Routes</div><div class="stat-value">' + reachable + ' / ' + rtResult.scannedRoutes + '</div><div class="stat-label">via headless runtime scan</div></div>';
       } else {
         html += '<div class="card"><div class="card-title">Components</div><div class="stat-value">' + map.componentCandidates.length + '</div><div class="stat-label">source files found in src/</div></div>';
       }

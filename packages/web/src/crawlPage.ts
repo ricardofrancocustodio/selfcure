@@ -648,7 +648,7 @@ export const crawlPageHtml = /* html */ `<!DOCTYPE html>
         <div class="legend-row"><code>textarea</code><span class="legend-desc">Multi-line text area</span></div>
         <div class="legend-row"><code>form</code><span class="legend-desc">Form container</span></div>
 
-        <p class="legend-section">Actions (Playwright)</p>
+        <p class="legend-section">Actions (universal)</p>
         <div class="legend-row"><code>click</code><span class="legend-desc">Click the element</span></div>
         <div class="legend-row"><code>fill</code><span class="legend-desc">Type text into field</span></div>
         <div class="legend-row"><code>clear</code><span class="legend-desc">Clear field content</span></div>

@@ -345,7 +345,7 @@ export const initPageHtml = /* html */ `<!DOCTYPE html>
 <main>
 
 <h1>selfcure init</h1>
-<p class="lede">Fill in the details below to generate <code>selfcure.config.mjs</code> and <code>.env</code> in your project root.</p>
+<p class="lede">selfcure measures <strong>testability maturity</strong> for any frontend — React, Vue, Angular or HTML — before any test runs. Tool-agnostic: works alongside Cypress, Playwright, Selenium, TestCafe or WebdriverIO. Fill in the details below to generate <code>selfcure.config.mjs</code> and <code>.env</code> in your project root.</p>
 
 <form id="initForm" novalidate>
 
