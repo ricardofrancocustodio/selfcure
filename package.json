@@ -2,7 +2,7 @@
   "name": "selfcure-root",
   "version": "0.1.0",
   "private": true,
-  "description": "AI-powered self-healing test suite using Playwright + Claude — monorepo root",
+  "description": "Frontend testability maturity for test automation — scores components, detects ambiguous locators, and ships data-testid fixes as a PR before Cypress, Playwright, Selenium, TestCafe, or WebdriverIO run. Monorepo root.",
   "type": "module",
   "workspaces": [
     "packages/*"
@@ -12,7 +12,24 @@
     "test": "vitest",
     "lint": "tsc --noEmit"
   },
-  "keywords": ["playwright", "ai", "self-healing", "testing", "claude"],
+  "keywords": [
+    "test-automation",
+    "testability",
+    "e2e",
+    "e2e-testing",
+    "data-testid",
+    "selectors",
+    "locators",
+    "playwright",
+    "cypress",
+    "selenium",
+    "testcafe",
+    "webdriverio",
+    "accessibility",
+    "wcag",
+    "qa",
+    "ai"
+  ],
   "author": "ricardofrancocustodio",
   "license": "MIT",
   "devDependencies": {
