@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Executes Playwright tests programmatically and captures traces on failure",
   "type": "module",
+  "license": "MIT",
+  "author": "ricardofrancocustodio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricardofrancocustodio/selfcure.git",
+    "directory": "packages/runner"
+  },
+  "homepage": "https://github.com/ricardofrancocustodio/selfcure#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -10,6 +18,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",

@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Self-healing loop — sends trace + error to the configured LLM, applies diff, re-validates",
   "type": "module",
+  "license": "MIT",
+  "author": "ricardofrancocustodio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricardofrancocustodio/selfcure.git",
+    "directory": "packages/selfcure"
+  },
+  "homepage": "https://github.com/ricardofrancocustodio/selfcure#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -11,18 +19,22 @@
       "import": "./dist/index.js"
     }
   },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsup src/index.ts --format esm --watch",
     "test": "vitest"
   },
   "dependencies": {
-    "@selfcure/generator": "*",
-    "@selfcure/runner": "*",
-    "ai": "latest",
-    "fs-extra": "latest"
+    "@selfcure/generator": "^0.1.0",
+    "@selfcure/runner": "^0.1.0",
+    "ai": "^6.0.191",
+    "fs-extra": "^11.3.5"
   },
   "devDependencies": {
-    "@types/fs-extra": "latest"
+    "@types/fs-extra": "^11.0.4"
   }
 }

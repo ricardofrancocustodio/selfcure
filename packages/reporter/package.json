@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Generates HTML report with test evidence — screenshots, traces, diffs",
   "type": "module",
+  "license": "MIT",
+  "author": "ricardofrancocustodio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricardofrancocustodio/selfcure.git",
+    "directory": "packages/reporter"
+  },
+  "homepage": "https://github.com/ricardofrancocustodio/selfcure#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -11,18 +19,22 @@
       "import": "./dist/index.js"
     }
   },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsup src/index.ts --format esm --watch",
     "test": "vitest"
   },
   "dependencies": {
-    "@selfcure/runner": "*",
-    "@selfcure/selfcure": "*",
-    "chalk": "latest",
-    "fs-extra": "latest"
+    "@selfcure/runner": "^0.1.0",
+    "@selfcure/selfcure": "^0.1.0",
+    "chalk": "^5.6.2",
+    "fs-extra": "^11.3.5"
   },
   "devDependencies": {
-    "@types/fs-extra": "latest"
+    "@types/fs-extra": "^11.0.4"
   }
 }

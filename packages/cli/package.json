@@ -1,12 +1,24 @@
 {
   "name": "@selfcure/cli",
   "version": "0.1.0",
-  "description": "CLI entry-point for selfcure (init, crawl, run, heal, report)",
+  "description": "CLI entry-point for selfcure (init, crawl, lint, mcp, web, and legacy run/heal/report)",
   "type": "module",
+  "license": "MIT",
+  "author": "ricardofrancocustodio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricardofrancocustodio/selfcure.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/ricardofrancocustodio/selfcure#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "selfcure": "dist/index.js"
+  },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsup --config tsup.config.ts",
@@ -14,17 +26,17 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@inquirer/prompts": "latest",
-    "@selfcure/analyzer": "*",
-    "@selfcure/crawler": "*",
-    "@selfcure/generator": "*",
-    "@selfcure/mcp": "*",
-    "@selfcure/reporter": "*",
-    "@selfcure/runner": "*",
-    "@selfcure/selfcure": "*",
-    "@selfcure/web": "*",
-    "chalk": "latest",
-    "commander": "latest",
-    "ora": "latest"
+    "@inquirer/prompts": "^8.4.3",
+    "@selfcure/analyzer": "^0.1.0",
+    "@selfcure/crawler": "^0.1.0",
+    "@selfcure/generator": "^0.1.0",
+    "@selfcure/mcp": "^0.1.0",
+    "@selfcure/reporter": "^0.1.0",
+    "@selfcure/runner": "^0.1.0",
+    "@selfcure/selfcure": "^0.1.0",
+    "@selfcure/web": "^0.1.0",
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "ora": "^9.4.0"
   }
 }

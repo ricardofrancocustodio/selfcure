@@ -1,8 +1,16 @@
 {
   "name": "@selfcure/web",
   "version": "0.1.0",
-  "description": "Local web UI for selfcure init — serves the configuration wizard in the browser",
+  "description": "Local web UI for selfcure — testability dashboard, lint results, and one-click PR flow",
   "type": "module",
+  "license": "MIT",
+  "author": "ricardofrancocustodio",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricardofrancocustodio/selfcure.git",
+    "directory": "packages/web"
+  },
+  "homepage": "https://github.com/ricardofrancocustodio/selfcure#readme",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -11,19 +19,23 @@
       "import": "./dist/index.js"
     }
   },
+  "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsup src/index.ts --format esm --watch",
     "test": "vitest"
   },
   "dependencies": {
-    "@selfcure/analyzer": "*",
-    "@selfcure/crawler": "*",
-    "@selfcure/generator": "*",
-    "fs-extra": "latest"
+    "@selfcure/analyzer": "^0.1.0",
+    "@selfcure/crawler": "^0.1.0",
+    "@selfcure/generator": "^0.1.0",
+    "fs-extra": "^11.3.5"
   },
   "devDependencies": {
-    "@types/fs-extra": "latest",
-    "@types/node": "latest"
+    "@types/fs-extra": "^11.0.4",
+    "@types/node": "^25.9.1"
   }
 }
