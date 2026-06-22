@@ -190,7 +190,7 @@ npm run lint    # tsc --noEmit
 | **Fase 23 — Onboarding zero-config + 3 telas + screenshot agnóstico** | 🔄 **em curso** — ✅ zero-config, dashboard `/`, `/evolution` (histórico local), histórico `.selfcure/history.json`, Copy prompt to IDE · ⚠️ `/map` wireframe · ❌ `@selfcure/screenshot`, `selfcure snapshot`, histórico pago |
 | Fase 15 — Plugin Figma | ⏳ somente se demanda orgânica aparecer de clientes |
 | Fase 16 — Integração Playwright Test Agents | ⏳ futuro, atrás de feature flag |
-| Publicação npm | parcial — pacotes prontos, não publicados |
+| Publicação npm | ✅ 9 pacotes `@selfcure/*` publicados (`0.1.0`, org `selfcure`) em 2026-06-22 — release via `npm run release` (ver `docs/releasing.md`) |
 
 Histórico completo das fases: ver git log.
 

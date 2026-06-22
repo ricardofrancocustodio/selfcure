@@ -10,7 +10,8 @@
   "scripts": {
     "build": "npm run build -w packages/crawler && npm run build -w packages/analyzer && npm run build -w packages/generator && npm run build -w packages/runner && npm run build -w packages/selfcure && npm run build -w packages/reporter && npm run build -w packages/web && npm run build -w packages/mcp && npm run build -w packages/cli",
     "test": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "release": "node scripts/release.mjs"
   },
   "keywords": [
     "test-automation",

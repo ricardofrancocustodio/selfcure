@@ -1,0 +1,116 @@
+# Releasing `@selfcure/*` to npm
+
+How selfcure cuts and tracks an npm release. All 9 packages publish in lockstep
+at the same version under the **`@selfcure`** org (public, free).
+
+> Code-side packaging (publishConfig, `files`, pinned deps, metadata) is already
+> in place — see the `chore(release)` commit. This doc covers the recurring
+> release flow.
+
+## TL;DR
+
+```bash
+npm run release patch        # 0.1.0 → 0.1.1   (or: minor | major | 1.2.3)
+npm run release minor --dry-run   # rehearse without publishing or committing
+git push origin main --tags  # after a real release
+```
+
+`scripts/release.mjs` does, in order:
+
+1. Bumps the version of all 9 packages in lockstep.
+2. Rewrites internal `@selfcure/*` dependency ranges to `^<newVersion>`.
+3. `npm install` (relink workspaces + refresh lockfile).
+4. Typecheck (`tsc --noEmit`) → `npm run build` → `npx vitest run`.
+5. `npm publish` each package **in dependency order**, stopping on first failure.
+6. `git commit -m "release: vX.Y.Z"` + `git tag vX.Y.Z` (skip with `--no-git`).
+
+It does **not** push. Push tags yourself after verifying.
+
+## Prerequisites
+
+| Requirement | Notes |
+|-------------|-------|
+| Logged in to npm | `npm whoami` must succeed (publisher: `ricardofrancocustodio`). |
+| Member of the `@selfcure` org | `npm org ls selfcure` must list you with publish rights. |
+| 2FA satisfied | The account has 2FA. Either let npm prompt for an OTP per publish, or use a **granular access token with "Bypass two-factor authentication (2FA)"** (Read & write on the `@selfcure` scope). See [Auth & 2FA](#auth--2fa). |
+
+## Why the order matters
+
+Each package depends on the previous ones via `^<version>`. npm validates that a
+dependency already exists on the registry at publish time, so they must go up in
+**topological order**:
+
+```
+crawler → analyzer → generator → runner → selfcure → reporter → web → mcp → cli
+```
+
+`scripts/release.mjs` hard-codes this order in `PUBLISH_ORDER`. If you add a new
+package, insert it after its dependencies.
+
+## The 0.x caret gotcha (why deps are re-synced every release)
+
+Internal deps use caret ranges (`^0.1.0`). For `0.x` versions, **caret does not
+cross a minor bump**: `^0.1.0` means `>=0.1.0 <0.2.0`, so it excludes `0.2.0`.
+
+If we bumped to `0.2.0` without updating the ranges, `@selfcure/cli@0.2.0` would
+still resolve `@selfcure/crawler@^0.1.0` → install a stale `0.1.x`. The release
+script prevents this by rewriting every internal range to `^<newVersion>` on each
+release. **Don't bump versions by hand** — use `npm run release`.
+
+## Auth & 2FA
+
+**Option A — OTP (no stored secret, good for a one-off):**
+Run the release; when npm prompts, paste the current 6-digit code. (The script
+streams npm's stdio, so the prompt is interactive.)
+
+**Option B — granular token with bypass-2FA (smoother for multi-package runs):**
+
+1. https://www.npmjs.com/settings/ricardofrancocustodio/tokens → *Generate New
+   Token* → *Granular Access Token*.
+2. Check **Bypass two-factor authentication (2FA)**.
+3. Permissions: **Read and write** on the **`@selfcure`** scope. Short expiry
+   (e.g. 7 days) is safer.
+4. Apply it locally (keeps the token out of the repo):
+   ```bash
+   npm config set //registry.npmjs.org/:_authToken <TOKEN>
+   ```
+5. **Revoke it after the release** and clear the local credential:
+   ```bash
+   npm config delete //registry.npmjs.org/:_authToken
+   ```
+
+> npm's UI warns bypass-2FA tokens carry risk and suggests *Trusted Publishing*
+> for CI/CD. That's the right choice **if/when** releases move into GitHub Actions
+> (OIDC, no stored token). For manual local releases the short-lived token is fine.
+
+## If a release fails mid-way
+
+Publishes are sequential and **not transactional**. If it fails at, say,
+`@selfcure/web`, everything before it is already live and **cannot be
+re-published at the same version** (npm forbids overwriting a version). Options:
+
+- Fix the cause and re-run only the remaining packages manually:
+  `npm publish -w @selfcure/web` … then `mcp`, then `cli`.
+- Or bump to the next patch and release the whole set again.
+
+## Published packages
+
+| Package | npm |
+|---------|-----|
+| `@selfcure/cli` | https://www.npmjs.com/package/@selfcure/cli |
+| `@selfcure/mcp` | https://www.npmjs.com/package/@selfcure/mcp |
+| `@selfcure/crawler` | https://www.npmjs.com/package/@selfcure/crawler |
+| `@selfcure/analyzer` | https://www.npmjs.com/package/@selfcure/analyzer |
+| `@selfcure/generator` | https://www.npmjs.com/package/@selfcure/generator |
+| `@selfcure/runner` | https://www.npmjs.com/package/@selfcure/runner |
+| `@selfcure/selfcure` | https://www.npmjs.com/package/@selfcure/selfcure |
+| `@selfcure/reporter` | https://www.npmjs.com/package/@selfcure/reporter |
+| `@selfcure/web` | https://www.npmjs.com/package/@selfcure/web |
+
+## Release log
+
+Newest first. Record every published version here for tracking.
+
+| Date | Version | Notes |
+|------|---------|-------|
+| 2026-06-22 | `0.1.0` | First public release — all 9 `@selfcure/*` packages. |
