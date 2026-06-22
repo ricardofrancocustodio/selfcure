@@ -7,12 +7,30 @@ at the same version under the **`@selfcure`** org (public, free).
 > in place — see the `chore(release)` commit. This doc covers the recurring
 > release flow.
 
-## TL;DR
+## Two ways to release
+
+| Path | When | Auth |
+|------|------|------|
+| **CI — Trusted Publishing (recommended)** | Normal releases | None — GitHub Actions OIDC, no token |
+| **Local** | Hotfix when CI is unavailable | `npm login` + OTP, or bypass-2FA token |
+
+### CI path (recommended)
 
 ```bash
-npm run release patch        # 0.1.0 → 0.1.1   (or: minor | major | 1.2.3)
-npm run release minor --dry-run   # rehearse without publishing or committing
-git push origin main --tags  # after a real release
+npm run release patch --prepare    # bump + verify + commit + tag (NO publish)
+git push origin main --follow-tags # pushing the v-tag triggers .github/workflows/release.yml
+```
+
+The workflow builds, tests, and publishes all 9 packages via OIDC with
+[provenance](https://docs.npmjs.com/generating-provenance-statements) — no
+secret stored anywhere. Requires the one-time [trusted-publisher setup](#ci--trusted-publishing-setup).
+
+### Local path
+
+```bash
+npm run release patch              # bump + verify + publish + commit + tag, all local
+npm run release minor --dry-run    # rehearse without publishing or committing
+git push origin main --follow-tags
 ```
 
 `scripts/release.mjs` does, in order:
@@ -82,6 +100,42 @@ streams npm's stdio, so the prompt is interactive.)
 > npm's UI warns bypass-2FA tokens carry risk and suggests *Trusted Publishing*
 > for CI/CD. That's the right choice **if/when** releases move into GitHub Actions
 > (OIDC, no stored token). For manual local releases the short-lived token is fine.
+
+## CI / Trusted Publishing setup
+
+The workflow lives at [`.github/workflows/release.yml`](../.github/workflows/release.yml).
+It uses GitHub Actions OIDC, so **no `NPM_TOKEN` is needed** — but each package
+must trust this repo + workflow once.
+
+**One-time, per package** (all 9), on npmjs.com:
+
+1. Open the package → **Settings** → **Trusted Publisher**.
+2. Add a publisher:
+   - Provider: **GitHub Actions**
+   - Organization/user: `ricardofrancocustodio`
+   - Repository: `selfcure`
+   - Workflow filename: `release.yml`
+   - Environment: *(leave blank)*
+3. Repeat for: `cli`, `mcp`, `crawler`, `analyzer`, `generator`, `runner`,
+   `selfcure`, `reporter`, `web`.
+
+> Trusted publishing can only be configured on a package that already exists on
+> npm — that's why the first `0.1.0` release went out via the local path.
+
+**How a CI release runs:**
+
+```bash
+npm run release minor --prepare    # bump + verify + commit + tag locally
+git push origin main --follow-tags # the vX.Y.Z tag triggers the workflow
+```
+
+The workflow then: `npm ci` → checks the tag matches `packages/cli` version →
+typecheck → build → test → `npm publish --provenance --access public` for each
+package in dependency order. Provenance shows up as a verified badge on the npm
+package page.
+
+Requirements baked into the workflow: `permissions.id-token: write` and
+`npm install -g npm@latest` (OIDC trusted publishing needs npm ≥ 11.5.1).
 
 ## If a release fails mid-way
 

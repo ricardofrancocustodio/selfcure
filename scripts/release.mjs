@@ -40,6 +40,9 @@ const PUBLISH_ORDER = [
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const noGit = args.includes('--no-git');
+// --prepare: bump + verify + commit + tag, but DON'T publish locally. Push the
+// tag to let the GitHub Actions trusted-publishing workflow publish (no token).
+const prepare = args.includes('--prepare');
 const bump = args.find((a) => !a.startsWith('--')) ?? 'patch';
 
 const log = (msg) => console.log(`\x1b[36m▸\x1b[0m ${msg}`);
@@ -100,14 +103,18 @@ run('npx', ['tsc', '--noEmit']); // typecheck (avoids npm-run workspace fan-out)
 run('npm', ['run', 'build']);
 run('npx', ['vitest', 'run']);
 
-// 5 — publish in dependency order
-for (const name of PUBLISH_ORDER) {
-  const publishArgs = ['publish', '-w', `@selfcure/${name}`];
-  if (dryRun) publishArgs.push('--dry-run');
-  try {
-    run('npm', publishArgs);
-  } catch {
-    die(`publish failed at @selfcure/${name} — fix and re-run. Packages before it are already on npm.`);
+// 5 — publish in dependency order (skipped in --prepare; CI publishes instead)
+if (prepare) {
+  log('--prepare: skipping local publish (GitHub Actions will publish on the tag).');
+} else {
+  for (const name of PUBLISH_ORDER) {
+    const publishArgs = ['publish', '-w', `@selfcure/${name}`];
+    if (dryRun) publishArgs.push('--dry-run');
+    try {
+      run('npm', publishArgs);
+    } catch {
+      die(`publish failed at @selfcure/${name} — fix and re-run. Packages before it are already on npm.`);
+    }
   }
 }
 
@@ -116,7 +123,10 @@ if (!noGit && !dryRun) {
   run('git', ['add', '-A']);
   run('git', ['commit', '-m', `release: v${version}`]);
   run('git', ['tag', `v${version}`]);
-  log(`Committed and tagged v${version}. Push with: git push origin main --tags`);
+  const hint = prepare
+    ? `Push to publish via CI:  git push origin main --follow-tags`
+    : `Push with:  git push origin main --follow-tags`;
+  log(`Committed and tagged v${version}. ${hint}`);
 }
 
 log(`\x1b[32m✔ Release ${version} complete.\x1b[0m`);
