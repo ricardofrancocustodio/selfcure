@@ -6,7 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Playwright](https://img.shields.io/badge/@playwright%2Ftest-1.60.0-45ba4b)](https://playwright.dev)
-[![MCP](https://img.shields.io/badge/MCP-Anthropic-blueviolet)](https://modelcontextprotocol.io)
+[![MCP](https://img.shields.io/badge/MCP-compatible-blueviolet)](https://modelcontextprotocol.io)
+[![VS Code](https://img.shields.io/badge/VS%20Code-GitHub%20Copilot-007ACC?logo=visualstudiocode)](https://code.visualstudio.com/docs/copilot/chat/mcp-servers)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 
 ## Why selfcure exists
@@ -28,7 +29,7 @@ Dogfooded on a real legacy HTML app: **500 issues across 27 files — 477 of the
 2. **Detects ambiguity** — when two or more elements in the same component share the best selector, the score is penalised and the element is flagged.
 3. **Lints with score + ambiguity** — `selfcure lint` or `POST /api/lint` returns one `LintIssue` per flagged element with a dedup-aware `suggestedTestId`.
 4. **Opens a Pull Request** — the `/lint` web page lets you pick which fixes to include with checkboxes. One click → branch + commit + push + PR against the base branch you configured (or the repo's default branch, auto-detected via `gh`). Redirects to GitHub.
-5. **Exposes everything via MCP** — `@selfcure/mcp` lets any MCP client (Claude Desktop, Cursor, VS Code, Claude Code, Windsurf) ask selfcure which components are blocking test generation.
+5. **Exposes everything via MCP** — `@selfcure/mcp` lets any MCP client (VS Code + GitHub Copilot, Claude Desktop, Cursor, Claude Code, Windsurf) ask selfcure which components are blocking test generation.
 
 ## What selfcure is not
 
@@ -41,7 +42,7 @@ selfcure lint  →  apply patches via PR  →  run Cypress / Playwright / Seleni
   (maturity score)     (frontend owns)          (stable, unambiguous selectors)
 ```
 
-For teams using MCP-capable AI clients (Claude Desktop, Cursor, VS Code, Windsurf), `@selfcure/mcp` publishes crawler + analyzer findings directly to the agent — no extra tooling needed.
+For teams using MCP-capable AI clients (VS Code + GitHub Copilot agent mode, Claude Desktop, Cursor, Windsurf), `@selfcure/mcp` publishes crawler + analyzer findings directly to the agent — no extra tooling needed.
 
 selfcure also ships a **legacy BYOK pipeline** (`@selfcure/generator` + `@selfcure/selfcure`) for LLM-powered test generation and healing. Provider matrix: Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, Ollama.
 
@@ -80,7 +81,7 @@ selfcure run                                       # full pipeline
 | `selfcure lint --fix` | [Pro] Apply patches to source files |
 | `selfcure lint --fix --pr` | [Pro] Apply + branch + push + open a Pull Request |
 | `selfcure web` | Browser UI with checkbox-driven PR flow |
-| `selfcure mcp` | Start the MCP stdio server (Claude Desktop / Cursor / VS Code / Windsurf) |
+| `selfcure mcp` | Start the MCP stdio server (VS Code Copilot / Claude Desktop / Cursor / Windsurf) |
 | `selfcure run` | (Legacy) Full BYOK pipeline: crawl → generate → run → heal → report |
 | `selfcure heal` | (Legacy) Re-attempt healing on the last set of failures |
 | `selfcure report` | (Legacy) Re-generate the HTML report from persisted data |
