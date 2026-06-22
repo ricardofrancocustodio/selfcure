@@ -5,6 +5,9 @@
 > Correction is commodity — visibility over time is the product.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![npm @selfcure/cli](https://img.shields.io/npm/v/@selfcure/cli?label=%40selfcure%2Fcli&color=cb3837&logo=npm)](https://www.npmjs.com/package/@selfcure/cli)
+[![npm @selfcure/mcp](https://img.shields.io/npm/v/@selfcure/mcp?label=%40selfcure%2Fmcp&color=cb3837&logo=npm)](https://www.npmjs.com/package/@selfcure/mcp)
+[![npm @selfcure/selfcure](https://img.shields.io/npm/v/@selfcure/selfcure?label=%40selfcure%2Fselfcure&color=cb3837&logo=npm)](https://www.npmjs.com/package/@selfcure/selfcure)
 [![Playwright](https://img.shields.io/badge/@playwright%2Ftest-1.60.0-45ba4b)](https://playwright.dev)
 [![MCP](https://img.shields.io/badge/MCP-compatible-blueviolet)](https://modelcontextprotocol.io)
 [![VS Code](https://img.shields.io/badge/VS%20Code-GitHub%20Copilot-007ACC?logo=visualstudiocode)](https://code.visualstudio.com/docs/copilot/chat/mcp-servers)
