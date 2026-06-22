@@ -50,7 +50,7 @@ It does **not** push. Push tags yourself after verifying.
 |-------------|-------|
 | Logged in to npm | `npm whoami` must succeed (publisher: `ricardofrancocustodio`). |
 | Member of the `@selfcure` org | `npm org ls selfcure` must list you with publish rights. |
-| 2FA satisfied | The account has 2FA. Either let npm prompt for an OTP per publish, or use a **granular access token with "Bypass two-factor authentication (2FA)"** (Read & write on the `@selfcure` scope). See [Auth & 2FA](#auth--2fa). |
+| 2FA satisfied | The account has 2FA (TOTP) enabled. For a **local** publish, let npm prompt for an OTP, or use a **granular access token with "Bypass 2FA"**. The **CI** path needs neither — OIDC is independent of account 2FA. See [Auth & 2FA](#auth--2fa). Keep your TOTP recovery codes somewhere safe. |
 
 ## Why the order matters
 
