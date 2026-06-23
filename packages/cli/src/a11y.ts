@@ -35,13 +35,12 @@ function severityCounts(findings: AccessibilityFinding[]): Record<A11ySeverity, 
 
 /**
  * Print the Accessibility section that appears below Testability in `selfcure lint --a11y`.
- * Shows a summary line always; full details only for Pro users.
  */
 export function printA11ySection(
   findings: AccessibilityFinding[],
-  opts: { isPro: boolean; wcagLevel: WcagLevel; cwd: string },
+  opts: { wcagLevel: WcagLevel; cwd: string },
 ): void {
-  const { isPro, wcagLevel, cwd } = opts;
+  const { wcagLevel, cwd } = opts;
   const counts = severityCounts(findings);
 
   console.log(chalk.bold(`Accessibility  WCAG ${wcagLevel}`));
@@ -61,12 +60,6 @@ export function printA11ySection(
   console.log('  ' + parts.join('  ·  '));
   console.log('');
 
-  if (!isPro) {
-    console.log(chalk.bold.yellow('  ✦ Full accessibility report available on the Pro plan'));
-    console.log(chalk.dim('    Enable with SELFCURE_PRO=1 or pro: true in your config.'));
-    console.log('');
-    return;
-  }
 
   // Group findings by file
   const byFile = new Map<string, AccessibilityFinding[]>();
@@ -140,7 +133,7 @@ export function registerA11yCommands(program: Command): void {
     .option('--wcag <level>',         'WCAG target level: A, AA, or AAA', 'AA')
     .option('--out <dir>',            'output directory for findings file', '.selfcure')
     .option('--app <name>',           'application name for the findings file')
-    .option('--dynamic',              '[Pro] also run live Playwright + axe-core scan')
+    .option('--dynamic',              'also run live Playwright + axe-core scan')
     .option('--base-url <url>',       'app base URL for dynamic scan (e.g. http://localhost:3000)')
     .option('--routes <routes>',      'comma-separated routes to scan (default: /)', '/')
     .option('--axe-source <path>',    'local path or URL to axe-core script (default: CDN)')
@@ -275,7 +268,7 @@ export function registerA11yCommands(program: Command): void {
 
         // Print open findings grouped by file
         const open = inventory.findings.filter((f: AccessibilityFinding) => f.status === 'open');
-        printA11ySection(open, { isPro: true, wcagLevel: inventory.targetLevel, cwd: process.cwd() });
+        printA11ySection(open, { wcagLevel: inventory.targetLevel, cwd: process.cwd() });
 
         if (opts.ci) {
           if (wouldFailCI) {

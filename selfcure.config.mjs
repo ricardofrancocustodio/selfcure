@@ -131,9 +131,7 @@ export default {
   /** Title displayed in the HTML report */
   reportTitle: 'Selfcure Report',
 
-  // ── Linter (Pro: `selfcure lint --fix --pr` and the web /lint page) ──────
-  //
-  // pro: true,                       // enable Pro features without SELFCURE_PRO=1
+  // ── Linter (`selfcure lint --fix --pr` and the web /lint page) ─────────
   //
   // lint: {
   //   /**

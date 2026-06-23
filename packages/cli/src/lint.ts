@@ -1,6 +1,5 @@
 // ---------------------------------------------------------------------------
 // selfcure lint — testability linter + optional auto-fix + PR creation
-// Pro plan feature: --fix applies data-testid patches; --pr opens a GitHub PR.
 // ---------------------------------------------------------------------------
 
 import { crawl, extractA11yEvidenceFromAll }    from '@selfcure/crawler';
@@ -22,8 +21,6 @@ export interface LintConfig {
   include:    string[];
   exclude:    string[];
   framework?: 'react' | 'vue' | 'angular' | 'auto';
-  /** Set to true in selfcure.config.mjs to enable Pro features without env var */
-  pro?:       boolean;
   /** Optional linter block — currently only `prBaseBranch`. */
   lint?:      { prBaseBranch?: string; gitProvider?: 'github' | 'gitlab' | 'auto' };
 }

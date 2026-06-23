@@ -177,7 +177,7 @@ export interface SelfcureConfig {
   reportTitle?: string;
 
   /** Optional Pro flag — enables `selfcure lint --fix` and `--pr` without the env var. */
-  pro?: boolean;
+  // pro field removed — all features are free
 
   /** Optional linter settings (currently just PR base branch). */
   lint?: LintOptions;
@@ -334,12 +334,12 @@ program
 
 program
   .command('lint')
-  .description('[Pro] Lint source files for unstable test selectors and suggest data-testid patches')
+  .description('Lint source files for unstable test selectors and suggest data-testid patches')
   .option('-c, --config <path>', 'path to selfcure.config.mjs (falls back to selfcure.config.js)', './selfcure.config.mjs')
   .option('--threshold <n>', 'testability score below which an element is flagged', '65')
-  .option('--fix',          '[Pro] apply data-testid patches to source files automatically')
-  .option('--pr',           '[Pro] create a GitHub PR with the applied fixes (requires --fix)')
-  .option('--a11y',         '[Pro] also run WCAG accessibility lint alongside testability')
+  .option('--fix',          'apply data-testid patches to source files automatically')
+  .option('--pr',           'create a GitHub PR with the applied fixes (requires --fix)')
+  .option('--a11y',         'also run WCAG accessibility lint alongside testability')
   .option('--wcag <level>', 'WCAG target level when using --a11y: A, AA, or AAA', 'AA')
   .option('--prompt',       'print a paste-ready prompt for your IDE AI agent (Copilot/Cursor) instead of the report — no API key needed')
   .action(async (opts) => {
@@ -350,21 +350,9 @@ program
       const { default: config } = await import(configUrl);
 
       const threshold = Number(opts.threshold ?? 65);
-      const isPro     = config.pro === true || process.env['SELFCURE_PRO'] === '1';
 
-      // Pro-gate: --fix, --pr, and --a11y (full details) require Pro
-      if ((opts.fix || opts.pr) && !isPro) {
-        spinner.stop();
-        console.log('');
-        console.log(chalk.bold.yellow('✦ Pro feature'));
-        console.log(chalk.dim('  --fix and --pr are available on the Pro plan and above.'));
-        console.log(chalk.dim('  Enable Pro by setting SELFCURE_PRO=1 or pro: true in your config.'));
-        console.log('');
-        // Fall through and run the report-only mode
-      }
-
-      const fix  = opts.fix  && isPro;
-      const pr   = opts.pr   && isPro && fix;
+      const fix  = Boolean(opts.fix);
+      const pr   = Boolean(opts.pr) && fix;
       const a11y = Boolean(opts.a11y);
 
       const summary = await runLint(config, { threshold, fix, pr, a11y, wcag: opts.wcag as 'A' | 'AA' | 'AAA' });
@@ -444,7 +432,6 @@ program
         console.log(chalk.dim('─'.repeat(60)));
         console.log('');
         printA11ySection(a11yFindings, {
-          isPro,
           wcagLevel: (opts.wcag ?? 'AA') as 'A' | 'AA' | 'AAA',
           cwd: process.cwd(),
         });
@@ -461,9 +448,9 @@ program
         } else if (pr) {
           console.log(chalk.yellow('  PR creation skipped (no files changed).'));
         }
-      } else if (!isPro) {
-        console.log(chalk.bold.yellow('✦ Run with --fix to auto-patch source files  (Pro)'));
-        console.log(chalk.bold.yellow('✦ Run with --fix --pr to open a GitHub PR   (Pro)'));
+      } else {
+        console.log(chalk.dim('  Run with --fix to auto-patch source files'));
+        console.log(chalk.dim('  Run with --fix --pr to open a GitHub PR'));
       }
       console.log('');
     } catch (err) {

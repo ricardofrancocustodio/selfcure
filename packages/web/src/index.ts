@@ -61,8 +61,6 @@ interface WebCrawlConfig {
   include: string[];
   exclude: string[];
   framework?: 'react' | 'vue' | 'angular' | 'auto';
-  /** Enables Pro features (auto-fix, open PR) without the SELFCURE_PRO env var. */
-  pro?: boolean;
   /** Optional linter settings (PR base branch, git provider override). */
   lint?: { prBaseBranch?: string; gitProvider?: 'github' | 'gitlab' | 'auto' };
 }
@@ -499,9 +497,6 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
     }
   }
 
-  // Pro is a UI hint — the actual gate lives on /api/pr where it matters.
-  const isPro = config.pro === true || process.env['SELFCURE_PRO'] === '1';
-
   // ── Append a snapshot to .selfcure/history.json (free local history) ───
   // Skip on --fix so we record the state *before* mutations are committed.
   if (!body.fix) {
@@ -532,7 +527,6 @@ async function runLintAnalysis(cwd: string, body: LintRequestBody) {
     totalFiles:   results.length,
     fixedCount,
     skippedCount,
-    pro: isPro,
   };
 }
 
@@ -1497,16 +1491,7 @@ export function startWebServer(
       readJsonBody(req)
         .then(async (rawBody) => {
           const body = rawBody as OpenPrRequestBody;
-          // Pro gate — same logic as /api/lint, enforced here because this
-          // endpoint actually mutates the repo (creates branch, opens PR).
-          const cfg   = await loadCrawlConfig(cwd, body.configPath);
-          const isPro = cfg.pro === true || process.env['SELFCURE_PRO'] === '1';
-          if (!isPro) {
-            throw new Error(
-              'Open pull request is a Pro feature. Enable it by setting ' +
-              "`pro: true` in selfcure.config.mjs or `SELFCURE_PRO=1` in the environment.",
-            );
-          }
+          const cfg  = await loadCrawlConfig(cwd, body.configPath);
           return runOpenPr(cwd, body);
         })
         .then((result) => {

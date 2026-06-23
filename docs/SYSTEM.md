@@ -42,9 +42,8 @@ comparável + mapa visual por tela com screenshot. Nenhum healer reativo enxerga
 isso, e nenhuma IA generalista de IDE mantém esse histórico ao longo do tempo.
 
 **Entrada comercial:** `@selfcure/mcp` — servidor MCP gratuito e open-source que qualquer
-cliente IA instala em uma linha. Pro features (auto-fix, abertura de PR, dashboards,
-módulo de acessibilidade, integração SonarQube, motor próprio de screenshot) ficam
-por cima.
+cliente IA instala em uma linha. Dashboards avançados, integração SonarQube e motor próprio
+de screenshot ficam em versões futuras.
 
 ---
 
@@ -92,7 +91,7 @@ selfcure stop        # mata o web server numa porta
 # Comandos individuais
 selfcure init        # gera selfcure.config.mjs
 selfcure crawl       # crawl do source → metadados de componentes
-selfcure lint        # [Pro] lint de selectors instáveis + patches data-testid + PR
+selfcure lint        # lint de selectors instáveis + patches data-testid + PR
 selfcure lint --prompt  # gera prompt pronto p/ agent do IDE (Copilot/Cursor) — sem API key
 selfcure export      # exporta findings p/ ferramenta externa (SonarQube Generic Issue Format)
 selfcure mcp         # sobe o servidor MCP em stdio

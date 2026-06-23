@@ -433,7 +433,6 @@ function esc(s) {
 
   let allExpanded = true;
   let lastResult  = null;
-  let lastIsPro   = false;
   const selected  = new Set();
   const allKeys   = new Set();
   let prInFlight  = null;
@@ -492,7 +491,6 @@ function esc(s) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Lint failed');
       lastResult = data;
-      lastIsPro  = data.pro === true;
       render(data, body.threshold);
       maybeShowPrAction(data);
     } catch (err) {
@@ -737,22 +735,16 @@ function esc(s) {
     prAction.hidden = false;
     prSuccess.hidden = true;
     prInlineError.hidden = true;
-    if (!lastIsPro) {
-      openPrBtn.disabled  = true;
-      openPrBtn.title     = 'Open pull request requires Pro. Set pro: true in selfcure.config.mjs or SELFCURE_PRO=1.';
-      prSubInfo.innerHTML = '<strong>Pro feature.</strong> Enable with <code>pro: true</code> in selfcure.config.mjs or <code>SELFCURE_PRO=1</code>. &nbsp;&middot;&nbsp; No API key? Use <strong>Copy prompt to IDE</strong> (free, works with Copilot, Cursor, Claude Code).';
-    } else {
-      openPrBtn.disabled  = false;
-      openPrBtn.title     = '';
-      prSubInfo.innerHTML = 'Pick which fixes go into the PR. We branch, commit, push and open it on GitHub in one shot.';
-    }
+    openPrBtn.disabled  = false;
+    openPrBtn.title     = '';
+    prSubInfo.innerHTML = 'Pick which fixes go into the PR. We branch, commit, push and open it on GitHub in one shot.';
     updateSelInfo();
   }
 
   function updateSelInfo() {
     prSelInfo.textContent = selected.size + ' of ' + allKeys.size + ' issues selected';
     const noneSelected = selected.size === 0;
-    if (lastIsPro) openPrBtn.disabled = noneSelected || prInFlight !== null;
+    openPrBtn.disabled = noneSelected || prInFlight !== null;
   }
 
   function syncFilePicks() {

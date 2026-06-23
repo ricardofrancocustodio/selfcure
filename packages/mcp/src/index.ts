@@ -49,7 +49,6 @@ interface ResolvedConfig {
   include:    string[];
   exclude:    string[];
   framework?: 'react' | 'vue' | 'angular' | 'auto';
-  pro?:       boolean;
   lint?:      { prBaseBranch?: string };
 }
 

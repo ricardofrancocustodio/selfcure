@@ -81,8 +81,8 @@ selfcure run                                       # full pipeline
 | `selfcure init` | Scaffold `selfcure.config.mjs` in the current project |
 | `selfcure crawl` | Crawl source files and print component metadata |
 | `selfcure lint` | Score testability + flag ambiguous locators + suggest data-testid patches |
-| `selfcure lint --fix` | [Pro] Apply patches to source files |
-| `selfcure lint --fix --pr` | [Pro] Apply + branch + push + open a Pull Request |
+| `selfcure lint --fix` | Apply patches to source files automatically |
+| `selfcure lint --fix --pr` | Apply + branch + push + open a Pull Request |
 | `selfcure web` | Browser UI with checkbox-driven PR flow |
 | `selfcure mcp` | Start the MCP stdio server (VS Code Copilot / Claude Desktop / Cursor / Windsurf) |
 | `selfcure run` | (Legacy) Full BYOK pipeline: crawl → generate → run → heal → report |
@@ -132,7 +132,7 @@ cli ──► crawler ──► analyzer ──► generator ──► [LLM prov
 
 LLM provider is configurable: Anthropic, OpenAI, Google Gemini, Groq, DeepSeek, or local Ollama.
 
-## Opening pull requests (Pro)
+## Opening pull requests
 
 The `selfcure lint --pr` command and the **Open pull request** button on the web `/lint` page delegate to the GitHub CLI — selfcure never stores tokens or repo URLs. Each user sets this up once:
 
@@ -150,10 +150,9 @@ git remote -v
 # if missing: git remote add origin https://github.com/<org>/<repo>.git
 ```
 
-Then enable the feature in `selfcure.config.mjs`:
+Then configure the target branch in `selfcure.config.mjs`:
 
 ```js
-pro: true,
 lint: { prBaseBranch: 'main' },   // optional — defaults to repo's default branch
 ```
 
