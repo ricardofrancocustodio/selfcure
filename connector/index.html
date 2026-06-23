@@ -454,12 +454,56 @@
     }
     footer a { color: #cbd5e1; }
 
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .tier {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .tier-free { border-color: var(--accent); }
+    .tier-name {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+    .tier-status {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+      background: color-mix(in srgb, var(--muted) 15%, transparent);
+      color: var(--muted);
+      letter-spacing: 0;
+      text-transform: none;
+    }
+    .tier-name .roadmap { background: color-mix(in srgb, #f59e0b 15%, transparent); color: #b45309; }
+    .tier h3 { margin: 0; font-size: 20px; }
+    .tier-price { margin: 0; font-size: 28px; font-weight: 700; }
+    .tier-price small { font-size: 13px; font-weight: 400; color: var(--muted); }
+    .tier ul { margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 8px; }
+    .tier li { font-size: 14px; color: var(--muted); }
+    .tier li strong { color: var(--fg); }
+    .tier .button { align-self: flex-start; }
     @media (max-width: 920px) {
       nav { display: none; }
       .hero-grid, .compliance, .grid-3, .grid-2, .case-grid { grid-template-columns: 1fr; }
       .logo-row { grid-template-columns: repeat(2, 1fr); }
       .integration-row { grid-template-columns: repeat(2, 1fr); }
       .hero { padding-top: 56px; }
+      .pricing-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -474,6 +518,7 @@
         <a href="#platform">Platform</a>
         <a href="#security">Security</a>
         <a href="#integrations">Integrations</a>
+        <a href="#pricing">Pricing</a>
         <a href="#docs">Docs</a>
         <a href="https://ricardofrancocustodio.github.io/selfcure/">Open source site</a>
       </nav>
@@ -485,7 +530,7 @@
     <section class="hero">
       <div class="wrap hero-grid">
         <div>
-          <p class="eyebrow">Visibility & maturity · WCAG accessibility · Tool-agnostic · Open source</p>
+          <p class="eyebrow">Open core · Visibility &amp; maturity · WCAG accessibility · Tool-agnostic</p>
           <h1>Know if your frontend is ready to be automated.</h1>
           <p class="lede">
             selfcure measures how ready your application is to be automated — and proves it's improving. It provides a shared visibility layer across monorepos to track testability score, TML maturity, and WCAG compliance.
@@ -659,6 +704,70 @@
       </div>
     </section>
 
+    <section id="pricing">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Open-core model</p>
+          <h2>Free to use. Paid for what comes next.</h2>
+          <p>The CLI, web UI, and MCP server are open source and free forever. Cloud features are on the roadmap for paid tiers &mdash; nothing is gated today.</p>
+        </div>
+        <div class="pricing-grid">
+
+          <div class="tier tier-free">
+            <div>
+              <span class="tier-name">Free<span class="tier-status">Open source &middot; forever</span></span>
+              <h3>Everything today</h3>
+              <p class="tier-price">$0 <small>/ always</small></p>
+            </div>
+            <ul>
+              <li><strong>selfcure lint</strong> &mdash; testability score &amp; ambiguity detection</li>
+              <li><strong>selfcure lint --fix</strong> &mdash; auto-patch <code>data-testid</code></li>
+              <li><strong>selfcure lint --fix --pr</strong> &mdash; open PR via GitHub / GitLab / Bitbucket</li>
+              <li><strong>selfcure web</strong> &mdash; local dashboard, evolution chart, PR flow</li>
+              <li><strong>@selfcure/mcp</strong> &mdash; MCP server for VS Code, Claude Desktop, Cursor&hellip;</li>
+              <li>WCAG static accessibility audit</li>
+              <li>Local history &amp; trend tracking</li>
+              <li>SonarQube Generic Issue file export</li>
+            </ul>
+            <a class="button primary" href="https://www.npmjs.com/package/@selfcure/cli">Install on npm &rarr;</a>
+          </div>
+
+          <div class="tier">
+            <div>
+              <span class="tier-name">Pro<span class="tier-status roadmap">Roadmap</span></span>
+              <h3>Team visibility</h3>
+              <p class="tier-price">TBD</p>
+            </div>
+            <ul>
+              <li>Everything in Free</li>
+              <li><strong>SonarQube live push</strong> &mdash; real-time findings sync to your SonarQube server</li>
+              <li>Hosted dashboard &amp; trend API</li>
+              <li>Cross-repo testability aggregation</li>
+              <li>Policy enforcement hooks for CI / release gates</li>
+            </ul>
+            <a class="button" href="https://github.com/ricardofrancocustodio/selfcure">Watch on GitHub</a>
+          </div>
+
+          <div class="tier">
+            <div>
+              <span class="tier-name">Enterprise<span class="tier-status roadmap">Roadmap</span></span>
+              <h3>Platform control</h3>
+              <p class="tier-price">TBD</p>
+            </div>
+            <ul>
+              <li>Everything in Pro</li>
+              <li>SSO / SAML authentication</li>
+              <li>Self-hosted deployment</li>
+              <li>Dedicated support &amp; SLA</li>
+              <li>Custom audit trail export</li>
+            </ul>
+            <a class="button" href="https://github.com/ricardofrancocustodio/selfcure">Follow roadmap</a>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <section id="docs" class="docs-band">
       <div class="wrap grid-2">
         <div>
@@ -678,7 +787,7 @@ npm install -g @selfcure/cli
 selfcure init --ci
 selfcure lint --threshold 75
 
-<span class="dim"># Pro workflow</span>
+<span class="dim"># fix and open PR (free)</span>
 selfcure lint --fix --pr
 <span class="good"># opens reviewable PR with audit trail</span>
         </div>

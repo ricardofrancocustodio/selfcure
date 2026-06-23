@@ -45,6 +45,14 @@ isso, e nenhuma IA generalista de IDE mantém esse histórico ao longo do tempo.
 cliente IA instala em uma linha. Dashboards avançados, integração SonarQube e motor próprio
 de screenshot ficam em versões futuras.
 
+**Modelo open-core:**
+
+| Tier | Status | O que inclui |
+|------|--------|--------------|
+| **Free** | Agora | Tudo que existe hoje: lint, fix, PR, web UI, MCP, WCAG, histórico local, export SonarQube (arquivo) |
+| **Pro** | Roadmap | SonarQube live push, dashboard hosted, trend API, agregação cross-repo |
+| **Enterprise** | Roadmap | SSO/SAML, self-hosted, suporte dedicado + SLA |
+
 ---
 
 ## 2. Pacotes (10)

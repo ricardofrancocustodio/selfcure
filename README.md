@@ -91,6 +91,28 @@ selfcure run                                       # full pipeline
 
 All commands accept `-c <path>` to point at a custom config file.
 
+## Open-core model
+
+selfcure is **open core**. The entire CLI, web UI, and MCP server are open source and free forever.
+
+| | Free | Pro | Enterprise |
+|---|---|---|---|
+| **Status** | Now | Roadmap | Roadmap |
+| selfcure lint \| fix \| --pr | ✓ | ✓ | ✓ |
+| selfcure web — local dashboard & PR flow | ✓ | ✓ | ✓ |
+| @selfcure/mcp — MCP server for any AI client | ✓ | ✓ | ✓ |
+| WCAG static accessibility audit | ✓ | ✓ | ✓ |
+| Local history & trend tracking | ✓ | ✓ | ✓ |
+| SonarQube Generic Issue file export | ✓ | ✓ | ✓ |
+| **SonarQube live push integration** | — | ✓ | ✓ |
+| **Hosted dashboard & trend API** | — | ✓ | ✓ |
+| **Cross-repo aggregation & policy hooks** | — | ✓ | ✓ |
+| **SSO / SAML** | — | — | ✓ |
+| **Self-hosted deployment** | — | — | ✓ |
+| **Dedicated support & SLA** | — | — | ✓ |
+
+> Pro and Enterprise are roadmap items — nothing is gated today.
+
 ## Package architecture
 
 ```
