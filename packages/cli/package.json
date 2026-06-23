@@ -1,7 +1,7 @@
 {
   "name": "@selfcure/cli",
   "version": "0.1.0",
-  "description": "CLI entry-point for selfcure (init, crawl, lint, mcp, web, and legacy run/heal/report)",
+  "description": "Frontend testability maturity CLI — scores components, flags ambiguous locators, and ships data-testid fixes as a PR before Cypress, Playwright, Selenium, TestCafe, or WebdriverIO run.",
   "type": "module",
   "license": "MIT",
   "author": "ricardofrancocustodio",

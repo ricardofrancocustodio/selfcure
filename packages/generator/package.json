@@ -1,7 +1,7 @@
 {
   "name": "@selfcure/generator",
   "version": "0.1.0",
-  "description": "Sends component analysis to an LLM (Anthropic/OpenAI/Google/Groq/DeepSeek/Ollama) and receives Playwright test code",
+  "description": "Legacy BYOK test generator for selfcure — sends component analysis to an LLM (Anthropic/OpenAI/Google/Groq/DeepSeek/Ollama) and returns Playwright test code. Fallback for teams without Playwright Test Agents.",
   "type": "module",
   "license": "MIT",
   "author": "ricardofrancocustodio",

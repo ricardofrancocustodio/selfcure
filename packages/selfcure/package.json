@@ -1,7 +1,7 @@
 {
   "name": "@selfcure/selfcure",
   "version": "0.1.0",
-  "description": "Self-healing loop — sends trace + error to the configured LLM, applies diff, re-validates",
+  "description": "Legacy BYOK self-healing loop for selfcure — sends trace + error to the configured LLM, applies diff, re-validates. Fallback for teams without Playwright Test Agents.",
   "type": "module",
   "license": "MIT",
   "author": "ricardofrancocustodio",
