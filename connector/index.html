@@ -494,15 +494,8 @@
             <a class="button primary" href="#platform">Explore the platform</a>
             <a class="button" href="https://github.com/ricardofrancocustodio/selfcure">View on GitHub</a>
           </div>
-          <div class="trust-strip" aria-label="Representative customer environments">
-            <p class="trust-label">Designed for enterprise environments like</p>
-            <div class="logo-row">
-              <div class="logo">NORTHSTAR<br>BANK</div>
-              <div class="logo">ATLAS<br>RETAIL</div>
-              <div class="logo">HELIX<br>CLOUD</div>
-              <div class="logo">CIVIC<br>HEALTH</div>
-              <div class="logo">ORBIT<br>FINANCE</div>
-            </div>
+          <div class="trust-strip" aria-label="Proof point">
+            <p class="trust-label">Dogfooded on a real legacy app: <strong>477 ambiguous locators across 27 files</strong>, avg score 43/100 — exported to SonarQube.</p>
           </div>
         </div>
 
@@ -543,8 +536,8 @@
     <section id="platform">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">Enterprise platform</p>
-          <h2>Built for frontend organizations, not one-off QA scripts.</h2>
+          <p class="eyebrow">Platform</p>
+          <h2>Built for frontend teams, not one-off QA scripts.</h2>
           <p>selfcure gives platform, QA, and frontend leads a shared source of truth for testability before automation tools, CI jobs, or human QA spend time on unstable surfaces.</p>
         </div>
         <div class="grid-3">
@@ -595,27 +588,24 @@
     <section id="security">
       <div class="wrap compliance">
         <div class="dark-panel">
-          <p class="eyebrow">Security and compliance posture</p>
-          <h2>Designed for regulated engineering environments.</h2>
-          <p>Run analysis locally, keep code in your network, delegate repository auth to your existing SCM provider, and make every automated fix reviewable.</p>
+          <p class="eyebrow">Security posture</p>
+          <h2>Local-first, no code leaves your network.</h2>
+          <p>Source analysis runs on your machine. Repository auth is delegated to your existing SCM provider. Every automated fix goes through a normal pull request — nothing mutates production directly.</p>
           <div class="badge-row">
-            <span class="badge">SSO / SAML ready</span>
+            <span class="badge">Local-first analysis</span>
             <span class="badge">OAuth scoped auth</span>
             <span class="badge">Audit logs</span>
-            <span class="badge">SOC 2 roadmap</span>
-            <span class="badge">Private networking roadmap</span>
+            <span class="badge">Reviewable PRs only</span>
           </div>
         </div>
         <div class="card">
-          <h3>Enterprise control requirements</h3>
+          <h3>What’s true today</h3>
           <ul class="check-list">
-            <li>Local-first source analysis with no mandatory cloud code upload.</li>
-            <li>GitHub Enterprise, GitLab, and Bitbucket flows through scoped OAuth or local CLI auth.</li>
+            <li>Local-first source analysis — no mandatory cloud code upload.</li>
+            <li>GitHub, GitLab, and Bitbucket flows through scoped OAuth or local CLI auth (<code>gh</code> / <code>glab</code>).</li>
             <li>WCAG accessibility compliance gates and reporting.</li>
             <li>Reviewable pull requests instead of direct production mutations.</li>
-            <li>Structured logs for compliance evidence and incident review.</li>
-            <li>Policy thresholds for CI, release gates, and platform scorecards.</li>
-            <li>Dedicated support, implementation review, and SLA packages for enterprise rollout.</li>
+            <li>Policy thresholds configurable for CI, release gates, and platform scorecards.</li>
           </ul>
         </div>
       </div>
@@ -624,11 +614,11 @@
     <section id="integrations">
       <div class="wrap">
         <div class="section-head">
-          <p class="eyebrow">Enterprise integrations</p>
-          <h2>Fits the tools large teams already use.</h2>
+          <p class="eyebrow">Works with your stack</p>
+          <h2>Fits the tools your team already uses.</h2>
           <p>selfcure is the maturity layer that runs before any automation runtime. Correction is commodity — visibility over time is the product. Works with Cypress, Playwright, Selenium, TestCafe, WebdriverIO, and any agent workflow.</p>
         </div>
-        <div class="integration-row" aria-label="Enterprise integrations">
+        <div class="integration-row" aria-label="Integrations">
           <div class="integration">GitHub<br>Enterprise</div>
           <div class="integration">GitLab<br>Self-Managed</div>
           <div class="integration">Bitbucket<br>Cloud</div>
