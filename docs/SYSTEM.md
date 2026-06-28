@@ -4,7 +4,7 @@
 > não plano de obra. Sempre que um pacote, comando ou módulo nascer/morrer/mudar de
 > papel, **atualize este arquivo primeiro**.
 >
-> _Última atualização: 2026-06-04._
+> _Última atualização: 2026-06-28._
 
 ---
 
@@ -63,7 +63,7 @@ Monorepo npm workspaces (`packages/*`). ESM-only, TypeScript, build via `tsup`.
 |--------|-------|--------|-----------|
 | `@selfcure/crawler` | ★ moat | ativo | Crawler estático via `@typescript-eslint/parser` — extrai AST + metadados de cada componente |
 | `@selfcure/analyzer` | ★ moat | ativo | Score de testabilidade 0–100 + **detecção de ambiguidade** (selectors compartilhados entre siblings) |
-| `@selfcure/web` | ★ moat | ativo | UI local zero-config: dashboard `/` (= `/lint`: PR + Copy prompt to IDE), `/evolution` (histórico local), `/crawl`, `/integrations` (OAuth SCM) · _`/map`: wireframe, Fase 23.5_ |
+| `@selfcure/web` | ★ moat | ativo | UI local zero-config: dashboard `/` (= `/lint`: PR + Copy prompt to IDE), `/tml` (Tag Maturity), `/evolution` (histórico local), `/crawl`, `/integrations` (OAuth SCM) · _`/map`: wireframe, Fase 23.5_ |
 | `@selfcure/mcp` | ★ entrada comercial | ativo | Servidor Model Context Protocol (stdio) expondo crawl + analyze + lint a qualquer cliente IA |
 | `@selfcure/screenshot` | ★ Fase 23 | planejado | Camada de captura de screenshot com providers (Playwright/Cypress/Selenium/TestCafe) + fallback próprio (pago) |
 | `@selfcure/cli` | infra | ativo | Entry-point Commander que orquestra todos os comandos |
@@ -145,6 +145,7 @@ perguntas. Estado por tela (ver detalhe em [`onboarding-flow.md`](onboarding-flo
 | Tela | Rota | Status | O que faz / falta |
 |------|------|--------|-------------------|
 | **Dashboard** | `/` | ✅ implementada | Página `/lint` evoluída: score geral + por componente, issues por categoria, PR de cura, Copy prompt to IDE, filtros |
+| **Tag Maturity** | `/tml` | ✅ implementada | Dashboard TML: distribuição por nível de maturidade + findings, lido de `/api/tml-analysis` |
 | **Mapa Visual** | `/map` | ⚠️ wireframe | Layout/mockup pronto; screenshot real + sobreposição dependem de `@selfcure/screenshot` (Fase 23.5) |
 | **Evolução Temporal** | `/evolution` | ✅ implementada (local) | Gráfico SVG de maturidade ao longo do tempo, lido de `.selfcure/history.json`; comparação entre branches / modo compartilhado = pago (pendente) |
 
@@ -194,7 +195,7 @@ npm run lint    # tsc --noEmit
 | Fase 14 — Dogfood pago (1º PR mergeado fora do qnexytest) | ⏳ pendente |
 | Fase 21 — Integração SonarQube via Generic Issue Format | ✅ código (2026-06-04) — falta só publicar em sonarplugins.com |
 | Fase 22 — Silos de landing page por ferramenta de automação | ✅ código (2026-06-04) — falta só SEO/ranqueamento |
-| **Fase 23 — Onboarding zero-config + 3 telas + screenshot agnóstico** | 🔄 **em curso** — ✅ zero-config, dashboard `/`, `/evolution` (histórico local), histórico `.selfcure/history.json`, Copy prompt to IDE · ⚠️ `/map` wireframe · ❌ `@selfcure/screenshot`, `selfcure snapshot`, histórico pago |
+| **Fase 23 — Onboarding zero-config + 3 telas + screenshot agnóstico** | 🔄 **em curso** — ✅ zero-config, dashboard `/`, `/tml`, `/evolution` (histórico local), histórico `.selfcure/history.json`, Copy prompt to IDE · ⚠️ `/map` wireframe · ❌ `@selfcure/screenshot`, `selfcure snapshot`, histórico pago |
 | Fase 15 — Plugin Figma | ⏳ somente se demanda orgânica aparecer de clientes |
 | Fase 16 — Integração Playwright Test Agents | ⏳ futuro, atrás de feature flag |
 | Publicação npm | ✅ 9 pacotes `@selfcure/*` publicados (`0.1.0`, org `selfcure`) em 2026-06-22 — release via `npm run release` (ver `docs/releasing.md`) |
@@ -234,7 +235,8 @@ Histórico completo das fases: ver git log.
   - CLI completa, crawl, analyze, score local
   - MCP server, BYOM/BYOK
   - Copy prompt to IDE (para quem não tem API key)
-  - _Mapa visual, evolução temporal e screenshot agnóstico: planejado para Fase 23_
+  - Dashboard web local (`/`, `/tml`, `/crawl`, `/integrations`) + evolução temporal local (`/evolution`)
+  - _Mapa visual com screenshot agnóstico: planejado para Fase 23.5_
 - **Team (~USD 199/mês):**
   - Dashboard web com histórico compartilhado entre membros do time
   - PR comments automáticos, comparação entre branches
