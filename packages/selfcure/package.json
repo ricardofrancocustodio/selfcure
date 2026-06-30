@@ -1,7 +1,7 @@
 {
   "name": "@selfcure/selfcure",
-  "version": "0.1.0",
-  "description": "Legacy BYOK self-healing loop for selfcure — sends trace + error to the configured LLM, applies diff, re-validates. Fallback for teams without Playwright Test Agents.",
+  "version": "0.1.1",
+  "description": "Legacy BYOK self-healing loop for selfcure — sends trace + error to the configured LLM, applies diff, re-validates. Optional fallback for teams without Playwright Test Agents; the headline flow is `selfcure lint` + @selfcure/mcp.",
   "type": "module",
   "license": "MIT",
   "author": "ricardofrancocustodio",
@@ -19,7 +19,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -29,8 +31,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@selfcure/generator": "^0.1.0",
-    "@selfcure/runner": "^0.1.0",
+    "@selfcure/generator": "^0.1.1",
+    "@selfcure/runner": "^0.1.1",
     "ai": "^6.0.191",
     "fs-extra": "^11.3.5"
   },

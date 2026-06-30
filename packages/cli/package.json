@@ -1,6 +1,6 @@
 {
   "name": "@selfcure/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Frontend testability maturity CLI — scores components, flags ambiguous locators, and ships data-testid fixes as a PR before Cypress, Playwright, Selenium, TestCafe, or WebdriverIO run.",
   "type": "module",
   "license": "MIT",
@@ -16,7 +16,9 @@
   "bin": {
     "selfcure": "dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -27,14 +29,14 @@
   },
   "dependencies": {
     "@inquirer/prompts": "^8.4.3",
-    "@selfcure/analyzer": "^0.1.0",
-    "@selfcure/crawler": "^0.1.0",
-    "@selfcure/generator": "^0.1.0",
-    "@selfcure/mcp": "^0.1.0",
-    "@selfcure/reporter": "^0.1.0",
-    "@selfcure/runner": "^0.1.0",
-    "@selfcure/selfcure": "^0.1.0",
-    "@selfcure/web": "^0.1.0",
+    "@selfcure/analyzer": "^0.1.1",
+    "@selfcure/crawler": "^0.1.1",
+    "@selfcure/generator": "^0.1.1",
+    "@selfcure/mcp": "^0.1.1",
+    "@selfcure/reporter": "^0.1.1",
+    "@selfcure/runner": "^0.1.1",
+    "@selfcure/selfcure": "^0.1.1",
+    "@selfcure/web": "^0.1.1",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "ora": "^9.4.0"

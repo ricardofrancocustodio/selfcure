@@ -1,6 +1,6 @@
 {
   "name": "@selfcure/mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Model Context Protocol server exposing selfcure's testability analysis (crawl + analyze + lint) to any MCP client — Claude Desktop, Cursor, VS Code, Claude Code, Windsurf, etc.",
   "type": "module",
   "license": "MIT",
@@ -22,7 +22,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -33,7 +35,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@selfcure/analyzer": "^0.1.0",
-    "@selfcure/crawler": "^0.1.0"
+    "@selfcure/analyzer": "^0.1.1",
+    "@selfcure/crawler": "^0.1.1"
   }
 }

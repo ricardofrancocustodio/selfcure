@@ -1,6 +1,6 @@
 {
   "name": "@selfcure/runner",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Executes Playwright tests programmatically and captures traces on failure",
   "type": "module",
   "license": "MIT",
@@ -19,7 +19,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },

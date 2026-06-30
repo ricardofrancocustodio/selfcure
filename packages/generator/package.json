@@ -1,7 +1,7 @@
 {
   "name": "@selfcure/generator",
-  "version": "0.1.0",
-  "description": "Legacy BYOK test generator for selfcure — sends component analysis to an LLM (Anthropic/OpenAI/Google/Groq/DeepSeek/Ollama) and returns Playwright test code. Fallback for teams without Playwright Test Agents.",
+  "version": "0.1.1",
+  "description": "Legacy BYOK test generator for selfcure — sends component analysis to an LLM (Anthropic/OpenAI/Google/Groq/DeepSeek/Ollama) and returns Playwright test code. Optional fallback for teams without Playwright Test Agents; the headline flow is `selfcure lint` + @selfcure/mcp.",
   "type": "module",
   "license": "MIT",
   "author": "ricardofrancocustodio",
@@ -19,7 +19,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -29,7 +31,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@selfcure/analyzer": "^0.1.0",
+    "@selfcure/analyzer": "^0.1.1",
     "ai": "^6.0.191",
     "@ai-sdk/anthropic": "^3.0.79",
     "@ai-sdk/openai": "^3.0.65",

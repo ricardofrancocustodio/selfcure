@@ -1,6 +1,6 @@
 {
   "name": "@selfcure/reporter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generates HTML report with test evidence — screenshots, traces, diffs",
   "type": "module",
   "license": "MIT",
@@ -19,7 +19,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -29,8 +31,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@selfcure/runner": "^0.1.0",
-    "@selfcure/selfcure": "^0.1.0",
+    "@selfcure/runner": "^0.1.1",
+    "@selfcure/selfcure": "^0.1.1",
     "chalk": "^5.6.2",
     "fs-extra": "^11.3.5"
   },

@@ -1,6 +1,6 @@
 {
   "name": "@selfcure/analyzer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Classifies interactive elements and computes a testability score per component",
   "type": "module",
   "license": "MIT",
@@ -19,7 +19,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -29,6 +31,6 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@selfcure/crawler": "^0.1.0"
+    "@selfcure/crawler": "^0.1.1"
   }
 }
