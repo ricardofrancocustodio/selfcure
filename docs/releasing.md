@@ -16,10 +16,21 @@ at the same version under the **`@selfcure`** org (public, free).
 
 ### CI path (recommended)
 
+> **Status:** the CI publish requires a one-time [trusted-publisher setup](#ci--trusted-publishing-setup)
+> per package on npmjs.com. Until every `@selfcure/*` package has it configured,
+> the workflow builds/tests fine but **fails at the publish step** — use the
+> [Local path](#local-path) or [Manual publish](#manual-publish-fallback) below.
+
 ```bash
-npm run release patch --prepare    # bump + verify + commit + tag (NO publish)
-git push origin main --follow-tags # pushing the v-tag triggers .github/workflows/release.yml
+npm run release -- patch --prepare  # bump + verify + commit + tag (NO publish)
+git push origin main                # push the release commit
+git push origin v0.1.1              # push the tag explicitly (see note below)
 ```
+
+> The bump script creates a **lightweight** tag, which `git push --follow-tags`
+> does **not** push. Push the `v<x.y.z>` tag explicitly to trigger the workflow.
+> Also note the `--` before `patch` — without it, npm swallows `--prepare` and
+> the script publishes locally (and fails on `ENEEDAUTH` if you're not logged in).
 
 The workflow builds, tests, and publishes all 9 packages via OIDC with
 [provenance](https://docs.npmjs.com/generating-provenance-statements) — no
@@ -32,6 +43,24 @@ npm run release patch              # bump + verify + publish + commit + tag, all
 npm run release minor --dry-run    # rehearse without publishing or committing
 git push origin main --follow-tags
 ```
+
+#### Manual publish fallback
+
+If versions are already bumped/committed (e.g. a `--prepare` run) but the CI
+publish failed for lack of a trusted publisher, publish the built packages
+yourself. Requires `npm login` first (the account has 2FA — npm opens a browser
+to authenticate; no OTP typing needed).
+
+```bash
+npm login                          # authenticate (browser-based)
+npm run build                      # ensure dist/ is current
+foreach ($p in 'crawler','analyzer','generator','runner','selfcure','reporter','web','mcp','cli') {
+  npm publish -w "@selfcure/$p" --access public   # dependency order, do not reorder
+}
+```
+
+Publish **in the order above** — npm rejects a package whose `@selfcure/*`
+dependency isn't on the registry yet.
 
 `scripts/release.mjs` does, in order:
 
