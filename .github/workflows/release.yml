@@ -49,11 +49,13 @@ jobs:
             exit 1
           fi
 
-      - name: Typecheck
-        run: npx tsc --noEmit
-
+      # Build first: cross-package `@selfcure/*` type resolution needs each
+      # package's dist/*.d.ts, which is gitignored and absent on a fresh checkout.
       - name: Build
         run: npm run build
+
+      - name: Typecheck
+        run: npx tsc --noEmit
 
       - name: Test
         run: npx vitest run

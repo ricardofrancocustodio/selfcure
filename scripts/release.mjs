@@ -99,8 +99,10 @@ for (const name of PUBLISH_ORDER) {
 
 // 3 — relink + 4 — verify
 run('npm', ['install']);
-run('npx', ['tsc', '--noEmit']); // typecheck (avoids npm-run workspace fan-out)
+// Build first: cross-package @selfcure/* type resolution needs each package's
+// dist/*.d.ts, which is gitignored and absent on a clean checkout.
 run('npm', ['run', 'build']);
+run('npx', ['tsc', '--noEmit']); // typecheck (avoids npm-run workspace fan-out)
 run('npx', ['vitest', 'run']);
 
 // 5 — publish in dependency order (skipped in --prepare; CI publishes instead)
